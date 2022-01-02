@@ -97,4 +97,8 @@
   @include breakpoint(large up) {
     font-size: 10rem;
   }
+
+  @include breakpoint(small up) {
+    font-size: 4rem;
+  }
 }

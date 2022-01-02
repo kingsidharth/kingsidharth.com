@@ -342,8 +342,8 @@ body li {
     height: 1em; } }
 @media print, screen and (max-width: 59.99875em) {
   .icon--social {
-    width: 2.2em;
-    height: 2.2em; } }
+    width: 1.5em;
+    height: 1.5em; } }
 
 .media--video {
   margin: 0 auto 2em auto; }
@@ -565,9 +565,11 @@ html {
 .shadow-2 {
   box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px; }
 
-@media print, screen and (min-width: 75em) {
-  .home h2 {
-    font-size: 10rem; } }
+.home h2 {
+  font-size: 4rem; }
+  @media print, screen and (min-width: 75em) {
+    .home h2 {
+      font-size: 10rem; } }
 
 /*! normalize.css v8.0.0 | MIT License | github.com/necolas/normalize.css */
 html {
