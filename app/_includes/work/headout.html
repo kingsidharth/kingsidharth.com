@@ -4,51 +4,55 @@
       {% if include.show_list %}
       <div class="[ cell small-12 margin--bottom ]">
         <h2 class="h3">
-          Headout (Current)
+          Headout (2019-2021)
         </h2>
       </div><!--.cell-->
       {% endif %}
 
       <div class="[ cell small-12 ]">
         <p style="margin-bottom: 2em;">
-          <img src="{% base64 app/assets/images/work/headout-logo.png %}"
+          <img src="{% base64 app/assets/images/logo-headout.png %}"
             width="250px"
             alt="Headout Logo" title="Headout Logo">
         </p>
       </div><!--.cell-->
 
       <div class="[ cell small-12 ]">
-        <p>
-          <a href="https://www.headout.com">Headout</a> sells experiences to
-          <strong>millions of tourists across the world</strong> — we specialize in
-          <strong>simplifying choices & last-minute availability</strong>.
-        </p>
-        <p>
-          The design & product teams solve customers problems and make their
-          experiences more memorable.
-          {% if include.show_list %}Read more about the team's work:{% endif %}
-        </p>
-        {% if include.show_list %}
-        <div>
-          <div class="[ margin--bottom ]">
-            Write-up:
-            <a href="https://www.64notes.com/design/inherited-design-redesign/" target="_blank">
-              How to Make Sense of Inherited Design
-            </a>
-          </div>
-          {% include components/youtube_video.html id="4e9rfgrW3Vo" %}
-        </div>
+        <div class="[ grid-x grid-margin-x ]">
 
-        <div>
-          <div class="[ margin--bottom ]">
-            <a href="https://uxdesign.cc/design-frameworks-ux-problems-24ce3141de54" target="_blank">
-              Ticket Redesign Case Study: Taming crazy design problems with Design Frameworks
-            </a>
+          <p class="[ cell small-12 ]">
+            <a href="https://www.headout.com">Headout</a> sells experiences to
+            <strong>millions of tourists across the world</strong> — we specialize in
+            <strong>simplifying choices & last-minute availability</strong>.
+          </p>
+
+          <p class="[ cell small-12 ]">
+            The design & product teams solve customers problems and make their
+            experiences more memorable.
+            {% if include.show_list %}Read more about the team's work:{% endif %}
+          </p>
+
+          <div class="[ cell small-12 medium-3 large-4 ]">
+            {% include components/youtube_video.html id="YgycoqtUvsQ" %}
           </div>
-          {% include components/youtube_video.html id="KHKkF8efyMo" %}
-        </div>
-        {% endif %}
+          <div class="[ cell small-12 medium-3 large-4 ]">
+            {% include components/youtube_video.html id="nVT8JbqYZs8" %}
+          </div>
+          <div class="[ cell small-12 medium-3 large-4 ]">
+            {% include components/youtube_video.html id="BpJ_qrNPzYM" %}
+          </div>
+          <div class="[ cell small-12 medium-3 large-4 ]">
+            {% include components/youtube_video.html id="4VuUhbnLX40" %}
+          </div>
+          <div class="[ cell small-12 medium-3 large-4 ]">
+            {% include components/youtube_video.html id="KHKkF8efyMo" %}
+          </div>
+          <div class="[ cell small-12 medium-3 large-4 ]">
+            {% include components/youtube_video.html id="4e9rfgrW3Vo" %}
+          </div>
+
+        </div><!--.grid-x-->
       </div><!--.cell-->
 
-    </div>
+    </div><!--#headout_area-->
 </div><!-- #headout_area -->

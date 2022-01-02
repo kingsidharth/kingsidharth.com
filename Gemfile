@@ -1,6 +1,6 @@
 source "http://rubygems.org"
 
-gem 'jekyll'
+gem 'jekyll', github: 'jekyll/jekyll'
 gem 'maruku'
 gem 'jekyll_image_encode'
 gem 'jekyll-feed'

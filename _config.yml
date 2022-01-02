@@ -26,16 +26,16 @@ defaults:
     values:
       layout: "talk"
       categories: "speaking"
-    output: false
+    output: true
 
 
 include: ['.htaccess']
-exclude: ['Gemfile', 'Gemfile.lock', 'node_modules', '.git', 'Readme.md', '.sass-cache', 'webpack', 'speaking/_posts']
+exclude: ['Gemfile', 'Gemfile.lock', 'node_modules', '.git', 'Readme.md', '.sass-cache', 'webpack']
 
 encoding: "utf-8"
 
 # _config.build.yml sets future and show_drafts to false on `grunt build`
-future: false
+future: true
 show_drafts: false
 
 # Markdown library

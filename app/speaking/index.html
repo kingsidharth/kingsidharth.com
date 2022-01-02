@@ -9,7 +9,7 @@ career, design, and user-behaviour. Invite Sidharth to speak at your college or 
 ---
 <article class="[ post ][ grid-x grid-margin-x ]" data-destination="speaking">
 
-  <div class="[ cell small-12 medium-6 ][ lead ]">
+  <div class="[ cell small-12 medium-6 ]">
     <p>
       Spoken at colleges like <strong>IIT, VJTI, BITS Goa, NMIMS, VIT, KNC, NITs, and TEDx</strong>
       about entrepreneurship, startups, & career.
@@ -20,15 +20,11 @@ career, design, and user-behaviour. Invite Sidharth to speak at your college or 
     <p>
   </div>
 
-  <div class="[ cell small-12 medium-6 ][ lead ]">
+  <div class="[ cell small-12 medium-6 ]">
     <p>
       Invite Sidharth to speak at your college or company: contact@kingsidharth.com
     </p>
   </div><!--.cell-->
-
-  <h3 class="[ cell small-12 padding--bottom ]">
-    Some past talks
-  </h3>
 
   <div id="youtube-videos" class="[ cell small-12 medium-6 large-4 ]">
     {% include components/youtube_video.html id="Fly3_nexjR4" %}
@@ -45,51 +41,9 @@ career, design, and user-behaviour. Invite Sidharth to speak at your college or 
 
   <div id="slides" class="[ cell small-12 margin--bottom-2x ]">
     <div class="[ grid-x grid-margin-x ]">
-      <h3 class="[ cell small-12 padding--bottom ]">
+      <p class="[ cell small-12 padding--bottom ]">
         Checkout <a href="https://speakerdeck.com/KingSidharth" target="">slides from the talks</a>.
-      </h3>
-
-      {% comment %}
-      <div class="[ cell small-12 medium-6 large-4 padding--bottom ]">
-        <script async
-          class="speakerdeck-embed"
-          data-id="d351295d00a94d1e8d50e1d09e4701ab"
-          data-ratio="1.6" src="//speakerdeck.com/assets/embed.js">
-        </script>
-      </div><!--.cell-->
-
-      <div class="[ cell small-12 medium-6 large-4 padding--bottom ]">
-      <script async
-        class="speakerdeck-embed"
-        data-id="3377227cde124679a84df455d3efa190"
-        data-ratio="1.6" src="//speakerdeck.com/assets/embed.js">
-      </script>
-      </div><!--.cell-->
-
-      <div class="[ cell small-12 medium-6 large-4 padding--bottom ]">
-      <script async
-        class="speakerdeck-embed"
-        data-id="9f9db38b78b944a880e188b3899bb2af"
-        data-ratio="1.6" src="//speakerdeck.com/assets/embed.js">
-      </script>
-      </div><!--.cell-->
-
-      <div class="[ cell small-12 medium-6 large-4 padding--bottom ]">
-      <script async
-        class="speakerdeck-embed"
-        data-id="5017120d38d54db2a046e0d3e5181857"
-        data-ratio="1.6" src="//speakerdeck.com/assets/embed.js">
-      </script>
-      </div><!--.cell-->
-
-      <div class="[ cell small-12 medium-6 large-4 padding--bottom ]">
-      <script async
-        class="speakerdeck-embed"
-        data-id="daa7ef54ae5846caac665e477c31917e"
-        data-ratio="1.6" src="//speakerdeck.com/assets/embed.js">
-      </script>
-      </div><!--.cell-->
-      {% endcomment %}
+      </p>
 
     </div>
   </div><!-- #slides-->
@@ -99,8 +53,8 @@ career, design, and user-behaviour. Invite Sidharth to speak at your college or 
   </div>
 
   <div class="[ cell small-12 ]">
-    <h3>All past talks</h3>
-    <ul class="[ grid-x grid-margin-x ]" id="talk_list">
+    <h3>Past talks (Non-Corporate)</h3>
+    <ol class="[ grid-x grid-margin-x ]" id="talk_list">
       {% for post in site.categories.speaking %}
       <li class="[ cell small-12 ] talks {% if post.featured %}featured{% endif %}" itemscope itemtype="http://data-vocabulary.org/Event">
         <div itemprop="startDate" datetime="{{ post.date }}" class="[ grid-x grid-margin-x ]">
@@ -141,12 +95,6 @@ career, design, and user-behaviour. Invite Sidharth to speak at your college or 
         </div><!-- schema-->
       </li>
       {% endfor %}
-    </ul>
+    </ol>
   </div>
 </article>
-
-<script type="text/javascript">
-  console.log("start")
-  var talks = document.querySelectorAll(".talks");
-  talks.each((i) => console.log(i));
-</script>

@@ -132,7 +132,7 @@ body li {
   padding: 0.75rem 1rem; }
 
 .logo {
-  font-family: "Rubik", "Roboto", "Lucida Grande", sans-serif;
+  font-family: "bligh", "Roboto", "Lucida Grande", sans-serif;
   text-transform: none;
   font-size: 1.2rem;
   line-height: 1;
@@ -431,21 +431,19 @@ body li {
       #main_navigation li a {
         width: 100%; } }
 
-#talk_list {
-  list-style-type: none; }
-  #talk_list li {
-    border-bottom: 1px solid #F2F2F2; }
-    @media print, screen and (max-width: 59.99875em) {
-      #talk_list li {
-        padding-top: 2rem;
-        padding-bottom: 2rem; } }
-    @media print, screen and (min-width: 60em) {
-      #talk_list li {
-        padding-top: 1.2rem;
-        padding-bottom: 1.2rem; } }
+#talk_list li {
+  border-bottom: 1px solid #F2F2F2; }
   @media print, screen and (max-width: 59.99875em) {
-    #talk_list .video--container {
-      margin-top: 1rem; } }
+    #talk_list li {
+      padding-top: 2rem;
+      padding-bottom: 2rem; } }
+  @media print, screen and (min-width: 60em) {
+    #talk_list li {
+      padding-top: 1.2rem;
+      padding-bottom: 1.2rem; } }
+@media print, screen and (max-width: 59.99875em) {
+  #talk_list .video--container {
+    margin-top: 1rem; } }
 
 html {
   background-color: #f3f3f3; }
@@ -453,7 +451,8 @@ html {
 .video-wrapper {
   max-width: 680px;
   margin: 0 auto;
-  padding: 0; }
+  padding: 0;
+  border-radius: 8px; }
 
 .youtube {
   background-color: #000;
@@ -553,6 +552,22 @@ html {
 
 .home__intro {
   font-size: 1.25rem; }
+
+.card {
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 2rem;
+  margin-bottom: 2rem; }
+
+.shadow-1 {
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px; }
+
+.shadow-2 {
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px; }
+
+@media print, screen and (min-width: 75em) {
+  .home h2 {
+    font-size: 10rem; } }
 
 /*! normalize.css v8.0.0 | MIT License | github.com/necolas/normalize.css */
 html {
@@ -714,7 +729,7 @@ body {
   margin: 0;
   padding: 0;
   background: #FFFFFF;
-  font-family: "Rubik", "Roboto", "Lucida Grande", sans-serif;
+  font-family: "bligh", "Roboto", "Lucida Grande", sans-serif;
   font-weight: normal;
   line-height: 1.5;
   color: #001B24;
@@ -2347,7 +2362,7 @@ h3, .h3,
 h4, .h4,
 h5, .h5,
 h6, .h6 {
-  font-family: "Asap", "Roboto", "Roboto", sans-serif;
+  font-family: "bligh", "Roboto", "Roboto", sans-serif;
   font-style: normal;
   font-weight: 600;
   color: inherit;
@@ -2402,37 +2417,37 @@ h6, .h6 {
     font-size: 2rem; }
 
   h2, .h2 {
-    font-size: 1.5rem; }
-
-  h3, .h3 {
-    font-size: 1.125rem; }
-
-  h4, .h4 {
-    font-size: 1rem; }
-
-  h5, .h5 {
-    font-size: 0.75rem; }
-
-  h6, .h6 {
-    font-size: 0.75rem; } }
-@media print, screen and (min-width: 75em) {
-  h1, .h1 {
-    font-size: 2rem; }
-
-  h2, .h2 {
     font-size: 1.75rem; }
 
   h3, .h3 {
     font-size: 1.5rem; }
 
   h4, .h4 {
-    font-size: 1.5rem; }
+    font-size: 1.25rem; }
 
   h5, .h5 {
     font-size: 1rem; }
 
   h6, .h6 {
     font-size: 0.75rem; } }
+@media print, screen and (min-width: 75em) {
+  h1, .h1 {
+    font-size: 2.75rem; }
+
+  h2, .h2 {
+    font-size: 2.5rem; }
+
+  h3, .h3 {
+    font-size: 2rem; }
+
+  h4, .h4 {
+    font-size: 1.75rem; }
+
+  h5, .h5 {
+    font-size: 1.5rem; }
+
+  h6, .h6 {
+    font-size: 1.25rem; } }
 a {
   line-height: inherit;
   color: #074F58;

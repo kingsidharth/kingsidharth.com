@@ -153,19 +153,19 @@ $header-styles: (
   ),
   medium: (
     'h1': ('font-size': 32),
-    'h2': ('font-size': 24),
-    'h3': ('font-size': 18),
-    'h4': ('font-size': 16),
-    'h5': ('font-size': 12),
+    'h2': ('font-size': 28),
+    'h3': ('font-size': 24),
+    'h4': ('font-size': 20),
+    'h5': ('font-size': 16),
     'h6': ('font-size': 12),
   ),
   large: (
-    'h1': ('font-size': 32),
-    'h2': ('font-size': 28),
-    'h3': ('font-size': 24),
-    'h4': ('font-size': 24),
-    'h5': ('font-size': 16),
-    'h6': ('font-size': 12),
+    'h1': ('font-size': 44),
+    'h2': ('font-size': 40),
+    'h3': ('font-size': 32),
+    'h4': ('font-size': 28),
+    'h5': ('font-size': 24),
+    'h6': ('font-size': 20),
   )
 );
 $header-text-rendering: optimizeLegibility;

@@ -1,27 +1,44 @@
 <div id="speaking_area">
-    <section id="speaking" class="[ grid-x grid-margin-x ]">
+  <section id="speaking" class="[ grid-x grid-margin-x align-middle ]">
 
-      <h2 class="[ cell small-12 ][ margin--bottom ]">Speaking</h2>
+    <h2 class="[ cell small-12 ][ margin--bottom ]">Teaching & Speaking</h2>
 
-      <div class="[ cell small-12 medium-5 ]">
-        {% include components/youtube_video.html id="8qmJvW5xKjo" %}
-      </div><!--.cell-->
+    <div class="[ cell small-12 medium-6 ]">
+      {% comment %}
+      {% include components/youtube_video.html id="8qmJvW5xKjo" %}
+      {% endcomment %}
+      <img src="/assets/images/floaty-content.png" alt="Human figure working on content creation"/>
+    </div><!--.cell-->
 
-      <div class="[ cell small-12 medium-7 ]">
-        <p>
-          30+ talks, at events like <strong>TEDxVBIT, TEDxTirupati,
-          TechSparks, Startup Saturday Mumbai, WordCamps, Design Day,
-          The UX Project, Behance Design Review</strong>.
-        </p>
-        <p>
-          And at colleges including <strong>IIT, BITS Pilani (Goa), VIT, NITs, VJTI, NITK</strong>.
-        </p>
-        <p>
-          <a href="http://www.64notes.com/speaking" target="_blank">See all talks &rarr;</a>
-        </p>
-        <p>
-          <a href="mailto:contact@kingsidharth.com" target="_blank">Invite to your college or company &rarr;</a>
-        </p>
-      </div><!--.cell -->
+    <div class="[ cell small-12 medium-6 ]">
+      <p>
+        30+ talks, at events like <strong>TEDxVBIT, TEDxTirupati,
+        TechSparks, Startup Saturday Mumbai, WordCamps, Design Day,
+        The UX Project, Behance Design Review</strong>.
+      </p>
+      <p>
+        And at colleges including <strong>IIT, BITS Pilani (Goa), VIT, NITs, VJTI, NITK</strong>.
+      </p>
+      <p>
+        <a href="/speaking">See more or invite &rarr;</a>
+      </p>
+    </div><!--.cell -->
+
   </section>
 </div><!-- speaking_area -->
+
+<div id="youtube_list_area" class="">
+  <section class="[ grid-x grid-margin-x ]">
+
+      <div class="[ cell small-12 medium-4 ]">
+        {% include components/youtube_video.html id="Fly3_nexjR4" %}
+      </div>
+      <div class="[ cell small-12 medium-4 ]">
+        {% include components/youtube_video.html id="8qmJvW5xKjo" %}
+      </div>
+      <div class="[ cell small-12 medium-4 ]">
+        {% include components/youtube_video.html id="gmRlPl_Ljh8" %}
+      </div>
+
+  </section>
+</div>
