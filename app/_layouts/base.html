@@ -34,7 +34,7 @@
     {% endif %}
   </head>
 
-  <body class="[ {{ page.slug }} ]" data-scroll-container>
+  <body class="{{ page.slug }}">
     {% include header.html %}
 
     {{ content }}
