@@ -14,8 +14,6 @@
     margin-bottom: 6em;
 
     h1 {
-      font-size: 3rem;
-      margin-bottom: 4rem;
     }
   }
 
@@ -50,11 +48,24 @@
 
 }
 
-#work_area {
-  .work-2 {
-    @include breakpoint(small only) {
-      margin-top: 1rem;
-    }
+#work_area, #speaking_area {
+  @include breakpoint(medium up) {
+    margin-top: 8rem;
+  }
+
+  @include breakpoint(small only) {
+    margin-top: 4rem;
+  }
+}
+
+#youtube_list_area {
+  @include breakpoint(medium up) {
+    margin-top: 8rem;
+    margin-bottom: 8rem;
+  }
+  @include breakpoint(small only) {
+    margin-top: 4rem;
+    margin-bottom: 4rem;
   }
 }
 
