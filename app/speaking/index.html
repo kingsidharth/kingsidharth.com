@@ -18,43 +18,64 @@ career, design, and user-behaviour. Invite Sidharth to speak at your college or 
       Talked about design & user experience at <strong>Design Day, The UX Project,
       Startup Saturday, TechSparks, and WordCamps</strong>.
     <p>
-  </div>
-
-  <div class="[ cell small-12 medium-6 ]">
     <p>
       Invite Sidharth to speak at your college or company: contact@kingsidharth.com
     </p>
+  </div>
+
+  <div class="[ cell small-12 medium-6 ]">
+    <p>Popular topics I for my talks:</p>
+    <ul>
+      <li>Career in the Internet & Startup World</li>
+      <li>Starting a Career in UI/UX Design</li>
+      <li>Building your first Startup: Yourself</li>
+      <li>Building Digital Products focused on User Behaviour</li>
+      <li>Personal Brand for Modern Careers</li>
+    </ul>
   </div><!--.cell-->
-
-  <div id="youtube-videos" class="[ cell small-12 medium-6 large-4 ]">
-    {% include components/youtube_video.html id="Fly3_nexjR4" %}
-  </div><!--.cell-->
-
-  <div class="[ cell small-12 medium-6 large-4 ]">
-    {% include components/youtube_video.html id="8qmJvW5xKjo" %}
-  </div><!--.cell-->
-
-  <div class="[ cell small-12 medium-6 large-4 ]">
-    {% include components/youtube_video.html id="gmRlPl_Ljh8" %}
-  </div><!--#youtube-videos-->
-
-
-  <div id="slides" class="[ cell small-12 margin--bottom-2x ]">
-    <div class="[ grid-x grid-margin-x ]">
-      <p class="[ cell small-12 padding--bottom ]">
-        Checkout <a href="https://speakerdeck.com/KingSidharth" target="">slides from the talks</a>.
-      </p>
-
-    </div>
-  </div><!-- #slides-->
 
   <div class="grid-x cell small-12">
     <hr class="cell small-12 margin--bottom margin--top">
   </div>
 
   <div class="[ cell small-12 ]">
-    <h3>Past talks (Non-Corporate)</h3>
-    <ol class="[ grid-x grid-margin-x ]" id="talk_list">
+    <h3>Popular Videos</h3>
+  </div>
+
+  <div id="youtube-videos" class="[ cell small-12 medium-6 large-4 ]">
+    {% include components/youtube_video.html id="Fly3_nexjR4" %}
+    <p>
+      <small>
+        Follow-up on the first TEDx talk, what I learned.
+      </small>
+    </p>
+  </div><!--.cell-->
+
+  <div class="[ cell small-12 medium-6 large-4 ]">
+    {% include components/youtube_video.html id="8qmJvW5xKjo" %}
+    <p>
+      <small>
+        I was 16 when I gave my first TEDx talk.
+      </small>
+    </p>
+  </div><!--.cell-->
+
+  <div class="[ cell small-12 medium-6 large-4 ]">
+    {% include components/youtube_video.html id="gmRlPl_Ljh8" %}
+    <p>
+      <small>
+        College degrees are not making careers for the internet.
+      </small>
+    </p>
+  </div><!--#youtube-videos-->
+
+  <div class="grid-x cell small-12">
+    <hr class="cell small-12 margin--bottom margin--top">
+  </div>
+
+  <div class="[ cell small-12 ]">
+    <h3>Some Past Talks</h3>
+    <ul class="[ grid-x grid-margin-x ]" id="talk_list">
       {% for post in site.categories.speaking %}
       <li class="[ cell small-12 ] talks {% if post.featured %}featured{% endif %}" itemscope itemtype="http://data-vocabulary.org/Event">
         <div itemprop="startDate" datetime="{{ post.date }}" class="[ grid-x grid-margin-x ]">
@@ -95,6 +116,6 @@ career, design, and user-behaviour. Invite Sidharth to speak at your college or 
         </div><!-- schema-->
       </li>
       {% endfor %}
-    </ol>
+    </ul>
   </div>
 </article>

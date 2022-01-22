@@ -20,23 +20,13 @@
 
       <nav class="cell small-12 medium-8">
         <ul class="menu show-for-medium align-right" id="main_navigation">
-          <li><a href="/" onclick="ga('send', 'event', 'Home', 'Click', 'Navigation');">Home</a></li>
-          <li><a href="/work/" onclick="ga('send', 'event', 'Work', 'Click', 'Navigation');">Work</a></li>
-          <li><a href="/speaking/" onclick="ga('send', 'event', 'Talks', 'Click', 'Navigation');">Talks</a></li>
-          <li><a href="/play/" onclick="ga('send', 'event', 'Play', 'Click', 'Navigation');">Play</a></li>
-          <li><a href="https://www.64notes.com/?ref=kingsidharth" onclick="ga('send', 'event', 'Blog', 'Click', 'Navigation');">Blog</a></li>
+          <li><a href="/">Home</a></li>
+          <li><a href="/work/">Work</a></li>
+          <li><a href="/speaking/">Talks</a></li>
+          <li><a href="https://www.64notes.com/?ref=kingsidharth" target="_blank" onclick="dataLayer.push({'event': 'Navigation Link', 'network': 'blog', 'ui_location': 'primary-navigation' })">Blog</a></li>
+          <li><a href="https://pages.kingsidharth.com" target="_blank" onclick="dataLayer.push({'event': 'Navigation Link', 'network': 'guides', 'ui_location': 'primary-navigation' })">Courses</a></li>
         </ul>
       </nav>
     </div>
   </div>
 </header>
-
-<nav id="social_nav_area" class="background--grey show-for-medium">
-  <div class="grid-container">
-    <div id="social_nav" class="[ grid-x grid-margin-x ]">
-      <div class="[ cell small-12 ]">
-
-      </div>
-    </div>
-  </div>
-</nav>

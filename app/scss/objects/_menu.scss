@@ -1,0 +1,22 @@
+.menu {
+  a {
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    &:hover {
+      border: 1px solid transparent!important;
+      border-bottom: 1px solid transparent!important;
+    }
+  }
+}
+
+:root menu a:hover {
+  border-bottom-color: transparent!important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root .menu a {
+    &:hover {
+      background: scale-color($blue, $lightness: 15%)
+    }
+  }
+}

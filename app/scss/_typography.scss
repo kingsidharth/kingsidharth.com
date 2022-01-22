@@ -1,8 +1,7 @@
 
 
 $primary-font: 'bligh', 'Roboto', 'Lucida Grande', sans-serif;
-$headline-font: 'bligh', 'Roboto', 'Roboto', sans-serif;
-
+$headline-font: 'gimlet-display', 'Garamond', serif;
 
 // SELECTION
 
@@ -19,6 +18,10 @@ $headline-font: 'bligh', 'Roboto', 'Roboto', sans-serif;
 // HEADLINES
 
 body {
+
+  h2, h3, h4 {
+    margin-top: 3rem;
+  }
 
   h1 {
     letter-spacing: -1px;

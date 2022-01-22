@@ -5,8 +5,13 @@
   Depdencies: Zurb Foundation 6 for grid
 */
 
-.c-logo-list {}
+.c-logo-list {
+  background: $white;
+  border-radius: 2rem;
+  margin: 2rem;
+  padding: 2rem;
+}
 
 .c-logo-list--item {
-  margin-bottom: 1rem;
+  margin-bottom: 0px;
 }

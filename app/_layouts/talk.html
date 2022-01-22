@@ -1,0 +1,9 @@
+{
+  'title': '{{title}}',
+  'event': '{{event}}',
+  'place': '{{place}}',
+  'links': {
+    {% if video_link %}'video': {{video_link}}, {% endif %}
+    {% if slide_link %}'slides': {{slide_link}}, {% endif %}
+  }
+}

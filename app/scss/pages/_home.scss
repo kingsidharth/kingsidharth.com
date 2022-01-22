@@ -7,6 +7,10 @@
 #intro {
   @include breakpoint(small only) {
     margin-top: 2rem;
+
+    .cell {
+      margin-bottom: 2.5rem;
+    }
   }
 
   @include breakpoint(large up) {
@@ -14,8 +18,8 @@
     margin-bottom: 6em;
 
     h1 {
-      font-size: 3rem;
-      margin-bottom: 4rem;
+      font-size: 2.75rem;
+      line-height: 1.4em;
     }
   }
 
@@ -50,6 +54,18 @@
 
 }
 
+#project_area, #speaking_area {
+  .cell {
+    @include breakpoint(small only) {
+      margin-bottom: 2.5rem;
+    }
+
+    @include breakpoint(medium up) {
+      margin-bottom: 3.5rem;
+    }
+  }
+}
+
 #work_area, #speaking_area {
   @include breakpoint(medium up) {
     margin-top: 8rem;
@@ -64,10 +80,16 @@
   @include breakpoint(medium up) {
     margin-top: 8rem;
     margin-bottom: 8rem;
+    h2 {
+      margin-bottom: 1rem;
+    }
   }
   @include breakpoint(small only) {
     margin-top: 4rem;
     margin-bottom: 4rem;
+    h2 {
+      margin-bottom: 2rem;
+    }
   }
 }
 
@@ -108,10 +130,10 @@
 
 .home h2 {
   @include breakpoint(large up) {
-    font-size: 10rem;
+    font-size: 6rem;
   }
 
   @include breakpoint(small up) {
-    font-size: 4rem;
+    font-size: 2.5rem;
   }
 }

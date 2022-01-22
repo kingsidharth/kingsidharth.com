@@ -8,24 +8,30 @@ meta_description: "Sidharth is an Entrepreneur, Designer, & Public Speaker from 
 
 <div id="intro_area" class=" area--padded ">
   <div class="grid-container">
-    <div id="intro" class="[ grid-x align-middle ]">
+    <div id="intro" class="[ grid-x grid-margin-x align-middle ]">
 
-      <div id="" class="[ cell shrink small-12 medium-6 text-center ]">
-        <img src="/assets/images/floaty-hero.png"
+      <div id="" class="[ cell shrink small-12 medium-4 text-center ]">
+        <img src="/assets/images/king-sidharth.jpg"
           alt="King Sidharth" title="King Sidharth"
-          class="">
-      </div>
+          class="rounded-image">
+      </div><!--.cell-->
 
-      <div class="[ cell small-12 medium-6 ][ home__intro ][ grid-x grid-margin-x ]">
-        <h1 class="[ cell small-12 ]">Entrepreneur, Product Builder, Designer, Speaker, & Artist</h1>
-        <ul class="[ cell small ]">{% include social.html %}</ul>
-      </div>
+      <div class="[ cell small-12 medium-8 ][ home__intro ]">
+        <h1>
+          Entrepreneur &middot; Product Builder &middot; Designer &middot; Speaker &middot; Content Creator &middot; Artist
+        </h1>
+        <p>Been building moats for tech-startups with behaviour driven products since the 15+ years.</p>
+      </div><!--.cell-->
 
     </div><!-- #intro -->
-  </div>
+  </div><!--.grid-container-->
 </div><!-- #intro_area -->
 
+{% include divider.html %}
 
+{% include media.html %}
+
+{% include divider.html %}
 
 <div id="work_area" class="[ area--padded ]">
   <div class="grid-container">
@@ -33,31 +39,33 @@ meta_description: "Sidharth is an Entrepreneur, Designer, & Public Speaker from 
 
       <h2 class="[ cell small-12 ]">Work</h2>
 
-
-      <div class="[ cell small-12 medium-6 ]">
+      <div class="[ cell small-12 medium-8 ]">
         <p>
-          <img src="/assets/images/logo-growthschool.png" alt="GrowthSchool Logo" style="max-width: 250px;"/>
+          I head product & design at <strong><a href="/work#growthschool">GrowthSchool</a></strong> — an edu-tech
+          startup based in Bangalore, India. We create programs to help people up-skill and
+          start non-traditional careers in the internet age.
         </p>
         <p>
-          I head product & design at <a href="/work#growthschool">GrowthSchool</a> — a startup based out of Bangalore,
-          India. We create programs to help people up-skill and start non-traditional careers.
+          In the past, I've been a part of <strong>Headout</strong>, <strong>Instamojo</strong>, <strong>Cleartax</strong>,
+          and other startups.
         </p>
-        <p>
-          In the past, I've been a part of Headout, Instamojo, Cleartax, and other startups.
-        </p>
+        <p><a href="/work">Read More</a></p>
       </div>
 
-      <div class="[ cell small-12 medium-6 ]">
-        <img src="/assets/images/floaty-work.png" alt="Human figure juggling">
+      <div class="[ cell small-12 medium-4 ]">
+        <img src="/assets/images/logo-growthschool.png" alt="GrowthSchool Logo" style="max-width: 250px;" class="rounded-image"/>
       </div>
 
-
+      {% comment %}
       <div class="[ cell small-12 ]">
         <div class="card shadow-1">
           <div class="[ grid-x grid-margin-x align-middle ]">
 
             <div class="[ cell small-12 medium-9 ]">
-              <p>Headout sells tourism experiences across the world. My team’s focus was on reshaping the core platform for scale — make it self-serve for partners, scaling the IA of the core platform and sister brands.
+              <p>
+                Headout sells tourism experiences across the world. My team’s
+                mandage was to manage the core product — which connects suppliers of
+                tourist experiences with millions of tourists from across the world.
               </p>
               <p><a href="/work#headout">Read More</a></p>
             </div>
@@ -95,6 +103,7 @@ meta_description: "Sidharth is an Entrepreneur, Designer, & Public Speaker from 
           </div><!--.grid-x-->
         </div><!--.card-->
       </div><!--.cell -->
+      {% endcomment %}
 
 
     </div>
@@ -102,49 +111,67 @@ meta_description: "Sidharth is an Entrepreneur, Designer, & Public Speaker from 
 </div><!-- #work_area -->
 
 
-
+{% include divider.html %}
 {% include speaking.html %}
-
+{% include divider.html %}
 
 <div id="project_area" class="area--padded">
   <div class="grid-container">
-    <div id="projects__youtube" class="[ grid-x grid-margin-x ][ cell small-12 ]">
+    <div id="projects__youtube" class="[ grid-x grid-margin-x ]">
 
-      <div class="[ cell small-12 medium-6 ]">
-        <h3>YouTube Channel</h3>
-        <ul class="no-list">
-          <li><a href="https://www.youtube.com/watch?v=S9mytjd4wVY&list=PLbwADCh48-fV1GY7f6N1pnD-1DFDv1Koq">Getting Started with UI/UX Design</a></li>
-          <li><a href="https://www.youtube.com/watch?v=_5LXIsxV08A&list=PLbwADCh48-fW_6N1a_aCt1Ixisrb8VwoK">Product Management Course (Hindi)</a></li>
-          <li><a href="https://www.youtube.com/watch?v=OP_nSvqllsg&list=PLbwADCh48-fWC2eAoFTXWJKHyz3Ack51C">Design Systems (Material, Apple Human Interface Guidelines & More)</a></li>
-          <li><a href="https://www.youtube.com/watch?v=4VuUhbnLX40&list=PLbwADCh48-fXz94l-ojlURj-DXmY5GWP5">Typography & Type Setting</a></li>
-          <li>Secret Guide to Information Architecture (<a href="https://www.youtube.com/watch?v=1Arxk2HjAXE&t=6s">Hindi</a> | <a href="https://www.youtube.com/watch?v=8aNV7hFbvEs">English</a>)</li>
-        </ul>
+      <h2 class="[ cell small-12 ]">Content & Community</h2>
+
+      <div class="[ cell small-12 ]">
+        {% include social.html %}
       </div>
 
       <div class="[ cell small-12 medium-6 ]">
-        <h3>Twitter Threads & Shitposting</h3>
+        <h3>Guides & Courses</h3>
+        <ul>
+          <li><a href="https://pages.kingsidharth.com/Getting-Started-with-UI-UX-Design-c687ccf191474cf5bb01c4b784055e81">Starting Career in UI/UX Design or Product Design</a></li>
+          <li><a href="https://pages.kingsidharth.com/Guide-to-Design-Systems-Playlist-2b3cfee64a6e447fa95e333dd4883b0d">Design Systems & UI Design</a></li>
+          <li><a href="https://pages.kingsidharth.com/Product-Management-Full-Course-Hindi-60203ad615644a75a5c36a1cd6972569">Product Management Course (Hindi)</a></li>
+        </ul>
+
+        <br>
+
+        <h3>YouTube Channel</h3>
+        <ul class="no-list">
+          <li><a href="https://www.youtube.com/watch?v=S9mytjd4wVY&list=PLbwADCh48-fV1GY7f6N1pnD-1DFDv1Koq">Getting Started with UI/UX Design</a></li>
+          <li><a href="https://www.youtube.com/watch?v=4VuUhbnLX40&list=PLbwADCh48-fXz94l-ojlURj-DXmY5GWP5">Typography & Type Setting</a></li>
+          <li>Secret Guide to Information Architecture (<a href="https://www.youtube.com/watch?v=1Arxk2HjAXE&t=6s">Hindi</a> | <a href="https://www.youtube.com/watch?v=8aNV7hFbvEs">English</a>)</li>
+          <li><a href="https://www.youtube.com/watch?v=C-DxQXZf2jc&list=PLbwADCh48-fVFRtlaBEtqzj8DS74Qy9kx">Design Portfolio & Case Study Reviews (Series)</a></li>
+          <li><a href="https://www.youtube.com/watch?v=bk5NnyJ_Q5w&list=PLbwADCh48-fUF_pSdybWz6WX0ZyUdUQnv">Design Office Hours (Series)</a></li>
+        </ul>
+
+        <br>
+      </div>
+
+      <div class="[ cell small-12 medium-6 ]">
+        <h3><img class="icon" src="/assets/images/icons/twitter.svg"> Threads & Shitposting</h3>
         <p>You know what to expect. Or maybe not. 💩</p>
         <p><a href="https://twitter.com/kingsidharth" target="_blank">Follow on Twitter &rarr;</a></p>
 
-        <p>&nbsp;</p>
+        <br>
 
-        <p>&nbsp;</p>
-
-        <h3>Instagram Characters & BTS</h3>
+        <h3><img class="icon" src="/assets/images/icons/instagram.svg"> Characters & BTS</h3>
         <p>What goes on in my life everyday? Get behind-the-scenes look and some interesting comic characters from the startup world.</p>
         <p><a href="https://instagram.com/kingsidharth" target="_blank">Follow on Instagram &rarr;</a></p>
+
+        <br>
+
+        <h3>Community</h3>
+        <p>
+          You can get to be a part of the special access community by joining the
+          <a href="https://t.me/kingsidharthtel" target="_blank">Telegram Group</a>,
+          <a href="https://discord.gg/mCqyuaZ" target="_blank">Discord Server</a>, or
+          <a href="https://www.youtube.com/kingsidharthofficial/join" target="_blank">YouTube Membership</a>.
+        </p>
+
+        <br>
+
       </div>
 
     </div>
   </div>
 </div><!-- #project_area -->
-
-<div>
-  <div class="grid-container">
-    <div class="grid-x grid-margin-x">
-      <div class="[ cell small-12 large-7 ][ margin--bottom-2x ]">
-        {% include media.html %}
-      </div><!--.cell-->
-    </div>
-  </div>
-</div>

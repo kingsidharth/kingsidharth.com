@@ -1,0 +1,33 @@
+
+
+@media (prefers-color-scheme: dark) {
+  :root body, [data-theme="dark"] {
+    background: $black;
+    color: $white;
+
+    a {
+      color: $grey;
+      &:hover {
+        border-bottom: 1px solid scale-color($blue, $lightness: 25%);
+      }
+    }
+
+    .social-bar li a {
+      border-color: $blue;
+    }
+
+    .icon {
+      filter: brightness(0) invert(1);
+    }
+
+
+    // Dividers
+    #talk_list li {
+      border-bottom-color: $blue;
+    }
+
+    hr {
+      border-bottom-color: $blue;
+    }
+  }
+}

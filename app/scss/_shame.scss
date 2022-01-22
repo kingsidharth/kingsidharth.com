@@ -15,3 +15,20 @@
 .hide {
   display: none;
 }
+
+
+@include breakpoint(small only) {
+  body .grid-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+
+.cell {
+  margin-bottom: max(2.5rem);
+}
+
+.rounded-image {
+  border-radius: 1.5rem;
+}

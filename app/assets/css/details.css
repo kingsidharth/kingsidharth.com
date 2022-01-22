@@ -12,6 +12,8 @@
   background: #001B24;
   color: #D1FCFF; }
 
+body h2, body h3, body h4 {
+  margin-top: 3rem; }
 body h1 {
   letter-spacing: -1px; }
 body h2 {
@@ -41,6 +43,16 @@ body li {
 
 .hide {
   display: none; }
+
+@media print, screen and (max-width: 39.99875em) {
+  body .grid-container {
+    padding-left: 2rem;
+    padding-right: 2rem; } }
+.cell {
+  margin-bottom: max(2.5rem); }
+
+.rounded-image {
+  border-radius: 1.5rem; }
 
 /**
  * Foundation for Sites by ZURB
@@ -359,6 +371,19 @@ body li {
   .video--thumbnail-1by2 {
     min-height: 250px; } }
 
+.menu a {
+  border: 1px solid transparent;
+  border-radius: 0.5rem; }
+  .menu a:hover {
+    border: 1px solid transparent !important;
+    border-bottom: 1px solid transparent !important; }
+
+:root menu a:hover {
+  border-bottom-color: transparent !important; }
+
+@media (prefers-color-scheme: dark) {
+  :root .menu a:hover {
+    background: #0c8392; } }
 @media print, screen and (max-width: 59.99875em) {
   #footer .menu {
     justify-content: center; } }
@@ -373,9 +398,6 @@ body li {
   HEADER::COMPONENTS
 
 */
-#header_area {
-  box-shadow: rgba(0, 0, 0, 0.15) 0 2px 2px; }
-
 #header {
   padding-top: 1em; }
 
@@ -419,8 +441,14 @@ body li {
   Component used to display a responsive grid/list of logos
   Depdencies: Zurb Foundation 6 for grid
 */
+.c-logo-list {
+  background: #FFFFFF;
+  border-radius: 2rem;
+  margin: 2rem;
+  padding: 2rem; }
+
 .c-logo-list--item {
-  margin-bottom: 1rem; }
+  margin-bottom: 0px; }
 
 #main_navigation {
   transition: height 0.3s; }
@@ -431,19 +459,21 @@ body li {
       #main_navigation li a {
         width: 100%; } }
 
-#talk_list li {
-  border-bottom: 1px solid #F2F2F2; }
+#talk_list {
+  list-style-type: none; }
+  #talk_list li {
+    border-bottom: 1px solid #F2F2F2; }
+    @media print, screen and (max-width: 59.99875em) {
+      #talk_list li {
+        padding-top: 2rem;
+        padding-bottom: 2rem; } }
+    @media print, screen and (min-width: 60em) {
+      #talk_list li {
+        padding-top: 1.2rem;
+        padding-bottom: 1.2rem; } }
   @media print, screen and (max-width: 59.99875em) {
-    #talk_list li {
-      padding-top: 2rem;
-      padding-bottom: 2rem; } }
-  @media print, screen and (min-width: 60em) {
-    #talk_list li {
-      padding-top: 1.2rem;
-      padding-bottom: 1.2rem; } }
-@media print, screen and (max-width: 59.99875em) {
-  #talk_list .video--container {
-    margin-top: 1rem; } }
+    #talk_list .video--container {
+      margin-top: 1rem; } }
 
 html {
   background-color: #f3f3f3; }
@@ -517,14 +547,16 @@ html {
 */
 @media print, screen and (max-width: 59.99875em) {
   #intro {
-    margin-top: 2rem; } }
+    margin-top: 2rem; }
+    #intro .cell {
+      margin-bottom: 2.5rem; } }
 @media print, screen and (min-width: 75em) {
   #intro {
     margin-top: 6em;
     margin-bottom: 6em; }
     #intro h1 {
-      font-size: 3rem;
-      margin-bottom: 4rem; } }
+      font-size: 2.75rem;
+      line-height: 1.4em; } }
 @media print, screen and (min-width: 60em) {
   #intro .photo {
     margin-top: 0;
@@ -542,6 +574,13 @@ html {
   #intro .headline span {
     font-size: 1.3em; }
 
+@media print, screen and (max-width: 59.99875em) {
+  #project_area .cell, #speaking_area .cell {
+    margin-bottom: 2.5rem; } }
+@media print, screen and (min-width: 60em) {
+  #project_area .cell, #speaking_area .cell {
+    margin-bottom: 3.5rem; } }
+
 @media print, screen and (min-width: 60em) {
   #work_area, #speaking_area {
     margin-top: 8rem; } }
@@ -552,11 +591,15 @@ html {
 @media print, screen and (min-width: 60em) {
   #youtube_list_area {
     margin-top: 8rem;
-    margin-bottom: 8rem; } }
+    margin-bottom: 8rem; }
+    #youtube_list_area h2 {
+      margin-bottom: 1rem; } }
 @media print, screen and (max-width: 59.99875em) {
   #youtube_list_area {
     margin-top: 4rem;
-    margin-bottom: 4rem; } }
+    margin-bottom: 4rem; }
+    #youtube_list_area h2 {
+      margin-bottom: 2rem; } }
 
 #circle {
   text-align: center; }
@@ -583,11 +626,30 @@ html {
   box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px; }
 
 .home h2 {
-  font-size: 4rem; }
+  font-size: 2.5rem; }
   @media print, screen and (min-width: 75em) {
     .home h2 {
-      font-size: 10rem; } }
+      font-size: 6rem; } }
 
+a {
+  transition: 0.5s; }
+
+@media (prefers-color-scheme: dark) {
+  :root body, [data-theme="dark"] {
+    background: #001B24;
+    color: #FFFFFF; }
+    :root body a, [data-theme="dark"] a {
+      color: #F2F2F2; }
+      :root body a:hover, [data-theme="dark"] a:hover {
+        border-bottom: 1px solid #0fa5b8; }
+    :root body .social-bar li a, [data-theme="dark"] .social-bar li a {
+      border-color: #074F58; }
+    :root body .icon, [data-theme="dark"] .icon {
+      filter: brightness(0) invert(1); }
+    :root body #talk_list li, [data-theme="dark"] #talk_list li {
+      border-bottom-color: #074F58; }
+    :root body hr, [data-theme="dark"] hr {
+      border-bottom-color: #074F58; } }
 /*! normalize.css v8.0.0 | MIT License | github.com/necolas/normalize.css */
 html {
   line-height: 1.15;
@@ -750,7 +812,7 @@ body {
   background: #FFFFFF;
   font-family: "bligh", "Roboto", "Lucida Grande", sans-serif;
   font-weight: normal;
-  line-height: 1.5;
+  line-height: 1.6;
   color: #001B24;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale; }
@@ -810,7 +872,7 @@ textarea {
 .grid-container {
   padding-right: 0.625rem;
   padding-left: 0.625rem;
-  max-width: 75rem;
+  max-width: 62.5rem;
   margin-left: auto;
   margin-right: auto; }
   @media print, screen and (min-width: 60em) {
@@ -2381,7 +2443,7 @@ h3, .h3,
 h4, .h4,
 h5, .h5,
 h6, .h6 {
-  font-family: "bligh", "Roboto", "Roboto", sans-serif;
+  font-family: "gimlet-display", "Garamond", serif;
   font-style: normal;
   font-weight: 600;
   color: inherit;
@@ -2479,7 +2541,7 @@ a {
 
 hr {
   clear: both;
-  max-width: 75rem;
+  max-width: 62.5rem;
   height: 0;
   margin: 1rem auto;
   border-top: 0;
