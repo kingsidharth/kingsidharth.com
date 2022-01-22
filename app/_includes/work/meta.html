@@ -1,0 +1,8 @@
+<date>{{ post.date | date: "%b," }} <strong>{{ post.date | date: "%Y" }}</strong></date>
+{% if post.title %}
+  {% if post.role %}Role: <strong>{{ post.role }}</strong> {% endif %}
+  {% if post.company %} &middot; Company: <strong>{{ post.company }}</strong> {% endif %}
+{% else %}
+  {% if page.role %}Role: <strong>{{ page.role }}</strong> {% endif %}
+  {% if page.company %} &middot; Company: <strong>{{ page.company }}</strong> {% endif %}
+{% endif %}

@@ -27,6 +27,14 @@ defaults:
       layout: "talk"
       categories: "speaking"
     output: true
+  -
+    scope:
+      path: "work"
+      type: "project"
+    values:
+      layout: "project"
+      categories: "projects"
+    output: true
 
 
 include: ['.htaccess']

@@ -4,30 +4,34 @@
   :root body, [data-theme="dark"] {
     background: $black;
     color: $white;
+  }
 
-    a {
+  .social-bar li a {
+    border-color: $blue;
+    &:hover {
+      border: 1px solid $blue;
+    }
+  }
+
+  .icon {
+    filter: brightness(0) invert(1);
+  }
+
+
+  // Dividers
+  #talk_list li {
+    border-bottom-color: $blue;
+  }
+
+  hr {
+    border-bottom-color: $blue;
+  }
+
+  div a {
+    color: $grey;
+    &:hover {
       color: $grey;
-      &:hover {
-        border-bottom: 1px solid scale-color($blue, $lightness: 25%);
-      }
-    }
-
-    .social-bar li a {
-      border-color: $blue;
-    }
-
-    .icon {
-      filter: brightness(0) invert(1);
-    }
-
-
-    // Dividers
-    #talk_list li {
-      border-bottom-color: $blue;
-    }
-
-    hr {
-      border-bottom-color: $blue;
+      border-bottom: 1px solid scale-color($blue, $lightness: 25%);
     }
   }
 }

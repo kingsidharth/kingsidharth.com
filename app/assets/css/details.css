@@ -14,11 +14,7 @@
 
 body h2, body h3, body h4 {
   margin-top: 3rem; }
-body h1 {
-  letter-spacing: -1px; }
 body h2 {
-  letter-spacing: -0.75px; }
-body h3 {
   letter-spacing: -0.5px; }
 @media print, screen and (min-width: 64em) {
   body p, body ul, body ol, body blockquote {
@@ -26,7 +22,8 @@ body h3 {
 body a {
   border-bottom: 1px solid #074F58; }
   body a:hover {
-    border-bottom: 1px solid #06444c; }
+    border-bottom: 1px solid #06444c;
+    color: #001B24; }
 body .menu a {
   border-bottom: none; }
 body li {
@@ -85,6 +82,10 @@ body li {
 .background--grey {
   background-color: #F2F2F2; }
 
+.caption {
+  display: block;
+  margin-bottom: 2rem; }
+
 /*
 
   TEXT:OBJECTS
@@ -141,7 +142,7 @@ body li {
 
 */
 #logo {
-  padding: 0.75rem 1rem; }
+  padding: 0.75rem 0rem; }
 
 .logo {
   font-family: "bligh", "Roboto", "Lucida Grande", sans-serif;
@@ -372,18 +373,16 @@ body li {
     min-height: 250px; } }
 
 .menu a {
-  border: 1px solid transparent;
+  border: none;
   border-radius: 0.5rem; }
   .menu a:hover {
-    border: 1px solid transparent !important;
-    border-bottom: 1px solid transparent !important; }
-
-:root menu a:hover {
-  border-bottom-color: transparent !important; }
+    border: none; }
 
 @media (prefers-color-scheme: dark) {
-  :root .menu a:hover {
-    background: #0c8392; } }
+  :root .menu a {
+    color: #F2F2F2; }
+    :root .menu a:hover {
+      background: #0c8392; } }
 @media print, screen and (max-width: 59.99875em) {
   #footer .menu {
     justify-content: center; } }
@@ -539,6 +538,9 @@ html {
   border: 1px solid #F2F2F2;
   border-radius: 4px;
   margin-right: 0.5rem; }
+  .social-bar li a:hover {
+    border: 1px solid #F2F2F2;
+    background: #F2F2F2; }
 
 /*
 
@@ -555,7 +557,7 @@ html {
     margin-top: 6em;
     margin-bottom: 6em; }
     #intro h1 {
-      font-size: 2.75rem;
+      font-size: 2.5rem;
       line-height: 1.4em; } }
 @media print, screen and (min-width: 60em) {
   #intro .photo {
@@ -638,18 +640,26 @@ a {
   :root body, [data-theme="dark"] {
     background: #001B24;
     color: #FFFFFF; }
-    :root body a, [data-theme="dark"] a {
-      color: #F2F2F2; }
-      :root body a:hover, [data-theme="dark"] a:hover {
-        border-bottom: 1px solid #0fa5b8; }
-    :root body .social-bar li a, [data-theme="dark"] .social-bar li a {
-      border-color: #074F58; }
-    :root body .icon, [data-theme="dark"] .icon {
-      filter: brightness(0) invert(1); }
-    :root body #talk_list li, [data-theme="dark"] #talk_list li {
-      border-bottom-color: #074F58; }
-    :root body hr, [data-theme="dark"] hr {
-      border-bottom-color: #074F58; } }
+
+  .social-bar li a {
+    border-color: #074F58; }
+    .social-bar li a:hover {
+      border: 1px solid #074F58; }
+
+  .icon {
+    filter: brightness(0) invert(1); }
+
+  #talk_list li {
+    border-bottom-color: #074F58; }
+
+  hr {
+    border-bottom-color: #074F58; }
+
+  div a {
+    color: #F2F2F2; }
+    div a:hover {
+      color: #F2F2F2;
+      border-bottom: 1px solid #0fa5b8; } }
 /*! normalize.css v8.0.0 | MIT License | github.com/necolas/normalize.css */
 html {
   line-height: 1.15;

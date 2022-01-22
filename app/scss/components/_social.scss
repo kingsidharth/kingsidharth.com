@@ -4,6 +4,11 @@
       border: 1px solid $grey;
       border-radius: 4px;
       margin-right: 0.5rem;
+      
+      &:hover {
+        border: 1px solid $grey;
+        background: $grey;
+      }
     }
   }
 }
