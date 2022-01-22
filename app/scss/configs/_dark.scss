@@ -4,6 +4,10 @@
   :root body, [data-theme="dark"] {
     background: $black;
     color: $white;
+
+    hr {
+      border-bottom-color: $blue;
+    }
   }
 
   .social-bar li a {
@@ -20,10 +24,6 @@
 
   // Dividers
   #talk_list li {
-    border-bottom-color: $blue;
-  }
-
-  hr {
     border-bottom-color: $blue;
   }
 

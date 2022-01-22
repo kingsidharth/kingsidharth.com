@@ -640,6 +640,8 @@ a {
   :root body, [data-theme="dark"] {
     background: #001B24;
     color: #FFFFFF; }
+    :root body hr, [data-theme="dark"] hr {
+      border-bottom-color: #074F58; }
 
   .social-bar li a {
     border-color: #074F58; }
@@ -650,9 +652,6 @@ a {
     filter: brightness(0) invert(1); }
 
   #talk_list li {
-    border-bottom-color: #074F58; }
-
-  hr {
     border-bottom-color: #074F58; }
 
   div a {
