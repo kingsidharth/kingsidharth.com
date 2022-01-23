@@ -1,9 +1,8 @@
-<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
 <!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
 <!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
 <!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
 <!--[if gt IE 8]><!-->
-<html class='no-js'>
+<html class="no-js" lang="en">
   <!--<![endif]-->
   <head>
 
@@ -30,7 +29,9 @@
     <!-- CSS -->
     <link href="/assets/css/details.css?stamp=79fd540e-c016-40a7-a23f-052e51f71300" media="all" rel="stylesheet" type="text/css">
     {% if page.slug == 'home' %}
-      {% include home_meta.html %}
+      {% include meta/homepage.html %}
+    {% else %}
+      {% include meta/pages.html %}
     {% endif %}
 
     <!-- Google Tag Manager -->
