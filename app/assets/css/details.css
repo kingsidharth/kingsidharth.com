@@ -219,6 +219,13 @@ body li {
 .margin--right-2x {
   margin-right: 3.2rem; }
 
+.switch {
+  border-radius: 0.25rem;
+  background: #F2F2F2; }
+  .switch .switch--control {
+    background: #FFFFFF;
+    border-radius: 0.5rem; }
+
 /*
 
   LINES::OBJECTS

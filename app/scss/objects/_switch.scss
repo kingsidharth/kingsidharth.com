@@ -1,0 +1,9 @@
+.switch {
+  border-radius: 0.25rem;
+  background: $grey;
+
+  .switch--control {
+    background: $white;
+    border-radius: 0.5rem;
+  }
+}
