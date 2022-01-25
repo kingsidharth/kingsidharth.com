@@ -4,7 +4,7 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 module.exports = {
 
   // webpack folder’s entry js — excluded from jekll’s build process.
-  entry: "./webpack/entry.js",
+  entry: "./app/assets/js/index.js",
 
   output: {
     // we’re going to put the generated file in the assets folder so jekyll will grab it.
@@ -24,23 +24,7 @@ module.exports = {
           presets: ["es2015"]
         }
       },
-      {
-        test: /\.scss$/,
-          use: [
-            { loader: "style-loader" },
-            { loader: "css-loader" },
-            { loader: "sass-loader",
-              options: {
-                includePaths: ["app/scss", "node_modules/foundation-sites"]
-              }
-            }
-          ]
-      }
     ]
   },
-
-  plugins: [
-    new ExtractTextPlugin('app/assets/css/style.css')
-  ]
 
 };
