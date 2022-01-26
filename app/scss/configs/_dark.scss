@@ -1,14 +1,17 @@
 
 $mode: 'dark';
 
-@mixin theme($mode: 'mode') {
-  :root body, [data-theme="dark"] {
-    background: $black;
-    color: $white;
+@mixin theme_switch() {
+  transition: background 0.3s, color 0.5s;
+}
 
-    hr {
-      border-bottom-color: $blue;
-    }
+
+@mixin dark_theme() {
+  background: $black;
+  color: $white;
+
+  hr {
+    border-bottom-color: $blue;
   }
 
   .social-bar li a {
@@ -35,12 +38,86 @@ $mode: 'dark';
       border-bottom: 1px solid scale-color($blue, $lightness: 25%);
     }
   }
+
+  .menu a {
+    color: $white;
+    border-color: transparent;
+    &:hover {
+      background: $blue;
+      border-color: $blue;
+    }
+
+    &.menu__item--bordered {
+      border-color: $white;
+    }
+  }
+}
+
+@mixin light_theme() {
+  background: $white;
+  color: $black;
+
+  hr {
+    border-bottom-color: $grey;
+  }
+
+  .social-bar li a {
+    border-color: $grey;
+    &:hover {
+      border: 1px solid $grey;
+    }
+  }
+
+  .icon {
+    filter: brightness(0) invert(0);
+  }
+
+
+  // Dividers
+  #talk_list li {
+    border-bottom-color: $grey;
+  }
+
+  div a {
+    color: $blue;
+    &:hover {
+      color: $black;
+      border-bottom: 1px solid scale-color($blue, $lightness: -25%);
+    }
+  }
+
+  .menu a {
+    color: $blue;
+    &:hover {
+      background: $grey;
+      border-color: $grey;
+    }
+
+    &.menu__item--bordered {
+      border-color: $black;
+    }
+  }
 }
 
 @media (prefers-color-scheme: dark) {
-  @include theme;
+  :root body, body.dark, [data-theme="dark"] {
+    @include theme_switch;
+    @include dark_theme;
+  }
+
+  body.light, [data-theme="light"] {
+    @include light_theme;
+  }
+
 }
 
-body.dark {
-  @include theme;
+@media (prefers-color-scheme: light) {
+  :root body, body.light, [data-theme="light"] {
+    @include theme_switch;
+    @include light_theme;
+  }
+
+  body.dark, [data-theme="dark"] {
+    @include dark_theme;
+  }
 }

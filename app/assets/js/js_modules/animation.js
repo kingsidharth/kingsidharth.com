@@ -56,8 +56,8 @@ var titleEntry = function(selector) {
       targets: '#js-page-title .js-animate-letter',
       opacity: [0,1],
       easing: "easeInOutQuad",
-      duration: 200,
-      delay: (el, i) => 120 * (i+1)
+      duration: anime.random(60,160),
+      delay: (el, i) => anime.random(20,100) * (i+1)
     });
   }
 
@@ -69,6 +69,8 @@ var titleEntry = function(selector) {
 */
 var animationSequence = function() {
   // Starts at every page transition
+
+  anime.remove('#js-page-title');
 
   screenEntry('#intro_area');
   emebed_youtube();
@@ -96,7 +98,7 @@ barba.init({
       return anime({
         targets: '[data-barba="container"]',
         direction: 'reverse',
-        opacity: 0,
+        opacity: [0, 100],
         translateY: 140,
         during: 400,
         easing: 'easeInOutExpo',

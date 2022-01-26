@@ -1,19 +1,12 @@
 .menu {
   a {
-    border: none;
+    border: 1px solid transparent;
     border-radius: 0.5rem;
-    &:hover {
-      border: none;
+    @include breakpoint(medium up) {
+      margin-left: 1rem;
     }
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root .menu a {
-    color: $grey;
     &:hover {
-      background: scale-color($blue, $lightness: 15%);
-      border-color: transparent!important;
+      border: 1px solid $black;
     }
   }
 }

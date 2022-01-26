@@ -45,3 +45,4 @@ node_modules
 .tmp
 Gemfile.lock
 .env
+bundle.js.LICENSE.txt
