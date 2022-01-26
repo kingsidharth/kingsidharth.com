@@ -1,6 +1,7 @@
 
+$mode: 'dark';
 
-@media (prefers-color-scheme: dark) {
+@mixin theme($mode: 'mode') {
   :root body, [data-theme="dark"] {
     background: $black;
     color: $white;
@@ -34,4 +35,12 @@
       border-bottom: 1px solid scale-color($blue, $lightness: 25%);
     }
   }
+}
+
+@media (prefers-color-scheme: dark) {
+  @include theme;
+}
+
+body.dark {
+  @include theme;
 }

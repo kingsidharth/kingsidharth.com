@@ -12,7 +12,8 @@
   :root .menu a {
     color: $grey;
     &:hover {
-      background: scale-color($blue, $lightness: 15%)
+      background: scale-color($blue, $lightness: 15%);
+      border-color: transparent!important;
     }
   }
 }

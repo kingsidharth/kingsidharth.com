@@ -15,9 +15,11 @@ $headline-font: 'gimlet-display', 'Garamond', serif;
   color: $highlight;
 }
 
-// HEADLINES
+/*
+  Typesetting
+*/
 
-body {
+.content {
 
   h2, h3, h4 {
     margin-top: 3rem;
@@ -42,10 +44,6 @@ body {
       border-bottom: 1px solid scale-color($blue, $lightness: -14%);
       color: $black;
     }
-  }
-
-  .menu a {
-    border-bottom: none;
   }
 
   li {

@@ -14,7 +14,6 @@
 
 #logo {
   @include breakpoint(small only) {
-    text-align: center;
     margin-bottom: 1rem;
   }
 }

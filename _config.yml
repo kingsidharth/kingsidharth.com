@@ -38,7 +38,7 @@ defaults:
 
 
 include: ['.htaccess']
-exclude: ['Gemfile', 'Gemfile.lock', 'node_modules', '.git', 'Readme.md', '.sass-cache', 'webpack']
+exclude: ['Gemfile', 'Gemfile.lock', 'node_modules', '.git', 'Readme.md', '.sass-cache', 'webpack', 'index.js', 'js_modules']
 
 encoding: "utf-8"
 

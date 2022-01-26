@@ -4,16 +4,21 @@
   "version": "6.0",
   "description": "Repository for kingsidharth.com",
   "dependencies": {
-    "animejs": "^3.2.1"
+    "@barba/core": "^2.9.7",
+    "animejs": "^3.2.1",
+    "dotenv": "^14.3.2",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "foundation-sites": "^6.5.1"
+    "foundation-sites": "^6.5.1",
+    "webpack": "^5.67.0",
+    "webpack-cli": "^4.9.2"
   },
   "engines": {
     "node": ">=0.8.0"
   },
   "scripts": {
-    "server": "jekyll s --watch",
-    "scss": "sass --watch app/scss:app/assets/css"
+    "serve": "npx webpack --config webpack.config.js --watch",
+    "jekyll": "bundle exec jekyll s --reload --incremental"
   }
 }

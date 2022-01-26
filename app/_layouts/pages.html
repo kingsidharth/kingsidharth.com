@@ -2,30 +2,34 @@
 layout: base
 ---
 
-<div id="headline_area" class="[ area--padded margin--bottom-2x ]">
-  <div class="[ grid-container ]">
-      <div class="[ grid-x grid-margin-x align-middle align-center ]">
+<div class="[ {{ page.slug }} ][ content ]" data-barba="container" data-barba-namespace="{{ page.slug }}">
 
-        <div class="[ headline text-center ][ cell small-12 ]">
-          <h1>{{ page.title }}</h1>
+  <div id="headline_area" class="[ area--padded margin--bottom-2x ][ js-animate-scroll ]">
+    <div class="[ grid-container ]">
+        <div class="[ grid-x grid-margin-x align-middle align-center ]">
+
+          <div class="[ headline text-center ][ cell small-12 ]">
+            <h1 id="js-page-title">{{ page.title }}</h1>
+          </div>
+
+          {% if page.subtitle %}
+          <div class="[ subheader text-center ][ cell small-12 ]">
+            {{ page.subtitle }}
+          </div>
+          {% endif %}
+
         </div>
+    </div>
+  </div><!-- #headline_area -->
 
-        {% if page.subtitle %}
-        <div class="[ subheader text-center ][ cell small-12 ]">
-          {{ page.subtitle }}
+  <div id="content_area" class="[ ]">
+    <div class="grid-container">
+      <div class="grid-x">
+        <div class="cell small-12">
+          {{ content }}
         </div>
-        {% endif %}
-
-      </div>
-  </div>
-</div><!-- #headline_area -->
-
-<div id="content_area">
-  <div class="grid-container">
-    <div class="grid-x">
-      <div class="cell small-12">
-        {{ content }}
       </div>
     </div>
-  </div>
-</div><!-- #content_area -->
+  </div><!-- #content_area -->
+
+</div><!--.content-->

@@ -12,21 +12,22 @@
   background: #001B24;
   color: #D1FCFF; }
 
-body h2, body h3, body h4 {
+/*
+  Typesetting
+*/
+.content h2, .content h3, .content h4 {
   margin-top: 3rem; }
-body h2 {
+.content h2 {
   letter-spacing: -0.5px; }
 @media print, screen and (min-width: 64em) {
-  body p, body ul, body ol, body blockquote {
+  .content p, .content ul, .content ol, .content blockquote {
     font-size: 120%; } }
-body a {
+.content a {
   border-bottom: 1px solid #074F58; }
-  body a:hover {
+  .content a:hover {
     border-bottom: 1px solid #06444c;
     color: #001B24; }
-body .menu a {
-  border-bottom: none; }
-body li {
+.content li {
   margin-bottom: 1em; }
 
 .border--grey {
@@ -152,7 +153,8 @@ body li {
   font-weight: normal;
   letter-spacing: 0px;
   text-decoration: none;
-  border: none; }
+  border: none;
+  text-align: left; }
 
 .logo--white {
   color: #FFFFFF !important; }
@@ -221,10 +223,22 @@ body li {
 
 .switch {
   border-radius: 0.25rem;
-  background: #F2F2F2; }
+  background: transparent;
+  border: 1px solid #FFFFFF; }
   .switch .switch--control {
-    background: #FFFFFF;
     border-radius: 0.5rem; }
+
+.dark .switch {
+  border: 1px solid #FFFFFF; }
+  .dark .switch:hover {
+    border: 1px solid #FFFFFF;
+    background: #F2F2F2; }
+
+.light .switch {
+  border: 1px solid #001B24; }
+  .light .switch:hover {
+    border: 1px solid #001B24;
+    background: #F2F2F2; }
 
 /*
 
@@ -389,7 +403,8 @@ body li {
   :root .menu a {
     color: #F2F2F2; }
     :root .menu a:hover {
-      background: #0c8392; } }
+      background: #0c8392;
+      border-color: transparent !important; } }
 @media print, screen and (max-width: 59.99875em) {
   #footer .menu {
     justify-content: center; } }
@@ -409,7 +424,6 @@ body li {
 
 @media print, screen and (max-width: 59.99875em) {
   #logo {
-    text-align: center;
     margin-bottom: 1rem; } }
 
 #main_navigation .menu {
@@ -496,7 +510,8 @@ html {
   position: relative;
   padding-top: 56.25%;
   overflow: hidden;
-  cursor: pointer; }
+  cursor: pointer;
+  border-radius: 1rem; }
 
 .youtube img {
   width: 100%;
@@ -505,10 +520,11 @@ html {
   opacity: 0.7; }
 
 .youtube .play-button {
-  width: 90px;
-  height: 60px;
+  width: 5.5rem;
+  height: 3.5rem;
   background-color: #333;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.45);
   z-index: 1;
   opacity: 0.8;
   border-radius: 6px; }
@@ -517,7 +533,8 @@ html {
   content: "";
   border-style: solid;
   border-width: 15px 0 15px 26.0px;
-  border-color: transparent transparent transparent #fff; }
+  border-color: transparent transparent transparent #fff;
+  opacity: 1; }
 
 .youtube img,
 .youtube .play-button {
@@ -634,10 +651,10 @@ html {
 .shadow-2 {
   box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px; }
 
-.home h2 {
+body.home h2 {
   font-size: 2.5rem; }
   @media print, screen and (min-width: 75em) {
-    .home h2 {
+    body.home h2 {
       font-size: 6rem; } }
 
 a {
@@ -666,6 +683,25 @@ a {
     div a:hover {
       color: #F2F2F2;
       border-bottom: 1px solid #0fa5b8; } }
+body.dark :root body, body.dark [data-theme="dark"] {
+  background: #001B24;
+  color: #FFFFFF; }
+  body.dark :root body hr, body.dark [data-theme="dark"] hr {
+    border-bottom-color: #074F58; }
+body.dark .social-bar li a {
+  border-color: #074F58; }
+  body.dark .social-bar li a:hover {
+    border: 1px solid #074F58; }
+body.dark .icon {
+  filter: brightness(0) invert(1); }
+body.dark #talk_list li {
+  border-bottom-color: #074F58; }
+body.dark div a {
+  color: #F2F2F2; }
+  body.dark div a:hover {
+    color: #F2F2F2;
+    border-bottom: 1px solid #0fa5b8; }
+
 /*! normalize.css v8.0.0 | MIT License | github.com/necolas/normalize.css */
 html {
   line-height: 1.15;

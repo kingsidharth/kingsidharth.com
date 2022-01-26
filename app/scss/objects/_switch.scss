@@ -1,9 +1,25 @@
 .switch {
   border-radius: 0.25rem;
-  background: $grey;
+  background: transparent;
+  border: 1px solid $white;
 
   .switch--control {
-    background: $white;
     border-radius: 0.5rem;
+  }
+}
+
+.dark .switch {
+  border: 1px solid $white;
+  &:hover {
+    border: 1px solid $white;
+    background: $grey;
+  }
+}
+
+.light .switch {
+  border: 1px solid $black;
+  &:hover {
+    border: 1px solid $black;
+    background: $grey;
   }
 }
