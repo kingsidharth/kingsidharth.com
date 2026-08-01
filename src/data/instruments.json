@@ -29,12 +29,12 @@
     "figure": 3
   },
   {
-    "id": "tokenizer-explorer",
-    "name": "Tokenizer explorer",
-    "blurb": "Shows where your prompt actually splits — and what that costs you.",
-    "status": "rough",
-    "version": "0.1",
-    "screen": "tokens",
+    "id": "vibe-coding-guide",
+    "name": "Vibe coding guide",
+    "blurb": "How to get useful work out of a coding agent without losing the plot.",
+    "status": "beta",
+    "version": "0.3",
+    "screen": "typewriter",
     "figure": 4
   }
 ]

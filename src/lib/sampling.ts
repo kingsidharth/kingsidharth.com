@@ -47,21 +47,21 @@ export interface Prompt {
    settings. The wrong answers are numerous and clustered, so their
    mass accumulates as the distribution flattens. */
 const MATHS: Candidate[] = [
-  { token: '2', logit: 7.0, correct: true },
-  { token: 'two', logit: 2.6, correct: true },
+  { token: '2', logit: 6.4, correct: true },
+  { token: 'two', logit: 2.5, correct: true },
   { token: '3', logit: 2.4 },
-  { token: '11', logit: 2.2 },
-  { token: '1', logit: 2.0 },
-  { token: '0', logit: 1.8 },
-  { token: '4', logit: 1.6 },
-  { token: '10', logit: 1.4 },
-  { token: '5', logit: 1.2 },
-  { token: '12', logit: 1.0 },
-  { token: '−1', logit: 0.8 },
-  { token: '6', logit: 0.6 },
-  { token: '21', logit: 0.4 },
-  { token: '7', logit: 0.3 },
-  { token: '9', logit: 0.1 },
+  { token: '11', logit: 2.3 },
+  { token: '1', logit: 2.2 },
+  { token: '0', logit: 2.1 },
+  { token: '4', logit: 2.0 },
+  { token: '10', logit: 1.9 },
+  { token: '5', logit: 1.8 },
+  { token: '12', logit: 1.7 },
+  { token: '−1', logit: 1.6 },
+  { token: '6', logit: 1.5 },
+  { token: '21', logit: 1.4 },
+  { token: '7', logit: 1.3 },
+  { token: '9', logit: 1.2 },
 ];
 
 const LANGUAGE: Candidate[] = [
@@ -83,21 +83,21 @@ const LANGUAGE: Candidate[] = [
 ];
 
 const POETRY: Candidate[] = [
-  { token: 'star', logit: 6.5 },
-  { token: 'light', logit: 2.6 },
-  { token: 'spark', logit: 2.4 },
-  { token: 'flame', logit: 2.2 },
-  { token: 'moon', logit: 2.0 },
-  { token: 'ember', logit: 1.8 },
-  { token: 'bird', logit: 1.6 },
-  { token: 'comet', logit: 1.5 },
-  { token: 'wisp', logit: 1.4 },
-  { token: 'ghost', logit: 1.2 },
-  { token: 'drone', logit: 1.0 },
-  { token: 'atom', logit: 0.9 },
-  { token: 'moth', logit: 0.7 },
-  { token: 'flare', logit: 0.5 },
-  { token: 'seed', logit: 0.3 },
+  { token: 'star', logit: 5.2 },
+  { token: 'light', logit: 3.0 },
+  { token: 'spark', logit: 2.9 },
+  { token: 'flame', logit: 2.8 },
+  { token: 'moon', logit: 2.7 },
+  { token: 'ember', logit: 2.6 },
+  { token: 'bird', logit: 2.5 },
+  { token: 'comet', logit: 2.4 },
+  { token: 'wisp', logit: 2.3 },
+  { token: 'ghost', logit: 2.2 },
+  { token: 'drone', logit: 2.1 },
+  { token: 'atom', logit: 2.0 },
+  { token: 'moth', logit: 1.9 },
+  { token: 'flare', logit: 1.8 },
+  { token: 'seed', logit: 1.7 },
 ];
 
 export const PROMPTS: Record<PromptId, Prompt> = {

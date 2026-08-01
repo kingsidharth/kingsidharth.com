@@ -1,4 +1,4 @@
-import { useCallback, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import {
   PROMPTS,
@@ -327,9 +327,10 @@ interface PromptScreenProps {
   promptId: PromptId;
   onChange: (id: PromptId) => void;
   reducedMotion: boolean;
+  completion: { token: string; wrong: boolean } | null;
 }
 
-function PromptScreen({ promptId, onChange, reducedMotion }: PromptScreenProps) {
+function PromptScreen({ promptId, onChange, reducedMotion, completion }: PromptScreenProps) {
   const prompt = PROMPTS[promptId];
   return (
     <div className="crt flex min-h-[130px] flex-col gap-3 p-4 sm:p-5">
@@ -355,7 +356,22 @@ function PromptScreen({ promptId, onChange, reducedMotion }: PromptScreenProps) 
         })}
       </div>
       <p className="font-mono text-[15px] text-screen-fg">
-        {prompt.text}
+        {prompt.text}{' '}
+        {/* The completion the current settings would actually produce.
+            Re-drawn whenever T, the strategy or the prompt changes, so
+            the knob visibly rewrites the sentence — and on a factual
+            prompt a wrong draw shows up red, right here in the output,
+            rather than only as a number in a gauge. */}
+        {completion && (
+          <span
+            className={cn(
+              'font-semibold',
+              completion.wrong ? 'text-destructive' : 'text-screen-fg',
+            )}
+          >
+            {completion.token}
+          </span>
+        )}
         <span
           aria-hidden="true"
           className={cn(
@@ -364,6 +380,12 @@ function PromptScreen({ promptId, onChange, reducedMotion }: PromptScreenProps) 
           )}
         />
       </p>
+
+      {completion?.wrong && (
+        <p className="font-mono text-[11px] text-destructive">
+          ✗ wrong answer — this is what breaks at high temperature
+        </p>
+      )}
     </div>
   );
 }
@@ -611,6 +633,25 @@ export default function TemperatureInstrument() {
     [promptId, strategy, distribution],
   );
 
+  /* The completion shown filling the prompt box. It is a real draw from
+     the current kept set, re-rolled whenever the settings change, so
+     turning the knob visibly rewrites the sentence. Greedy is
+     deliberately excluded from re-rolling noise: with one kept token
+     the draw is that token every time anyway. */
+  const [completion, setCompletion] = useState<{ token: string; wrong: boolean } | null>(null);
+
+  useEffect(() => {
+    if (distribution.scored.every((t) => !t.kept)) {
+      setCompletion(null);
+      return;
+    }
+    const drawn = sampleToken(distribution.scored);
+    setCompletion({
+      token: drawn.token,
+      wrong: PROMPTS[promptId].kind === 'factual' && !drawn.correct,
+    });
+  }, [distribution, promptId]);
+
   const handlePromptChange = useCallback((id: PromptId) => {
     setPromptId(id);
     setTape([]);
@@ -731,7 +772,12 @@ export default function TemperatureInstrument() {
 
         {/* Right column — two stacked screens */}
         <div className="flex min-w-0 flex-1 flex-col gap-4 p-5 sm:p-6">
-          <PromptScreen promptId={promptId} onChange={handlePromptChange} reducedMotion={reducedMotion} />
+          <PromptScreen
+            promptId={promptId}
+            onChange={handlePromptChange}
+            reducedMotion={reducedMotion}
+            completion={completion}
+          />
           <DistributionScreen
             promptId={promptId}
             strategy={strategy}

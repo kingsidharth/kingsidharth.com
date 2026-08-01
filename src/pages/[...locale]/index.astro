@@ -7,6 +7,7 @@ import InstrumentCard from '@/components/InstrumentCard.astro';
 import BroadcastCard from '@/components/BroadcastCard.astro';
 import NoteRow from '@/components/NoteRow.astro';
 import TemperatureInstrument from '@/components/instruments/TemperatureInstrument';
+import GotchaQuiz from '@/components/instruments/GotchaQuiz';
 import { getLocalized } from '@/lib/content';
 import { localePath, localeStaticPaths, useTranslations } from '@/lib/i18n';
 import type { Locale } from '@/lib/i18n';
@@ -33,37 +34,73 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
 >
   <!-- ── Who this is ──────────────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-14 sm:pt-20">
-    <p class="nameplate mb-5 text-primary">Bengaluru · product &amp; design</p>
+    <p class="nameplate mb-5 text-primary">Bengaluru</p>
 
-    <h1 class="max-w-[24ch] text-4xl sm:text-5xl">
-      I'm Sidharth. I build products, and tools that show how AI actually behaves.
-    </h1>
+    <h1 class="text-4xl sm:text-5xl">I'm Sidharth. I:</h1>
 
-    <p class="mt-6 max-w-[54ch] text-lg text-muted-foreground">
-      Sixteen years in product and design — founding team at Instamojo, then Headout, now
-      Outskill. I write about AI and build small tools you can take apart.
+    <ul class="mt-6 max-w-[36ch] space-y-2 text-xl sm:text-2xl">
+      {
+        [
+          'Build products',
+          'Teach AI to engineers and non-coders',
+          'Read research papers',
+          'Build visualisation and teaching tools',
+          'Help startups',
+        ].map((item) => (
+          <li class="flex gap-3">
+            <span class="mt-[0.6em] h-px w-4 shrink-0 bg-primary" aria-hidden="true" />
+            <span>{item}</span>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="mt-8 max-w-[56ch] text-muted-foreground">
+      16+ years working with startups. Currently at Outskill; before that Headout, Instamojo and
+      more. I also run a <a href="https://youtube.com/@kingsidharth" class="text-primary hover:underline">YouTube channel</a>.
     </p>
   </section>
 
   <!-- ── Featured demo. One of the tools, not the premise of the
          site — hence its own section below the introduction. ───── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-14 sm:pt-16">
-    <p class="nameplate mb-3 text-primary">Featured · sampling</p>
+    <p class="nameplate mb-3 text-primary">One of the teaching tools</p>
 
-    <h2 class="max-w-[24ch] text-2xl sm:text-3xl">
-      Why one temperature can't be right for everything
-    </h2>
+    <h2 class="max-w-[24ch] text-2xl sm:text-3xl">Temperature visualiser</h2>
 
     <p class="mt-4 max-w-[58ch] text-muted-foreground">
-      Same knob, three prompts. Turn it up and the poem gets more interesting while the arithmetic
-      starts getting the answer wrong. Switch to greedy and the maths is safe at any temperature —
-      but the poem says "star" every single time.
+      Before you look at it — a question most people get wrong.
     </p>
 
-    <div class="mt-9">
-      <TemperatureInstrument client:visible />
+    <div class="mt-7 max-w-2xl">
+      <GotchaQuiz client:visible />
+    </div>
+
+    <!-- Revealed by the quiz. Hidden rather than un-rendered so the
+         reveal is instant and it stays out of the a11y tree until
+         then. Note `client:idle` below, NOT `client:visible`: a
+         `hidden` element has no layout, so an IntersectionObserver
+         never fires and the island would still be inert after the
+         reveal. -->
+    <div id="instrument-reveal" hidden class="mt-10">
+      <p class="mt-4 mb-7 max-w-[58ch] text-muted-foreground">
+        Same knob, three prompts. Turn it up and the poem gets more interesting while the
+        arithmetic starts getting the answer wrong. Switch to greedy and the maths is safe at any
+        temperature — but the poem says "star" every single time.
+      </p>
+      <TemperatureInstrument client:idle />
     </div>
   </section>
+
+  <script>
+    // The quiz island dispatches this once, on first answer or reveal.
+    document.addEventListener('gotcha:revealed', () => {
+      const panel = document.getElementById('instrument-reveal');
+      if (!panel) return;
+      panel.hidden = false;
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  </script>
 
   <!-- ── The shelf ────────────────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
