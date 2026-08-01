@@ -110,9 +110,11 @@ function PromptRow({ category }: { category: Category }) {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <div className="flex items-baseline gap-2.5">
-        <span className="nameplate shrink-0 text-muted-foreground">{category.audience}</span>
-      </div>
+      <span className="nameplate text-muted-foreground">{category.audience}</span>
+
+      {/* The title is a benefit, not a description of the prompt, so it
+          earns its place above rather than repeating what follows. */}
+      <h4 className="text-lg font-semibold text-foreground">{category.title}</h4>
 
       <div className="crt p-4 sm:p-5">
         <p

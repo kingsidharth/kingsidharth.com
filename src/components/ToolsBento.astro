@@ -1,10 +1,8 @@
 ---
 /**
- * An asymmetric bento rather than a uniform grid: Temperature is the
- * flagship (the only instrument the quiz reveals), so it gets the wide
- * top-left cell — spanning two columns makes it wider, and since
- * InstrumentCard's screen is a fixed aspect ratio, wider also means
- * taller, with zero changes needed to InstrumentCard itself.
+ * A plain 2x2. This was briefly an asymmetric bento with the
+ * temperature visualiser spanning two cells; giving the flagship more
+ * room made the other three read as leftovers.
  */
 import type { CollectionEntry } from 'astro:content';
 import InstrumentCard from '@/components/InstrumentCard.astro';
@@ -16,46 +14,10 @@ interface Props {
 }
 
 const { entries, locale } = Astro.props;
-
-const byId = (id: string) => entries.find((e) => e.data.id === id);
-
-const temperature = byId('temperature-visualiser');
-const freshcast = byId('freshcast');
-const agentsMd = byId('agents-md-generator');
-const vibeCoding = byId('vibe-coding-guide');
 ---
 
-<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-  {
-    temperature && (
-      <div class="sm:col-span-2 lg:col-span-2">
-        <InstrumentCard entry={temperature} locale={locale} />
-      </div>
-    )
-  }
-
-  {
-    freshcast && (
-      <div>
-        <InstrumentCard entry={freshcast} locale={locale} />
-      </div>
-    )
-  }
-
-  {
-    agentsMd && (
-      <div>
-        <InstrumentCard entry={agentsMd} locale={locale} />
-      </div>
-    )
-  }
-
-  {
-    vibeCoding && (
-      <div>
-        <InstrumentCard entry={vibeCoding} locale={locale} />
-      </div>
-    )
-  }
-
+<!-- A plain 2x2. The asymmetric bento gave the flagship more room but
+     made the other three read as leftovers. -->
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+  {entries.map((entry) => <InstrumentCard entry={entry} locale={locale} />)}
 </div>

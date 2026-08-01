@@ -552,6 +552,8 @@
       inset 0 8px 12px -4px rgb(0 0 0 / 0.5),
       /* 3 — vignette */
       inset 0 0 34px 6px var(--screen-vignette),
+      inset 1.5px 0 0 0 oklch(0.62 0.2 25 / 0.22),
+      inset -1.5px 0 0 0 oklch(0.6 0.14 200 / 0.22),
       /* outer: the panel cutout */
       0 0 0 1px var(--color-chassis-edge),
       0 1px 0 var(--bevel-light),
@@ -564,6 +566,9 @@
       inset 0 0 0 6px oklch(0.09 0.004 55),
       inset 0 8px 16px -4px rgb(0 0 0 / 0.9),
       inset 0 0 40px 8px var(--screen-vignette),
+      /* Chromatic fringe: red and cyan misconverging on opposite edges */
+      inset 1.5px 0 0 0 oklch(0.62 0.2 25 / 0.4),
+      inset -1.5px 0 0 0 oklch(0.75 0.14 200 / 0.4),
       0 0 0 1px oklch(0.09 0.004 55),
       0 1px 0 var(--bevel-light),
       var(--screen-glow);
@@ -651,6 +656,18 @@
     font-size: 0.8125rem;
     line-height: 1.2;
     color: var(--color-muted-foreground);
+  }
+
+  /* Chromatic aberration on screen type. The red/cyan pair sits under
+     the phosphor bloom, so the text reads as slightly misconverged
+     rather than simply doubled. Sub-pixel offsets only — anything
+     larger stops looking like optics and starts looking like a bug. */
+  .chromatic {
+    text-shadow:
+      -0.6px 0 0 oklch(0.62 0.22 25 / 0.55),
+      0.6px 0 0 oklch(0.78 0.15 200 / 0.55),
+      0 0 8px color-mix(in oklch, currentColor 45%, transparent),
+      0 0 20px color-mix(in oklch, currentColor 22%, transparent);
   }
 
   .readout {
@@ -967,24 +984,20 @@
 /* ══════════════════════════════════════════════════════════════════
    OPTIONAL TYPEFACES
 
-   Symlinked from ~/Sites/fonts into static/fonts, so the files are not
-   copied into the repo. Only web-ready woff2 is linked — the source
-   tree is mostly TTF, which would bloat every build for no gain.
+   Grotesques and humanists, exposed through `[data-font]`; absent means
+   the default IBM Plex Sans.
 
-   Grotesques and humanists only, which is the brief. Each is exposed
-   through `[data-font]`; absent means the default IBM Plex Sans.
+   Sources are symlinked from ~/Sites/fonts rather than copied into the
+   repo. Most of that tree is TTF, so the variable faces were converted
+   to woff2 into static/fonts/generated — roughly half the bytes for the
+   same outlines.
 
-   LICENSING: Bricolage, Chivo, Familjen Grotesk and Maven Pro are OFL.
-   Akt is a commercial face and needs a webfont licence before this
-   ships publicly.
+   Google Sans needed more than conversion: as shipped it carries six
+   axes and every script, at 4.5MB. Pinning everything except weight and
+   subsetting to Latin brings it to 57KB. It is also PROPRIETARY —
+   Google's brand face, not licensed for third-party sites, so it must
+   come out before this ships. The rest are OFL.
    ══════════════════════════════════════════════════════════════════ */
-
-@font-face {
-  font-family: 'Akt';
-  src: url('/fonts/Akt-var.woff2') format('woff2-variations');
-  font-weight: 100 900;
-  font-display: swap;
-}
 
 @font-face {
   font-family: 'Bricolage Grotesque';
@@ -1026,31 +1039,50 @@
 }
 
 @font-face {
-  font-family: 'Maven Pro';
-  src: url('/fonts/MavenPro-400.woff2') format('woff2');
-  font-weight: 400;
+  font-family: 'Spline Sans';
+  src: url('/fonts/generated/SplineSans-var.woff2') format('woff2-variations');
+  font-weight: 300 700;
   font-display: swap;
 }
+
 @font-face {
-  font-family: 'Maven Pro';
-  src: url('/fonts/MavenPro-500.woff2') format('woff2');
-  font-weight: 500;
+  font-family: 'Rethink Sans';
+  src: url('/fonts/generated/RethinkSans-var.woff2') format('woff2-variations');
+  font-weight: 400 800;
   font-display: swap;
 }
+
 @font-face {
-  font-family: 'Maven Pro';
-  src: url('/fonts/MavenPro-600.woff2') format('woff2');
-  font-weight: 600 800;
+  font-family: 'Google Sans';
+  src: url('/fonts/generated/GoogleSans-var.woff2') format('woff2-variations');
+  font-weight: 100 1000;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Akshar';
+  src: url('/fonts/generated/Akshar-var.woff2') format('woff2-variations');
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Strichpunkt Sans';
+  src: url('/fonts/generated/StrichpunktSans-var.woff2') format('woff2-variations');
+  font-weight: 100 900;
   font-display: swap;
 }
 
 /* Only the sans changes. Mono stays IBM Plex Mono throughout, because
    the instrument readouts are calibrated to its metrics. */
-:root[data-font='akt'] { --font-sans-active: 'Akt'; }
 :root[data-font='bricolage'] { --font-sans-active: 'Bricolage Grotesque'; }
 :root[data-font='familjen'] { --font-sans-active: 'Familjen Grotesk'; }
 :root[data-font='chivo'] { --font-sans-active: 'Chivo'; }
-:root[data-font='maven'] { --font-sans-active: 'Maven Pro'; }
+:root[data-font='spline'] { --font-sans-active: 'Spline Sans'; }
+:root[data-font='rethink'] { --font-sans-active: 'Rethink Sans'; }
+:root[data-font='googlesans'] { --font-sans-active: 'Google Sans'; }
+:root[data-font='akshar'] { --font-sans-active: 'Akshar'; }
+:root[data-font='strichpunkt'] { --font-sans-active: 'Strichpunkt Sans'; }
 
 :root[data-font] body,
 :root[data-font] h1,

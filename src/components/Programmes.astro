@@ -1,45 +1,118 @@
 ---
 /**
- * The programmes, as a banner rather than a card grid — they are a
- * marquee of things on offer, and a sign is the honest form for that.
+ * Each programme is its own small screen — a bank of displays you can
+ * press, under the teaching readout in the same panel.
  *
- * The track holds two identical copies of the list and translates by
- * exactly -50%, so the seam lands where the second copy begins and the
- * loop is invisible. Under reduced motion the clone is hidden and the
- * track becomes a plain wrapping list.
+ * The faces are kaomoji rather than drawn ASCII: they read at a glance
+ * at this size, where box-drawing art turned to mush. Frames ship as
+ * one JSON attribute per card; as individual `data-*` attributes the
+ * quotes and backslashes in the old art arrived empty.
  */
 const programmes = [
-  'Steal the Secret Prompts',
-  'Vibe Coding 101',
-  'Deep AI',
-  'Fun AI',
+  {
+    name: 'Steal the Secret Prompts',
+    href: '#',
+    frames: { idle: ['(๏ᆺ๏υ)', '( ఠൠఠ )'], hover: '( ఠൠఠ )', click: '(๏ᆺ๏ )ノ' },
+  },
+  {
+    name: 'Vibe Coding 101',
+    href: '#',
+    frames: { idle: ['(◑‿◐)'], hover: '(◑‿◐)♪', click: '(◕‿◕)b' },
+  },
+  {
+    name: 'Deep AI',
+    href: '#',
+    frames: { idle: ['(´⊙ω⊙`)！'], hover: 'ಥ‿ಥ', click: '(⊙_⊙;)' },
+  },
+  {
+    name: 'Fun AI',
+    href: '#',
+    frames: { idle: ['(づ ◕‿◕ )づ', '(づ ◕‿◕)づ'], hover: '(づ ✿◡✿)づ', click: '＼(^▽^)／' },
+  },
 ];
 ---
 
-<div class="chassis relative overflow-hidden py-6">
-  <span class="screw top-3 left-3"></span>
-  <span class="screw top-3 right-3"></span>
-  <span class="screw bottom-3 left-3"></span>
-  <span class="screw bottom-3 right-3"></span>
+<div class="grid grid-cols-2 gap-3 p-5 pt-0 sm:p-6 sm:pt-0">
+  {
+    programmes.map((p) => (
+      <a
+        href={p.href}
+        data-face-card
+        class="crt group flex flex-col items-center justify-center gap-3 px-3 py-5"
+      >
+        <span
+          data-face
+          data-frames={JSON.stringify(p.frames)}
+          class="chromatic block text-center text-lg text-screen-fg/85 transition-colors group-hover:text-screen-fg"
+          aria-hidden="true"
+        >
+          {p.frames.idle[0]}
+        </span>
 
-  <div class="ticker">
-    <div class="ticker-track gap-x-10 px-6">
-      {
-        [false, true].map((isClone) => (
-          <ul
-            class="flex shrink-0 items-center gap-x-10"
-            data-ticker-clone={isClone ? '' : undefined}
-            aria-hidden={isClone ? 'true' : undefined}
-          >
-            {programmes.map((name) => (
-              <li class="flex shrink-0 items-center gap-4 text-xl sm:text-2xl">
-                <span class="size-1.5 shrink-0 rounded-full bg-contrast" aria-hidden="true" />
-                {name}
-              </li>
-            ))}
-          </ul>
-        ))
-      }
-    </div>
-  </div>
+        <span class="chromatic text-center font-mono text-xs text-screen-fg">{p.name}</span>
+      </a>
+    ))
+  }
 </div>
+
+<script>
+  interface Frames {
+    idle?: string[];
+    hover?: string;
+    click?: string;
+  }
+
+  // One driver for every card. Idle cycling is skipped under reduced
+  // motion, but hover and click still respond — those are user-initiated,
+  // so suppressing them would just make the cards feel broken.
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  for (const card of document.querySelectorAll<HTMLElement>('[data-face-card]')) {
+    const face = card.querySelector<HTMLElement>('[data-face]');
+    if (!face) continue;
+
+    const frames = JSON.parse(face.dataset.frames ?? '{}') as Frames;
+    const idle = frames.idle?.length ? frames.idle : [face.textContent ?? ''];
+    const hover = frames.hover ?? idle[0];
+    const click = frames.click ?? idle[0];
+
+    let tick = 0;
+    let hovering = false;
+    let reacting = false;
+    let reactTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const render = () => {
+      if (reacting) return;
+      face.textContent = hovering ? hover : idle[tick % idle.length];
+    };
+
+    if (!reduce && idle.length > 1) {
+      setInterval(() => {
+        tick += 1;
+        render();
+      }, 800);
+    }
+
+    card.addEventListener('mouseenter', () => {
+      hovering = true;
+      render();
+    });
+
+    card.addEventListener('mouseleave', () => {
+      hovering = false;
+      render();
+    });
+
+    // No preventDefault — the link must still navigate once these have
+    // real destinations.
+    card.addEventListener('click', () => {
+      reacting = true;
+      face.textContent = click;
+      if (reactTimer) clearTimeout(reactTimer);
+      reactTimer = setTimeout(() => {
+        reacting = false;
+        render();
+      }, 900);
+    });
+  }
+</script>

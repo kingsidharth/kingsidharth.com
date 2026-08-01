@@ -55,6 +55,7 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
         <span aria-hidden="true" class="screw absolute bottom-2.5 right-2.5"></span>
 
         <TeachingStats />
+        <Programmes />
       </div>
     </div>
   </section>
@@ -88,11 +89,6 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   </script>
-
-  <!-- ── Programmes, as a sign rather than a card grid. ───────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-16">
-    <Programmes />
-  </section>
 
   <!-- ── Work, with prompts to steal alongside it. ────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
@@ -140,9 +136,9 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
       <span class="screw bottom-2.5 right-2.5"></span>
 
       <div>
-        <p class="nameplate">Elsewhere</p>
-        <p class="mt-1.5 text-sm text-muted-foreground">
-          More of the same, on other people's platforms.
+        <p class="text-xl font-semibold">Socials</p>
+        <p class="mt-1 text-sm text-muted-foreground">
+          They won't let you follow me everywhere.
         </p>
       </div>
 

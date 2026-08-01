@@ -1,0 +1,26 @@
+[
+  {
+    "id": "secret-prompts",
+    "name": "Steal the Secret Prompts",
+    "blurb": "The prompts I actually use, and why they work.",
+    "href": "#"
+  },
+  {
+    "id": "vibe-coding-101",
+    "name": "Vibe Coding 101",
+    "blurb": "Get real work out of a coding agent.",
+    "href": "#"
+  },
+  {
+    "id": "deep-ai",
+    "name": "Deep AI",
+    "blurb": "How the models work, under the marketing.",
+    "href": "#"
+  },
+  {
+    "id": "fun-ai",
+    "name": "Fun AI",
+    "blurb": "The playful end. Build something silly, learn something real.",
+    "href": "#"
+  }
+]

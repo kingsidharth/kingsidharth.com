@@ -1,39 +1,52 @@
 ---
 /**
- * Static by design. This was briefly a React island with per-item
- * write-ups behind toggles; both the toggles and the write-ups made
- * the hero work harder than an introduction should. Five lines, no JS.
- *
  * Balanced on purpose. A pure list of what Sidharth does read like a
  * resume; pure benefit copy read like a landing page with nobody behind
  * it. The headline carries the person, the list carries what you get.
  */
 const benefits = [
-  'See what temperature actually does — take the sampler apart',
-  'Steal prompts that work, sorted by what you do',
-  'Test what you think you know, in one question',
-  'Read papers already annotated, with what held up',
-  'Get help with fine-tuning, agents and cost control',
+  'Steal prompts that work',
+  'Get help with AI',
+  'Build products',
+  'Decode AI research',
+  'Play, test & learn with tools',
 ];
+
+/* The cycling word is rendered as a stack, not swapped in place: every
+   word sits in the same grid cell, so the span is always as wide as the
+   longest of them and nothing after it moves. Replacing the text
+   content instead made "some" jump between lines on every tick. */
+const words = ['AI', 'design', 'ML', 'tech', 'startup'];
 ---
 
 <div class="flex w-full min-w-0 flex-col">
-  <p class="nameplate text-primary">Bengaluru</p>
+  <h1 class="max-w-[24ch] text-4xl sm:text-5xl">
+    <span class="sr-only">Can I show you some cool AI stuff?</span>
 
-  <h1 class="mt-3 max-w-[22ch] text-4xl sm:text-5xl">
-    Can I show you some cool{' '}
-    <!-- The cycling word is decorative: screen readers get one stable
-         sentence from the visually-hidden copy instead of a word that
-         changes under them mid-read. -->
-    <span class="sr-only">AI stuff?</span>
     <span aria-hidden="true">
-      <span data-cycle-word class="text-primary">AI</span> stuff?
+      Can I show you some cool{' '}
+      <span
+        data-cycle-track
+        class="inline-grid justify-items-start overflow-hidden align-bottom transition-[width] duration-200"
+      >
+        {
+          words.map((word, i) => (
+            <span
+              data-cycle-word
+              data-active={i === 0 ? '' : undefined}
+              class="col-start-1 row-start-1 text-primary opacity-0 transition-opacity duration-200 data-[active]:opacity-100"
+            >
+              {word}
+            </span>
+          ))
+        }
+      </span>{' '}
+      stuff?
     </span>
   </h1>
 
-  <p class="mt-4 max-w-[54ch] text-lg text-muted-foreground">
+  <p class="mt-5 max-w-[54ch] text-lg text-muted-foreground">
     I teach this for a living, to engineers and to people who have never written a line of code.
-    Everything below is something you can take apart.
   </p>
 
   <ul class="mt-7 space-y-3 text-lg sm:text-xl">
@@ -47,8 +60,8 @@ const benefits = [
     }
   </ul>
 
-  <p class="mt-8 max-w-[52ch] text-sm text-muted-foreground">
-    16+ years with startups — Instamojo, Headout, now Outskill. I also run a{' '}
+  <p class="mt-8 max-w-[54ch] text-sm text-muted-foreground">
+    16+ years with startups — Instamojo, Headout, now Outskill. College dropout. I also run a{' '}
     <a
       href="https://youtube.com/@kingsidharth"
       rel="noopener"
@@ -58,22 +71,39 @@ const benefits = [
 </div>
 
 <script>
-  // Cycles the headline word. Pure decoration, so it bails out entirely
-  // under reduced motion rather than swapping without the fade.
-  const el = document.querySelector<HTMLElement>('[data-cycle-word]');
-  const words = ['AI', 'design', 'ML', 'tech', 'startup'];
+  // The words are stacked in one grid cell so they can crossfade. That
+  // makes the track as wide as the LONGEST word, which left a gap after
+  // a short one — so the track's width is driven from the active word
+  // and transitioned, giving a tight fit with no reflow of what follows.
+  const track = document.querySelector<HTMLElement>('[data-cycle-track]');
+  const words = document.querySelectorAll<HTMLElement>('[data-cycle-word]');
 
-  if (el && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    let i = 0;
-    el.style.transition = 'opacity 220ms ease';
+  if (track && words.length > 1) {
+    const fit = (el: HTMLElement) => {
+      track.style.width = `${el.getBoundingClientRect().width}px`;
+    };
 
-    setInterval(() => {
-      el.style.opacity = '0';
-      setTimeout(() => {
+    // Fonts change metrics, so wait for them before the first measure.
+    const start = () => {
+      fit(words[0]);
+
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      let i = 0;
+      setInterval(() => {
+        words[i].removeAttribute('data-active');
         i = (i + 1) % words.length;
-        el.textContent = words[i];
-        el.style.opacity = '1';
-      }, 220);
-    }, 2200);
+        words[i].setAttribute('data-active', '');
+        fit(words[i]);
+      }, 2200);
+    };
+
+    if (document.fonts?.ready) void document.fonts.ready.then(start);
+    else start();
+
+    addEventListener('resize', () => {
+      const active = document.querySelector<HTMLElement>('[data-cycle-word][data-active]');
+      if (active) fit(active);
+    });
   }
 </script>

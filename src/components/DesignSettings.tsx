@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 type Accent = 'amber' | 'purple' | 'pink' | 'teal' | 'cool';
 type Typeset = 'default' | 'comfortable' | 'compact';
-type Font = 'default' | 'akt' | 'bricolage' | 'familjen' | 'chivo' | 'maven';
+type Font = 'default' | 'bricolage' | 'familjen' | 'chivo' | 'spline' | 'rethink' | 'googlesans' | 'akshar' | 'strichpunkt';
 type Scale = 'default' | 's' | 'l';
 type Headline = 'auto' | 'light' | 'regular' | 'bold';
 type Ligatures = 'default' | 'on' | 'off';
@@ -50,13 +50,16 @@ const TYPESET_OPTIONS: { value: Typeset; label: string; description: string }[] 
   },
 ];
 
-const FONT_OPTIONS: { value: Font; label: string; fontFamily?: string }[] = [
-  { value: 'default', label: 'IBM Plex Sans (default)' },
-  { value: 'akt', label: 'Akt', fontFamily: "'Akt'" },
+const FONT_OPTIONS: { value: Font; label: string; fontFamily: string | undefined }[] = [
+  { value: 'default', label: 'IBM Plex Sans (default)', fontFamily: undefined },
   { value: 'bricolage', label: 'Bricolage Grotesque', fontFamily: "'Bricolage Grotesque'" },
   { value: 'familjen', label: 'Familjen Grotesk', fontFamily: "'Familjen Grotesk'" },
   { value: 'chivo', label: 'Chivo', fontFamily: "'Chivo'" },
-  { value: 'maven', label: 'Maven Pro', fontFamily: "'Maven Pro'" },
+  { value: 'spline', label: 'Spline Sans', fontFamily: "'Spline Sans'" },
+  { value: 'rethink', label: 'Rethink Sans', fontFamily: "'Rethink Sans'" },
+  { value: 'googlesans', label: 'Google Sans', fontFamily: "'Google Sans'" },
+  { value: 'akshar', label: 'Akshar', fontFamily: "'Akshar'" },
+  { value: 'strichpunkt', label: 'Strichpunkt Sans', fontFamily: "'Strichpunkt Sans'" },
 ];
 
 const SCALE_OPTIONS: { value: Scale; label: string }[] = [
@@ -132,11 +135,14 @@ function readFont(): Font {
   try {
     const stored = localStorage.getItem(FONT_KEY);
     if (
-      stored === 'akt' ||
       stored === 'bricolage' ||
       stored === 'familjen' ||
       stored === 'chivo' ||
-      stored === 'maven'
+      stored === 'spline' ||
+      stored === 'rethink' ||
+      stored === 'googlesans' ||
+      stored === 'akshar' ||
+      stored === 'strichpunkt'
     ) {
       return stored;
     }
