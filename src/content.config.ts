@@ -106,6 +106,10 @@ const work = defineCollection({
     /** Drives the green "current" pip. */
     current: z.boolean(),
     summary: z.string(),
+    /** Specific outcomes. Empty for roles where the summary says enough. */
+    highlights: z.array(z.string()).default([]),
+    /** Explicit display order — the JSON loader does not guarantee it. */
+    order: z.number().int(),
   }),
 });
 

@@ -9,6 +9,8 @@ import NoteRow from '@/components/NoteRow.astro';
 import WorkList from '@/components/WorkList.astro';
 import TemperatureInstrument from '@/components/instruments/TemperatureInstrument';
 import GotchaQuiz from '@/components/instruments/GotchaQuiz';
+import HeroIntro from '@/components/HeroIntro';
+import PromptsToSteal from '@/components/PromptsToSteal';
 import { getLocalized } from '@/lib/content';
 import { localePath, localeStaticPaths, useTranslations } from '@/lib/i18n';
 import type { Locale } from '@/lib/i18n';
@@ -24,18 +26,9 @@ const instruments = (await getCollection('instruments')).sort(
 const broadcasts = (await getCollection('broadcasts'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
   .slice(0, 4);
-const work = (await getCollection('work')).sort(
-  (a, b) => Number(b.data.current) - Number(a.data.current)
-);
+const work = (await getCollection('work')).sort((a, b) => a.data.order - b.data.order);
 const notes = (await getLocalized('blog', locale)).slice(0, 5);
 
-const doing = [
-  'Build products',
-  'Teach AI to engineers and non-coders',
-  'Read research papers',
-  'Build visualisation and teaching tools',
-  'Help startups',
-];
 ---
 
 <Base
@@ -44,38 +37,23 @@ const doing = [
   description="Product builder in Bengaluru. Tools, writing and videos about how AI actually behaves."
   bareTitle
 >
-  <!-- ── Hero. Two columns on desktop so the challenge card occupies
-         the right rather than leaving it empty; stacks on mobile. ── -->
+  <!-- ── Hero. Two columns on desktop: the introduction on the left,
+         a giveaway on the right rather than an empty gutter. ────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-12 sm:pt-16">
     <div class="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
-      <div>
-        <p class="nameplate mb-5 text-primary">Bengaluru</p>
-
-        <h1 class="text-4xl sm:text-5xl">I'm Sidharth. I:</h1>
-
-        <ul class="mt-6 max-w-[34ch] space-y-2 text-xl sm:text-2xl">
-          {
-            doing.map((item) => (
-              <li class="flex gap-3">
-                <span class="mt-[0.62em] h-px w-4 shrink-0 bg-primary" aria-hidden="true" />
-                <span>{item}</span>
-              </li>
-            ))
-          }
-        </ul>
-
-        <p class="mt-8 max-w-[52ch] text-muted-foreground">
-          16+ years working with startups. Currently at Outskill; before that Headout, Instamojo
-          and more. I also run a{' '}
-          <a href="https://youtube.com/@kingsidharth" class="text-primary hover:underline">
-            YouTube channel
-          </a>.
-        </p>
-      </div>
+      <HeroIntro client:visible />
 
       <div class="lg:sticky lg:top-24">
-        <GotchaQuiz client:visible />
+        <PromptsToSteal client:visible />
       </div>
+    </div>
+  </section>
+
+  <!-- ── Challenge. Its own section now: it gates the instrument, so
+         it needs the full width and its own beat. ───────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-20">
+    <div class="max-w-2xl">
+      <GotchaQuiz client:visible />
     </div>
   </section>
 

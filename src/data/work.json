@@ -3,32 +3,65 @@
     "id": "outskill",
     "org": "Outskill",
     "role": "Product & Design",
-    "period": "Present",
+    "period": "Current",
     "current": true,
-    "summary": "Product and design, and teaching AI to engineers and people who have never written code."
+    "summary": "Product and design, and teaching AI to engineers and to people who have never written code.",
+    "highlights": [],
+    "order": 0
+  },
+  {
+    "id": "growthschool",
+    "org": "GrowthSchool",
+    "role": "Product & Design",
+    "period": "Recent",
+    "current": true,
+    "summary": "Edtech for modern careers and upskilling. Traditional education cannot keep pace with how fast the industry moves; the programmes exist to close that gap for people starting or changing careers.",
+    "highlights": [],
+    "order": 1
   },
   {
     "id": "headout",
     "org": "Headout",
     "role": "Product & Design",
-    "period": "Past",
+    "period": "2019–2021",
     "current": false,
-    "summary": "Product and design on a marketplace for things to do in a city."
+    "summary": "Headout sells experiences to millions of travellers, competing on simplified choice and last-minute availability.",
+    "highlights": [
+      "Scaled the hyperlocal brand portfolio from ~100 to thousands of sub-brands, covering 80% of gross booking value",
+      "Designed a system handling 4,000+ kinds of pass, ticket and access code worldwide",
+      "Took user research and UAT coverage from 0 to 90% on every critical project — during a pandemic",
+      "Lifted conversion ~2% twice over: once with a product card system for discovery, once with a redesigned mobile-web booking flow",
+      "Launched Headout Hub, an extranet letting suppliers self-manage listings and inventory, cutting ops and support overhead",
+      "Rebranded Headout for a global audience and post-pandemic scale"
+    ],
+    "order": 2
   },
   {
     "id": "instamojo",
     "org": "Instamojo",
-    "role": "Founding team",
-    "period": "Past",
+    "role": "Head of Design, then Product Manager",
+    "period": "2012–2019",
     "current": false,
-    "summary": "Founding team. Payments and storefronts for small Indian businesses."
+    "summary": "Fintech serving over 700,000 Indian businesses. Easy products and a simple experience got us to product-market fit and made us a leader in the MSME market. I ran the design team and managed payments, merchant and mobile products.",
+    "highlights": [
+      "Designed Payment Links — the product the company became known for, and more than half its GMV",
+      "Designed the payment flow used by 1.5M+ consumers a month, carrying 100% of GMV",
+      "Launched Smart Payment Links: 5% of active users, 7% of GMV",
+      "Cut sign-up to activation from 170 minutes to 7",
+      "Got 80% of users self-activating within 30 days, without high-touch sales",
+      "Grew MAU 17% with a new Android app; launched Virtual Account Numbers, closing 10+ enterprise customers in 15 days",
+      "Hired the design team and built its processes as the company went from 100 to 400,000+ customers"
+    ],
+    "order": 3
   },
   {
-    "id": "independent",
-    "org": "Independent",
-    "role": "AI research & consulting",
-    "period": "Ongoing",
-    "current": true,
-    "summary": "Fine-tuning models, custom agents, AI solutions, cost control."
+    "id": "past",
+    "org": "Earlier",
+    "role": "Founder & consultant",
+    "period": "Before 2012",
+    "current": false,
+    "summary": "Ran WebMutiny, a UX design agency, and an educational events company. Started Besperk and ReadJitsu, which was selected for Start-Up Chile. Worked with Cleartax, L-pad and other startups along the way.",
+    "highlights": [],
+    "order": 4
   }
 ]
