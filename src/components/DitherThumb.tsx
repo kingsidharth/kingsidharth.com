@@ -123,8 +123,6 @@ export default function DitherThumb({
 
     canvas.width = logicalW * upscale * dpr;
     canvas.height = logicalH * upscale * dpr;
-    canvas.style.width = `${logicalW * upscale}px`;
-    canvas.style.height = `${logicalH * upscale}px`;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -187,8 +185,11 @@ export default function DitherThumb({
   return (
     <canvas
       ref={canvasRef}
-      className={cn('block', className)}
-      style={{ imageRendering: 'pixelated' }}
+      className={cn('block w-full h-auto max-w-full', className)}
+      style={{
+        imageRendering: 'pixelated',
+        aspectRatio: aspect === 'video' ? '16 / 9' : '1 / 1',
+      }}
       aria-hidden="true"
     />
   );

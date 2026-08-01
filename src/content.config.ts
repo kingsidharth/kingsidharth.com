@@ -95,5 +95,19 @@ const broadcasts = defineCollection({
   }),
 });
 
-export const collections = { blog, guides, instruments, broadcasts };
+
+const work = defineCollection({
+  loader: file('./src/data/work.json'),
+  schema: z.object({
+    id: z.string(),
+    org: z.string(),
+    role: z.string(),
+    period: z.string(),
+    /** Drives the green "current" pip. */
+    current: z.boolean(),
+    summary: z.string(),
+  }),
+});
+
+export const collections = { blog, guides, instruments, broadcasts, work };
 export { LOCALES };

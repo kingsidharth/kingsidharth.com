@@ -28,6 +28,11 @@ function Screw({ className }: { className?: string }) {
   return <span aria-hidden="true" className={cn('screw absolute', className)} />;
 }
 
+/** A-Z letter for the option index, used as the row's clickable indicator. */
+function optionLetter(index: number): string {
+  return String.fromCharCode(65 + index);
+}
+
 export default function GotchaQuiz() {
   const [selected, setSelected] = useState<string | null>(null);
   const [wrongTried, setWrongTried] = useState<Set<string>>(new Set());
@@ -65,6 +70,7 @@ export default function GotchaQuiz() {
 
   const hasWrongAttempt = wrongTried.size > 0;
   const correctOption = OPTIONS.find((o) => o.correct)!;
+  const answeredCorrectly = revealed && selected === correctOption.id;
 
   return (
     <div ref={rootRef} className="chassis relative w-full" data-revealed={revealed ? 'true' : undefined}>
@@ -75,21 +81,31 @@ export default function GotchaQuiz() {
       <div className="panel-divider-h flex items-center gap-3 px-6 py-3.5 sm:px-8">
         <span className="plaque flex items-center gap-2.5 px-3 py-1.5 text-[13px] font-semibold uppercase tracking-[0.14em]">
           <span aria-hidden="true" className={cn('led', revealed && 'led-on')} />
-          Gotcha
+          Challenge
         </span>
       </div>
 
       <div className="flex flex-col gap-6 px-6 py-7 sm:px-8">
-        <p id={questionId} className="font-sans text-xl text-foreground">
+        <div className="flex flex-col gap-2">
+          <span className="nameplate text-[11px] tracking-[0.18em] text-muted-foreground">
+            Do you understand AI?
+          </span>
+          <h3 className="text-balance font-sans text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
+            Wanna take a challenge?
+          </h3>
+        </div>
+
+        <p id={questionId} className="font-sans text-base text-foreground sm:text-lg">
           {QUESTION}
         </p>
 
-        <div role="radiogroup" aria-labelledby={questionId} className="flex flex-col gap-2">
-          {OPTIONS.map((option) => {
+        <div role="radiogroup" aria-labelledby={questionId} className="flex flex-col gap-3">
+          {OPTIONS.map((option, index) => {
             const isSelected = selected === option.id;
             const isWrongPick = wrongTried.has(option.id);
             const isCorrectAndRevealed = revealed && option.correct;
             const showAsWrong = isWrongPick && !(revealed && option.correct);
+            const isDisabled = revealed && !option.correct;
 
             return (
               <button
@@ -97,25 +113,45 @@ export default function GotchaQuiz() {
                 type="button"
                 role="radio"
                 aria-checked={isSelected}
-                disabled={revealed && !option.correct}
+                disabled={isDisabled}
                 onClick={() => handleSelect(option)}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-sm border border-transparent px-3 py-2.5 text-left transition-colors focus-visible:outline-none',
-                  'hover:bg-muted/60',
-                  revealed && !option.correct && 'cursor-default opacity-60 hover:bg-transparent',
-                  isCorrectAndRevealed && 'border-primary/40 bg-primary/10',
+                  'group flex w-full items-center gap-4 rounded-md border px-4 py-3.5 text-left transition-colors sm:py-4',
+                  'border-border bg-transparent hover:border-chassis-edge hover:bg-muted/50',
+                  'focus-visible:outline-none',
+                  isDisabled && 'cursor-default opacity-50 hover:border-border hover:bg-transparent',
+                  showAsWrong && 'border-destructive/50 bg-destructive/5',
+                  isCorrectAndRevealed && 'border-success bg-success/10',
                 )}
               >
                 <span
                   aria-hidden="true"
                   className={cn(
-                    'h-3.5 w-3.5 shrink-0 rounded-[3px]',
-                    isSelected || isCorrectAndRevealed ? 'bg-primary' : 'groove',
+                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border font-mono text-[12px] font-semibold transition-colors',
+                    isCorrectAndRevealed && 'border-success text-success',
+                    showAsWrong && 'border-destructive text-destructive',
+                    !isCorrectAndRevealed &&
+                      !showAsWrong &&
+                      (isSelected
+                        ? 'border-primary text-primary'
+                        : 'groove border-transparent text-muted-foreground'),
                   )}
-                />
-                <span className="flex-1 font-sans text-sm text-foreground">{option.label}</span>
-                {isCorrectAndRevealed && <span className="text-primary">✓</span>}
-                {showAsWrong && <span className="text-destructive">✗</span>}
+                >
+                  {optionLetter(index)}
+                </span>
+                <span className="flex-1 font-sans text-sm text-foreground sm:text-base">
+                  {option.label}
+                </span>
+                {isCorrectAndRevealed && (
+                  <span aria-hidden="true" className="text-lg font-semibold text-success">
+                    ✓
+                  </span>
+                )}
+                {showAsWrong && (
+                  <span aria-hidden="true" className="text-lg font-semibold text-destructive">
+                    ✗
+                  </span>
+                )}
               </button>
             );
           })}
@@ -136,8 +172,13 @@ export default function GotchaQuiz() {
 
         {revealed && (
           <div className="crt flex flex-col gap-2 p-4 sm:p-5">
-            <span className="nameplate text-screen-dim text-[11px] tracking-[0.18em]">
-              {selected === correctOption.id ? 'Correct' : 'Answer'}
+            <span
+              className={cn(
+                'nameplate text-[11px] tracking-[0.18em]',
+                answeredCorrectly ? 'text-success-screen' : 'text-screen-dim',
+              )}
+            >
+              {answeredCorrectly ? 'Correct' : 'Answer'}
             </span>
             <p className="font-mono text-[13px] leading-relaxed text-screen-fg">
               Temperature 0 means greedy decoding — always take the highest-probability token.

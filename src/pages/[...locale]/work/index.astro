@@ -1,0 +1,37 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import SectionHead from '@/components/SectionHead.astro';
+import WorkList from '@/components/WorkList.astro';
+import { localeStaticPaths, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+export const getStaticPaths = (() => localeStaticPaths()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props as { locale: Locale };
+const t = useTranslations(locale);
+
+// Current engagements first, then past, preserving authored order within each.
+const work = (await getCollection('work')).sort(
+  (a, b) => Number(b.data.current) - Number(a.data.current)
+);
+---
+
+<Base
+  locale={locale}
+  title={t('work.title')}
+  description="Sixteen years of product and design work, mostly with startups."
+  path="work"
+>
+  <div class="mx-auto max-w-4xl px-(--spacing-gutter) py-14">
+    <SectionHead title={t('work.title')} sub={t('work.sub')} glyph="book" as="h1" />
+
+    <WorkList entries={work} />
+
+    <p class="mt-10 max-w-[56ch] text-muted-foreground">
+      For the tools and experiments rather than the jobs, see{' '}
+      <a href="/instruments" class="text-primary hover:underline">Tools &amp; Experiments</a>.
+    </p>
+  </div>
+</Base>

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "outskill",
+    "org": "Outskill",
+    "role": "Product & Design",
+    "period": "Present",
+    "current": true,
+    "summary": "Product and design, and teaching AI to engineers and people who have never written code."
+  },
+  {
+    "id": "headout",
+    "org": "Headout",
+    "role": "Product & Design",
+    "period": "Past",
+    "current": false,
+    "summary": "Product and design on a marketplace for things to do in a city."
+  },
+  {
+    "id": "instamojo",
+    "org": "Instamojo",
+    "role": "Founding team",
+    "period": "Past",
+    "current": false,
+    "summary": "Founding team. Payments and storefronts for small Indian businesses."
+  },
+  {
+    "id": "independent",
+    "org": "Independent",
+    "role": "Product & design consulting",
+    "period": "Ongoing",
+    "current": true,
+    "summary": "Helping startups get a product out and figure out what to build next."
+  }
+]

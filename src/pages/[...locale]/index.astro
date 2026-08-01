@@ -6,6 +6,7 @@ import SectionHead from '@/components/SectionHead.astro';
 import InstrumentCard from '@/components/InstrumentCard.astro';
 import BroadcastCard from '@/components/BroadcastCard.astro';
 import NoteRow from '@/components/NoteRow.astro';
+import WorkList from '@/components/WorkList.astro';
 import TemperatureInstrument from '@/components/instruments/TemperatureInstrument';
 import GotchaQuiz from '@/components/instruments/GotchaQuiz';
 import { getLocalized } from '@/lib/content';
@@ -23,73 +24,79 @@ const instruments = (await getCollection('instruments')).sort(
 const broadcasts = (await getCollection('broadcasts'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
   .slice(0, 4);
+const work = (await getCollection('work')).sort(
+  (a, b) => Number(b.data.current) - Number(a.data.current)
+);
 const notes = (await getLocalized('blog', locale)).slice(0, 5);
+
+const doing = [
+  'Build products',
+  'Teach AI to engineers and non-coders',
+  'Read research papers',
+  'Build visualisation and teaching tools',
+  'Help startups',
+];
 ---
 
 <Base
   locale={locale}
   title="Sidharth — Product builder"
-  description="Building tools to understand AI. Essays, interactive demos, and videos from Bengaluru."
+  description="Product builder in Bengaluru. Tools, writing and videos about how AI actually behaves."
   bareTitle
 >
-  <!-- ── Who this is ──────────────────────────────────────────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-14 sm:pt-20">
-    <p class="nameplate mb-5 text-primary">Bengaluru</p>
+  <!-- ── Hero. Two columns on desktop so the challenge card occupies
+         the right rather than leaving it empty; stacks on mobile. ── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-12 sm:pt-16">
+    <div class="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
+      <div>
+        <p class="nameplate mb-5 text-primary">Bengaluru</p>
 
-    <h1 class="text-4xl sm:text-5xl">I'm Sidharth. I:</h1>
+        <h1 class="text-4xl sm:text-5xl">I'm Sidharth. I:</h1>
 
-    <ul class="mt-6 max-w-[36ch] space-y-2 text-xl sm:text-2xl">
-      {
-        [
-          'Build products',
-          'Teach AI to engineers and non-coders',
-          'Read research papers',
-          'Build visualisation and teaching tools',
-          'Help startups',
-        ].map((item) => (
-          <li class="flex gap-3">
-            <span class="mt-[0.6em] h-px w-4 shrink-0 bg-primary" aria-hidden="true" />
-            <span>{item}</span>
-          </li>
-        ))
-      }
-    </ul>
+        <ul class="mt-6 max-w-[34ch] space-y-2 text-xl sm:text-2xl">
+          {
+            doing.map((item) => (
+              <li class="flex gap-3">
+                <span class="mt-[0.62em] h-px w-4 shrink-0 bg-primary" aria-hidden="true" />
+                <span>{item}</span>
+              </li>
+            ))
+          }
+        </ul>
 
-    <p class="mt-8 max-w-[56ch] text-muted-foreground">
-      16+ years working with startups. Currently at Outskill; before that Headout, Instamojo and
-      more. I also run a <a href="https://youtube.com/@kingsidharth" class="text-primary hover:underline">YouTube channel</a>.
-    </p>
+        <p class="mt-8 max-w-[52ch] text-muted-foreground">
+          16+ years working with startups. Currently at Outskill; before that Headout, Instamojo
+          and more. I also run a{' '}
+          <a href="https://youtube.com/@kingsidharth" class="text-primary hover:underline">
+            YouTube channel
+          </a>.
+        </p>
+      </div>
+
+      <div class="lg:sticky lg:top-24">
+        <GotchaQuiz client:visible />
+      </div>
+    </div>
   </section>
 
-  <!-- ── Featured demo. One of the tools, not the premise of the
-         site — hence its own section below the introduction. ───── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-14 sm:pt-16">
+  <!-- Revealed by the quiz. Hidden rather than un-rendered so the
+       reveal is instant and it stays out of the a11y tree until then.
+       Note `client:idle`, NOT `client:visible`: a `hidden` element has
+       no layout, so an IntersectionObserver never fires and the island
+       would still be inert after the reveal. -->
+  <section
+    id="instrument-reveal"
+    hidden
+    class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-16"
+  >
     <p class="nameplate mb-3 text-primary">One of the teaching tools</p>
-
     <h2 class="max-w-[24ch] text-2xl sm:text-3xl">Temperature visualiser</h2>
-
-    <p class="mt-4 max-w-[58ch] text-muted-foreground">
-      Before you look at it — a question most people get wrong.
+    <p class="mt-4 mb-8 max-w-[58ch] text-muted-foreground">
+      Same knob, three prompts. Turn it up and the poem gets more interesting while the arithmetic
+      starts getting the answer wrong. Switch to greedy and the maths is safe at any temperature —
+      but the poem says "star" every single time.
     </p>
-
-    <div class="mt-7 max-w-2xl">
-      <GotchaQuiz client:visible />
-    </div>
-
-    <!-- Revealed by the quiz. Hidden rather than un-rendered so the
-         reveal is instant and it stays out of the a11y tree until
-         then. Note `client:idle` below, NOT `client:visible`: a
-         `hidden` element has no layout, so an IntersectionObserver
-         never fires and the island would still be inert after the
-         reveal. -->
-    <div id="instrument-reveal" hidden class="mt-10">
-      <p class="mt-4 mb-7 max-w-[58ch] text-muted-foreground">
-        Same knob, three prompts. Turn it up and the poem gets more interesting while the
-        arithmetic starts getting the answer wrong. Switch to greedy and the maths is safe at any
-        temperature — but the poem says "star" every single time.
-      </p>
-      <TemperatureInstrument client:idle />
-    </div>
+    <TemperatureInstrument client:idle />
   </section>
 
   <script>
@@ -102,13 +109,20 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     });
   </script>
 
-  <!-- ── The shelf ────────────────────────────────────────────── -->
+  <!-- ── Work ─────────────────────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
-    <SectionHead
-      title={t('shelf.title')}
-      sub={`${instruments.length} ${t('shelf.sub')}`}
-      glyph="shelf"
-    />
+    <SectionHead title={t('work.title')} sub={t('work.sub')} glyph="book" />
+    <WorkList entries={work} />
+    <p class="mt-6 font-mono text-xs">
+      <a href={localePath(locale, 'work')} class="text-primary hover:underline">
+        More about the work →
+      </a>
+    </p>
+  </section>
+
+  <!-- ── Tools & Experiments ──────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
+    <SectionHead title={t('shelf.title')} sub={t('shelf.sub')} glyph="shelf" />
 
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
       {instruments.map((entry) => <InstrumentCard entry={entry} locale={locale} />)}
@@ -122,7 +136,7 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     </div>
   </section>
 
-  <!-- ── Broadcasts ───────────────────────────────────────────── -->
+  <!-- ── Watch ────────────────────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
     <SectionHead title={t('broadcasts.title')} sub={t('broadcasts.sub')} glyph="reel" />
 
@@ -131,7 +145,7 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     </div>
   </section>
 
-  <!-- ── Field notes ──────────────────────────────────────────── -->
+  <!-- ── Notes ────────────────────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
     <SectionHead title={t('notes.title')} sub={t('notes.sub')} glyph="note" />
 
@@ -144,14 +158,5 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
         </a>
       </p>
     </div>
-  </section>
-
-  <!-- ── About ────────────────────────────────────────────────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
-    <p class="max-w-[32ch] text-3xl">Product builder, Bengaluru.</p>
-    <p class="mt-4 max-w-[50ch] text-muted-foreground">
-      About 16 years working on products. Founding team at Instamojo, then Headout, now at
-      Outskill. These tools and essays are for anyone trying to understand how AI actually works.
-    </p>
   </section>
 </Base>

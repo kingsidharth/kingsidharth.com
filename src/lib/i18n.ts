@@ -48,7 +48,8 @@ export function localeStaticPaths() {
 
 const en = {
   'nav.watch': 'Watch',
-  'nav.tools': 'Tools',
+  'nav.work': 'Work',
+  'nav.tools': 'Tools & Experiments',
   'nav.notes': 'Notes',
   'nav.guides': 'Guides',
   'nav.about': 'About',
@@ -59,16 +60,19 @@ const en = {
   'theme.dark': 'Dark',
   'lang.switch': 'Change language',
 
-  'shelf.title': 'Work',
-  'shelf.sub': 'interactive tools for understanding AI',
+  'shelf.title': 'Tools & Experiments',
+  'shelf.sub': 'things you can take apart',
   'shelf.figure': 'Fig.',
 
+  'work.title': 'Work',
+  'work.sub': 'sixteen years, mostly with startups',
+
   'broadcasts.title': 'Videos',
-  'broadcasts.sub': 'long-form, most Fridays',
+  'broadcasts.sub': 'long-form, series and courses',
   'broadcasts.views': 'views',
 
   'notes.title': 'Writing',
-  'notes.sub': 'essays on AI, product, and building',
+  'notes.sub': '',
   'notes.readingTime': 'min',
   'notes.draft': 'Draft',
   'notes.all': 'Read all',

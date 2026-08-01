@@ -13,10 +13,9 @@ const t = useTranslations(locale);
 
 const links = [
   { href: localePath(locale, 'broadcasts'), label: t('nav.watch') },
-  { href: localePath(locale, 'instruments'), label: t('nav.tools') },
-  { href: localePath(locale, 'guides'), label: t('nav.guides') },
   { href: localePath(locale, 'blog'), label: t('nav.notes') },
-  { href: localePath(locale, 'about'), label: t('nav.about') },
+  { href: localePath(locale, 'instruments'), label: t('nav.tools') },
+  { href: localePath(locale, 'work'), label: t('nav.work') },
 ];
 
 const here = Astro.url.pathname.replace(/\/$/, '') || '/';
@@ -40,7 +39,7 @@ const isCurrent = (href: string) => {
       href={localePath(locale)}
       class="flex items-center gap-2.5 ps-3 text-[1.0625rem] font-semibold tracking-[-0.03em]"
     >
-      Sidharth
+      @kingsidharth
     </a>
 
     <div class="flex items-center gap-4">

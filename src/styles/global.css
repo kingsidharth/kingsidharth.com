@@ -44,6 +44,12 @@
   --phosphor: oklch(0.82 0.135 78);
   --rust-500: oklch(0.64 0.165 42);
 
+  /* Green means correct / live / running. On cream paper a vivid green
+     fails contrast, so light mode gets a darker, denser one and dark
+     mode gets the vivid phosphor version. Same hue family either way. */
+  --success: oklch(0.5 0.14 152);
+  --success-screen: oklch(0.52 0.15 152);
+
   /* -- semantic (light is the default document) -------------------- */
   --background: var(--paper-50);
   --foreground: var(--ink-900);
@@ -142,6 +148,10 @@
 
   --rule: oklch(0.26 0.01 62);
 
+  /* Vivid on the dark bench; this is the "it works" colour. */
+  --success: oklch(0.82 0.2 148);
+  --success-screen: oklch(0.86 0.21 148);
+
   color-scheme: dark;
 }
 
@@ -178,6 +188,8 @@
   --color-screen-fg: var(--screen-fg);
   --color-screen-dim: var(--screen-dim);
   --color-well: var(--well);
+  --color-success: var(--success);
+  --color-success-screen: var(--success-screen);
 
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
@@ -536,6 +548,17 @@
       0 0 0 1px oklch(0.09 0.004 55),
       0 1px 0 var(--bevel-light),
       var(--screen-glow);
+  }
+
+  /* Phosphor bloom. text-shadow inherits, and `currentColor` resolves
+     per element, so amber readouts glow amber and green ones glow
+     green without any per-element wiring. Dark only — on the light
+     readout a glow just reads as blur. */
+  .dark .crt {
+    text-shadow:
+      0 0 1px color-mix(in oklch, currentColor 55%, transparent),
+      0 0 7px color-mix(in oklch, currentColor 40%, transparent),
+      0 0 18px color-mix(in oklch, currentColor 18%, transparent);
   }
 
   /* 4 — scanlines */

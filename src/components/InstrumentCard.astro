@@ -27,7 +27,7 @@ const lit = status === 'live';
       <span
         class:list={[
           'size-1.5 rounded-full',
-          lit ? 'bg-primary shadow-[0_0_7px_var(--color-primary)]' : 'bg-muted-foreground/50',
+          lit ? 'bg-success shadow-[0_0_8px_var(--color-success)]' : 'bg-muted-foreground/50',
         ]}
         aria-hidden="true"></span>
     </div>
@@ -54,7 +54,7 @@ const lit = status === 'live';
       <span
         class:list={[
           'rounded-xs border px-1.5 py-0.5',
-          lit ? 'border-primary/60 text-primary' : 'border-border text-muted-foreground',
+          lit ? 'border-success/60 text-success' : 'border-border text-muted-foreground',
         ]}
       >
         {t(`status.${status}` as const)}

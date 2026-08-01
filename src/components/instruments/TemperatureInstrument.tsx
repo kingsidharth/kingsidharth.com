@@ -66,10 +66,10 @@ function Screw({ className }: { className?: string }) {
   return <span aria-hidden="true" className={cn('screw absolute', className)} />;
 }
 
-function GaugeCell({ value, label }: { value: string; label: string }) {
+function GaugeCell({ value, label, valueClassName }: { value: string; label: string; valueClassName?: string }) {
   return (
-    <div className="flex flex-col gap-1">
-      <span className="gauge-value tabular-nums">{value}</span>
+    <div className="flex min-w-0 flex-col gap-1">
+      <span className={cn('gauge-value tabular-nums', valueClassName)}>{value}</span>
       <span className="gauge-label">{label}</span>
     </div>
   );
@@ -328,9 +328,10 @@ interface PromptScreenProps {
   onChange: (id: PromptId) => void;
   reducedMotion: boolean;
   completion: { token: string; wrong: boolean } | null;
+  onDraw: () => void;
 }
 
-function PromptScreen({ promptId, onChange, reducedMotion, completion }: PromptScreenProps) {
+function PromptScreen({ promptId, onChange, reducedMotion, completion, onDraw }: PromptScreenProps) {
   const prompt = PROMPTS[promptId];
   return (
     <div className="crt flex min-h-[130px] flex-col gap-3 p-4 sm:p-5">
@@ -355,31 +356,41 @@ function PromptScreen({ promptId, onChange, reducedMotion, completion }: PromptS
           );
         })}
       </div>
-      <p className="font-mono text-[15px] text-screen-fg">
-        {prompt.text}{' '}
-        {/* The completion the current settings would actually produce.
-            Re-drawn whenever T, the strategy or the prompt changes, so
-            the knob visibly rewrites the sentence — and on a factual
-            prompt a wrong draw shows up red, right here in the output,
-            rather than only as a number in a gauge. */}
-        {completion && (
-          <span
-            className={cn(
-              'font-semibold',
-              completion.wrong ? 'text-destructive' : 'text-screen-fg',
-            )}
-          >
-            {completion.token}
-          </span>
-        )}
-        <span
-          aria-hidden="true"
-          className={cn(
-            'ml-0.5 inline-block h-[1em] w-[0.5em] translate-y-[0.15em] bg-screen-fg align-middle',
-            !reducedMotion && 'motion-safe:animate-pulse',
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <p className="min-w-0 flex-1 font-mono text-[15px] text-screen-fg">
+          {prompt.text}{' '}
+          {/* The completion the current settings would actually produce.
+              Re-drawn whenever T, the strategy or the prompt changes, so
+              the knob visibly rewrites the sentence — and on a factual
+              prompt a wrong draw shows up red, right here in the output,
+              rather than only as a number in a gauge. */}
+          {completion && (
+            <span
+              className={cn(
+                'font-semibold',
+                completion.wrong ? 'text-destructive' : 'text-screen-fg',
+              )}
+            >
+              {completion.token}
+            </span>
           )}
-        />
-      </p>
+          <span
+            aria-hidden="true"
+            className={cn(
+              'ml-0.5 inline-block h-[1em] w-[0.5em] translate-y-[0.15em] bg-screen-fg align-middle',
+              !reducedMotion && 'motion-safe:animate-pulse',
+            )}
+          />
+        </p>
+        <button
+          type="button"
+          onClick={onDraw}
+          className="shrink-0 whitespace-nowrap rounded-sm border border-screen-fg/50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-screen-fg transition-transform hover:border-screen-fg hover:bg-screen-fg/10 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-screen-fg active:translate-y-px"
+        >
+          <span className="hidden sm:inline">Draw again</span>
+          <span className="sm:hidden">Draw</span>
+        </button>
+      </div>
 
       {completion?.wrong && (
         <p className="font-mono text-[11px] text-destructive">
@@ -439,7 +450,6 @@ function DistributionScreen({
           viewBox={`0 0 ${chartWidth} ${height}`}
           role="img"
           aria-label="Token probability distribution"
-          className="min-w-[320px]"
         >
           <defs>
             {/* Kept bars: fine horizontal hatch over a darker amber base, so
@@ -482,7 +492,7 @@ function DistributionScreen({
                   )}
                 >
                   {t.token}
-                  {isFactual && t.correct ? ' ✓' : ''}
+                  {isFactual && t.correct ? <tspan className="fill-success-screen"> ✓</tspan> : ''}
                 </text>
                 <rect
                   x={labelWidth}
@@ -540,15 +550,17 @@ function DistributionScreen({
           aria-hidden="true"
           className={cn(
             'h-[6px] w-[6px] shrink-0 rounded-full',
-            verdictTone === 'bad' ? 'bg-destructive' : 'bg-primary',
-            verdictTone === 'warn' && 'opacity-60',
+            verdictTone === 'bad' && 'bg-destructive',
+            verdictTone === 'good' && 'bg-success-screen',
+            verdictTone === 'warn' && 'bg-primary opacity-60',
           )}
         />
         <p
           className={cn(
             'font-mono text-[12px] leading-snug',
-            verdictTone === 'bad' ? 'text-destructive' : 'text-primary',
-            verdictTone === 'warn' && 'opacity-70',
+            verdictTone === 'bad' && 'text-destructive',
+            verdictTone === 'good' && 'text-success-screen',
+            verdictTone === 'warn' && 'text-primary opacity-70',
           )}
         >
           {verdictText}
@@ -640,7 +652,7 @@ export default function TemperatureInstrument() {
      the draw is that token every time anyway. */
   const [completion, setCompletion] = useState<{ token: string; wrong: boolean } | null>(null);
 
-  useEffect(() => {
+  const roll = useCallback(() => {
     if (distribution.scored.every((t) => !t.kept)) {
       setCompletion(null);
       return;
@@ -651,6 +663,10 @@ export default function TemperatureInstrument() {
       wrong: PROMPTS[promptId].kind === 'factual' && !drawn.correct,
     });
   }, [distribution, promptId]);
+
+  useEffect(() => {
+    roll();
+  }, [roll]);
 
   const handlePromptChange = useCallback((id: PromptId) => {
     setPromptId(id);
@@ -676,6 +692,11 @@ export default function TemperatureInstrument() {
     );
   }, [distribution, temperature, strategy, promptId]);
 
+  const handleDrawButton = useCallback(() => {
+    roll();
+    handleDraw();
+  }, [roll, handleDraw]);
+
   const latest = tape[0];
   const isFactual = PROMPTS[promptId].kind === 'factual';
 
@@ -697,15 +718,15 @@ export default function TemperatureInstrument() {
         </span>
       </div>
 
-      <div className="flex flex-col min-[900px]:flex-row">
+      <div className="flex min-w-0 flex-col min-[900px]:flex-row">
         {/* Left control panel */}
-        <div className="flex flex-col gap-9 px-6 py-7 sm:px-8 min-[900px]:w-[370px] min-[900px]:shrink-0">
+        <div className="flex min-w-0 w-full flex-col gap-9 px-6 py-7 sm:px-8 min-[900px]:w-[370px] min-[900px]:shrink-0">
           {/* Temperature */}
           <div className="flex flex-col gap-4">
             <span className="nameplate text-[13px] tracking-[0.18em]">Temperature</span>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <TemperatureKnob temperature={temperature} onChange={setTemperature} />
-              <div className="flex flex-col">
+              <div className="flex min-w-0 flex-col">
                 <span className="readout-xl tabular-nums">{temperature.toFixed(2)}</span>
                 <span className="nameplate mt-1">T</span>
               </div>
@@ -759,6 +780,7 @@ export default function TemperatureInstrument() {
                 <GaugeCell
                   value={`${((distribution.correctProbability ?? 1) * 100).toFixed(0)}%`}
                   label="answer correct"
+                  valueClassName={(distribution.correctProbability ?? 1) >= 0.9 ? 'text-success' : undefined}
                 />
               ) : (
                 <GaugeCell value={distribution.effectiveChoices.toFixed(1)} label="effective choices" />
@@ -777,6 +799,7 @@ export default function TemperatureInstrument() {
             onChange={handlePromptChange}
             reducedMotion={reducedMotion}
             completion={completion}
+            onDraw={handleDrawButton}
           />
           <DistributionScreen
             promptId={promptId}
@@ -792,14 +815,14 @@ export default function TemperatureInstrument() {
       </div>
 
       {/* Tape strip */}
-      <div className="panel-divider-h flex flex-wrap items-center justify-between gap-3 px-6 py-4 sm:px-8">
-        <span className="font-mono text-[13px] tabular-nums">
+      <div className="panel-divider-h flex flex-wrap items-center gap-3 px-6 py-4 sm:px-8">
+        <span className="w-full font-mono text-[13px] tabular-nums">
           <span className="text-muted-foreground">Tape — </span>
           {latest ? (
             <span className="text-primary">
               {latest.token} · p={latest.probability.toFixed(3)}
               {PROMPTS[latest.promptId].kind === 'factual' && (
-                <span className={latest.correct ? 'text-primary' : 'text-destructive'}>
+                <span className={latest.correct ? 'text-success' : 'text-destructive'}>
                   {' '}
                   {latest.correct ? '✓' : '✗'}
                 </span>
@@ -809,13 +832,6 @@ export default function TemperatureInstrument() {
             <span className="text-muted-foreground">no draws yet</span>
           )}
         </span>
-        <button
-          type="button"
-          onClick={handleDraw}
-          className="rounded-sm border border-chassis-edge bg-primary px-4 py-2 font-condensed text-[13px] font-semibold uppercase tracking-[0.12em] text-primary-foreground shadow-[inset_0_1px_0_rgb(255_255_255_/_0.25),inset_0_-1px_0_rgb(0_0_0_/_0.25)] transition-transform active:translate-y-px"
-        >
-          Draw a token
-        </button>
       </div>
     </div>
   );
