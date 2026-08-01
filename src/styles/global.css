@@ -850,7 +850,8 @@
 
   .label-marquee > span {
     display: inline-block;
-    animation: label-scroll 9s linear infinite;
+    animation: label-scroll 11s linear infinite;
+    animation-delay: -2s;
   }
 
   @keyframes label-scroll {
@@ -860,6 +861,26 @@
 
   @media (prefers-reduced-motion: reduce) {
     .label-marquee > span {
+      animation: none;
+    }
+  }
+
+  /* A slow band of symbols drifting across a card. Two copies, -50%,
+     so the loop has no seam. */
+  .symbol-drift > span {
+    display: inline-block;
+    white-space: nowrap;
+    animation: symbol-drift 21s linear infinite;
+    animation-delay: -4s;
+  }
+
+  @keyframes symbol-drift {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .symbol-drift > span {
       animation: none;
     }
   }
@@ -1162,15 +1183,8 @@
 }
 
 @font-face {
-  font-family: 'Google Sans';
-  src: url('/fonts/generated/GoogleSans-var.woff2') format('woff2-variations');
-  font-weight: 100 1000;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Akshar';
-  src: url('/fonts/generated/Akshar-var.woff2') format('woff2-variations');
+  font-family: 'Spline Sans Mono';
+  src: url('/fonts/generated/SplineSansMono-var.woff2') format('woff2-variations');
   font-weight: 300 700;
   font-display: swap;
 }
@@ -1182,15 +1196,18 @@
   font-display: swap;
 }
 
-/* Only the sans changes. Mono stays IBM Plex Mono throughout, because
-   the instrument readouts are calibrated to its metrics. */
+/* Choosing a sans also swaps the mono, where a genuine sibling exists.
+   Only Spline Sans ships one; the rest fall back to IBM Plex Mono,
+   which is a deliberate mismatch rather than an oversight — pairing a
+   grotesque with an unrelated mono looks worse than not pairing it. */
 :root[data-font='bricolage'] { --font-sans-active: 'Bricolage Grotesque'; }
 :root[data-font='familjen'] { --font-sans-active: 'Familjen Grotesk'; }
 :root[data-font='chivo'] { --font-sans-active: 'Chivo'; }
-:root[data-font='spline'] { --font-sans-active: 'Spline Sans'; }
+:root[data-font='spline'] {
+  --font-sans-active: 'Spline Sans';
+  --font-mono-active: 'Spline Sans Mono';
+}
 :root[data-font='rethink'] { --font-sans-active: 'Rethink Sans'; }
-:root[data-font='googlesans'] { --font-sans-active: 'Google Sans'; }
-:root[data-font='akshar'] { --font-sans-active: 'Akshar'; }
 :root[data-font='strichpunkt'] { --font-sans-active: 'Strichpunkt Sans'; }
 
 :root[data-font] body,
@@ -1201,6 +1218,11 @@
   font-family:
     var(--font-sans-active), 'IBM Plex Sans Variable', 'Noto Sans Devanagari Variable',
     ui-sans-serif, system-ui, sans-serif;
+}
+
+:root[data-font] {
+  --font-mono:
+    var(--font-mono-active, 'IBM Plex Mono'), ui-monospace, 'SF Mono', monospace;
 }
 
 /* Stylistic ligatures */

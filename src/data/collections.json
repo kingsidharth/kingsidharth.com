@@ -1,0 +1,18 @@
+[
+  {
+    "id": "pm-course-hinglish",
+    "title": "PM Course in Hinglish",
+    "detail": "8-part series",
+    "motif": "grid",
+    "seed": 12,
+    "url": "#"
+  },
+  {
+    "id": "for-designers",
+    "title": "For UI/UX Designers",
+    "detail": "Series",
+    "motif": "shards",
+    "seed": 27,
+    "url": "#"
+  }
+]

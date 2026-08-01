@@ -17,6 +17,8 @@ const programmes = [
     bg: 'oklch(0.28 0.11 275)',
     ink: 'oklch(0.88 0.16 195)',
     shadow: 'oklch(0.16 0.09 275)',
+    labelBg: 'oklch(0.78 0.13 190)',
+    labelInk: 'oklch(0.22 0.07 220)',
     title: 'marquee',
     frames: {
       idle: ['┬┴┬┴┤ω・)', '┬┴┬┴┤・ω・)'],
@@ -30,9 +32,9 @@ const programmes = [
     name: 'Vibe Coding 101',
     href: '#',
     bg: 'oklch(0.3 0.13 340)',
-    ink: 'oklch(0.9 0.16 95)',
+    ink: 'oklch(0.98 0 0)',
     shadow: 'oklch(0.19 0.1 340)',
-    title: 'sprite',
+    title: 'wordmark',
     frames: {
       idle: ['(◑‿◐)'],
       l1: '(◑‿◐)♪',
@@ -64,6 +66,7 @@ const programmes = [
     ink: 'oklch(0.92 0.15 85)',
     shadow: 'oklch(0.2 0.09 45)',
     title: 'sprite',
+    symbols: '✦ ✧ ★ ☆ ✿ ❀ ♪ ✦ ✧ ★ ☆ ✿ ❀ ♪ ',
     frames: {
       idle: ['(ﾐⓛᆽⓛﾐ)✧', '(=^ ◡ ^=)', '(=◉ᆽ◉=)'],
       l1: '/ᐠ｡ꞈ｡ᐟ\\',
@@ -81,9 +84,21 @@ const programmes = [
       <a
         href={p.href}
         data-face-card
-        class="screen-raised group flex h-full flex-col items-center justify-center gap-3 px-3 py-5"
+        class="screen-raised group relative flex h-full flex-col items-center justify-center gap-3 px-3 py-5"
         style={`background:${p.bg}; --sprite-shadow:${p.shadow};`}
       >
+        {
+          p.symbols && (
+            <span
+              class="symbol-drift pointer-events-none absolute inset-x-0 top-2 overflow-hidden text-center text-[11px] opacity-50"
+              style={`color:${p.ink};`}
+              aria-hidden="true"
+            >
+              <span>{p.symbols.repeat(2)}</span>
+            </span>
+          )
+        }
+
         <span
           data-face
           data-frames={JSON.stringify(p.frames)}
@@ -96,14 +111,27 @@ const programmes = [
 
         {
           p.title === 'marquee' ? (
-            <span class="label-marquee w-full" style={`color:${p.ink};`}>
-              <span class="sprite-text font-mono text-[11px]">
+            /* A printed plate rather than bare text: brighter ground,
+               darker ink, so the scrolling title reads as a label stuck
+               on the cartridge. */
+            <span
+              class="label-marquee w-full rounded-sm py-1"
+              style={`background:${p.labelBg}; color:${p.labelInk};`}
+            >
+              <span class="font-mono text-[11px] font-semibold">
                 {`${p.name}\u00a0\u00a0·\u00a0\u00a0`.repeat(4)}
               </span>
             </span>
           ) : p.title === 'extruded' ? (
             <span
               class="text-extruded text-center font-mono text-[13px] font-bold"
+              style={`color:${p.ink};`}
+            >
+              {p.name}
+            </span>
+          ) : p.title === 'wordmark' ? (
+            <span
+              class="sprite-text text-center font-mono text-[13px] font-bold"
               style={`color:${p.ink};`}
             >
               {p.name}
@@ -156,11 +184,20 @@ const programmes = [
 
     // Idle cycling is the only part that is not user-initiated, so it is
     // the only part reduced motion switches off.
+    // Each card gets its own period and start offset. With a shared
+    // interval every face flipped on the same frame, which read as one
+    // animation rather than four independent things idling.
     if (!reduce && idle.length > 1) {
-      setInterval(() => {
-        tick += 1;
-        if (level === 0) paint();
-      }, 900);
+      const period = 900 + Math.round(Math.random() * 700);
+      setTimeout(
+        () => {
+          setInterval(() => {
+            tick += 1;
+            if (level === 0) paint();
+          }, period);
+        },
+        Math.round(Math.random() * period),
+      );
     }
 
     const settle = () => {

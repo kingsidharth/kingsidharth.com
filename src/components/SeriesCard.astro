@@ -1,0 +1,36 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import DitherThumb from './DitherThumb';
+
+interface Props {
+  entry: CollectionEntry<'series'>;
+}
+
+const { entry } = Astro.props;
+const { title, detail, motif, seed, url } = entry.data;
+---
+
+<a href={url} class="group block">
+  <div class="relative aspect-video overflow-hidden rounded-md border border-chassis-edge">
+    <DitherThumb motif={motif} seed={seed} width={320} aspect="video" client:visible />
+
+    <div
+      class="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 via-40% to-black/20"
+      aria-hidden="true"
+    >
+    </div>
+
+    <span
+      class="absolute top-2 left-2 z-10 bg-contrast px-1.5 py-0.5 font-mono text-2xs text-background"
+    >
+      Series
+    </span>
+
+    <div class="absolute inset-x-0 bottom-0 z-10 p-3">
+      <h3 class="text-lg font-bold text-white transition-colors group-hover:text-primary">
+        {title}
+      </h3>
+      <p class="mt-0.5 font-mono text-xs text-white/70">{detail}</p>
+    </div>
+  </div>
+</a>

@@ -21,21 +21,25 @@ const STAR_PATH =
 
     <div class="flex flex-wrap items-end gap-x-14 gap-y-7">
       <div>
-        <p class="gauge-value text-screen-fg">1M+</p>
+        <p class="gauge-value font-semibold text-screen-fg">1M+</p>
         <p class="gauge-label text-screen-dim">taught</p>
       </div>
 
       <div>
         <p class="flex items-center gap-3">
-          <span class="gauge-value text-screen-fg">{rating}+</span>
+          <span class="gauge-value font-semibold text-screen-fg">{rating}+</span>
 
           <span class="flex gap-0.5" role="img" aria-label={`${rating} out of 5`}>
             {
               stars.map((i) => {
                 const fill = Math.min(1, Math.max(0, rating - (i - 1)));
                 return (
-                  <svg viewBox="0 0 24 24" class="size-4 shrink-0" aria-hidden="true">
-                    <path d={STAR_PATH} class="fill-screen-dim/40" />
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="size-[18px] shrink-0 drop-shadow-[1px_1px_0_rgb(0_0_0/0.55)]"
+                    aria-hidden="true"
+                  >
+                    <path d={STAR_PATH} class="fill-screen-dim/35" stroke-width="1" />
                     {fill > 0 && (
                       <path
                         d={STAR_PATH}

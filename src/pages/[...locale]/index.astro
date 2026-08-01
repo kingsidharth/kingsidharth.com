@@ -4,6 +4,7 @@ import { getCollection } from 'astro:content';
 import Base from '@/layouts/Base.astro';
 import SectionHead from '@/components/SectionHead.astro';
 import BroadcastCard from '@/components/BroadcastCard.astro';
+import SeriesCard from '@/components/SeriesCard.astro';
 import NoteRow from '@/components/NoteRow.astro';
 import WorkList from '@/components/WorkList.astro';
 import TemperatureInstrument from '@/components/instruments/TemperatureInstrument';
@@ -30,6 +31,7 @@ const broadcasts = (await getCollection('broadcasts'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
   .slice(0, 4);
 const work = (await getCollection('work')).sort((a, b) => a.data.order - b.data.order);
+const series = await getCollection('series');
 const notes = (await getLocalized('blog', locale)).slice(0, 5);
 
 ---
@@ -90,44 +92,51 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     });
   </script>
 
-  <!-- ── Work, with prompts to steal alongside it. ────────────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
-    <div class="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
-      <div>
-        <SectionHead title={t('work.title')} />
-        <WorkList entries={work} />
-        <p class="mt-6 font-mono text-xs">
-          <a href={localePath(locale, 'work')} class="text-primary hover:underline">
-            More about the work →
-          </a>
-        </p>
-      </div>
-
-      <div class="lg:sticky lg:top-24">
-        <PromptsToSteal client:visible />
-      </div>
-    </div>
-  </section>
-
-  <!-- ── Tools & Experiments, as an asymmetric bento rather than a
-         uniform grid — Temperature is the flagship. ───────────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
-    <SectionHead title={t('shelf.title')} />
-
-    <ToolsBento entries={instruments} locale={locale} />
-  </section>
-
-  <!-- ── Watch ────────────────────────────────────────────────── -->
+  <!-- ── Watch. Ahead of Work: the videos are what most people came
+         for, and the CV can wait its turn. ─────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
     <SectionHead title={t('broadcasts.title')} />
+
+    {
+      series.length > 0 && (
+        <div class="mb-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {series.map((entry) => (
+            <SeriesCard entry={entry} />
+          ))}
+        </div>
+      )
+    }
 
     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
       {broadcasts.map((entry) => <BroadcastCard entry={entry} locale={locale} />)}
     </div>
   </section>
 
-  <!-- ── Elsewhere. Sits after the videos because that is where a
-         reader who liked something goes looking for more of it. ─── -->
+  <!-- ── Prompts to steal. Its own section rather than a sidebar:
+         it is a giveaway, and a giveaway should not be a margin note. -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
+    <PromptsToSteal client:visible />
+  </section>
+
+  <!-- ── Work ─────────────────────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pb-16 sm:pb-20">
+    <SectionHead title={t('work.title')} />
+    <WorkList entries={work} />
+    <p class="mt-6 font-mono text-xs">
+      <a href={localePath(locale, 'work')} class="text-primary hover:underline">
+        More about the work →
+      </a>
+    </p>
+  </section>
+
+  <!-- ── Tools & Experiments ──────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
+    <SectionHead title={t('shelf.title')} />
+
+    <ToolsBento entries={instruments} locale={locale} />
+  </section>
+
+  <!-- ── Elsewhere ────────────────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pb-4">
     <div class="chassis relative flex flex-wrap items-center justify-between gap-6 p-6">
       <span class="screw top-2.5 left-2.5"></span>

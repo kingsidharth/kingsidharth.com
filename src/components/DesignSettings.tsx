@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 type Accent = 'amber' | 'purple' | 'pink' | 'teal' | 'cool';
 type Typeset = 'default' | 'comfortable' | 'compact';
-type Font = 'default' | 'bricolage' | 'familjen' | 'chivo' | 'spline' | 'rethink' | 'googlesans' | 'akshar' | 'strichpunkt';
+type Font = 'default' | 'bricolage' | 'familjen' | 'chivo' | 'spline' | 'rethink' | 'strichpunkt';
 type Scale = 'default' | 's' | 'l';
 type Headline = 'auto' | 'light' | 'regular' | 'bold';
 type Ligatures = 'default' | 'on' | 'off';
@@ -55,10 +55,9 @@ const FONT_OPTIONS: { value: Font; label: string; fontFamily: string | undefined
   { value: 'bricolage', label: 'Bricolage Grotesque', fontFamily: "'Bricolage Grotesque'" },
   { value: 'familjen', label: 'Familjen Grotesk', fontFamily: "'Familjen Grotesk'" },
   { value: 'chivo', label: 'Chivo', fontFamily: "'Chivo'" },
-  { value: 'spline', label: 'Spline Sans', fontFamily: "'Spline Sans'" },
+  { value: 'spline', label: 'Spline Sans (+ matching mono)', fontFamily: "'Spline Sans'" },
   { value: 'rethink', label: 'Rethink Sans', fontFamily: "'Rethink Sans'" },
-  { value: 'googlesans', label: 'Google Sans', fontFamily: "'Google Sans'" },
-  { value: 'akshar', label: 'Akshar', fontFamily: "'Akshar'" },
+
   { value: 'strichpunkt', label: 'Strichpunkt Sans', fontFamily: "'Strichpunkt Sans'" },
 ];
 
@@ -140,8 +139,7 @@ function readFont(): Font {
       stored === 'chivo' ||
       stored === 'spline' ||
       stored === 'rethink' ||
-      stored === 'googlesans' ||
-      stored === 'akshar' ||
+
       stored === 'strichpunkt'
     ) {
       return stored;

@@ -113,5 +113,25 @@ const work = defineCollection({
   }),
 });
 
-export const collections = { blog, guides, instruments, broadcasts, work };
+const collections_ = defineCollection({
+  loader: file('./src/data/collections.json'),
+  schema: z.object({
+    id: z.string(),
+    title: z.string(),
+    /** e.g. "8-part series" — what kind of thing this is. */
+    detail: z.string(),
+    motif: z.enum(['reach', 'burst', 'orb', 'tunnel', 'shards', 'grid']),
+    seed: z.number().int(),
+    url: z.string(),
+  }),
+});
+
+export const collections = {
+  blog,
+  guides,
+  instruments,
+  broadcasts,
+  work,
+  series: collections_,
+};
 export { LOCALES };

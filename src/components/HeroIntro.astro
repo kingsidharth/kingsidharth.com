@@ -40,7 +40,7 @@ const words = ['AI', 'design', 'ML', 'tech', 'startup'];
 
   <p class="mt-5 max-w-[54ch] text-lg text-muted-foreground">
     Teaching &amp; building AI products for software engineers and non-coders. 16+ years with
-    startups — Instamojo, Headout, now Outskill. Also, I am a college dropout. And I run a{' '}
+    startups — Instamojo, Headout, now Outskill. Also, I am a college dropout. I've a{' '}
     <a
       href="https://youtube.com/@kingsidharth"
       rel="noopener"
@@ -72,13 +72,20 @@ const words = ['AI', 'design', 'ML', 'tech', 'startup'];
 
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
+      // Offset from the cards next door so the headline is not changing
+      // on the same beat as everything else.
       let i = 0;
-      setInterval(() => {
-        words[i].removeAttribute('data-active');
-        i = (i + 1) % words.length;
-        words[i].setAttribute('data-active', '');
-        fit(words[i]);
-      }, 2200);
+      setTimeout(
+        () => {
+          setInterval(() => {
+            words[i].removeAttribute('data-active');
+            i = (i + 1) % words.length;
+            words[i].setAttribute('data-active', '');
+            fit(words[i]);
+          }, 2600);
+        },
+        400 + Math.round(Math.random() * 600),
+      );
     };
 
     if (document.fonts?.ready) void document.fonts.ready.then(start);
