@@ -359,7 +359,9 @@ function PromptScreen({
                 active ? 'text-screen-fg' : 'text-screen-dim',
               )}
             >
-              <span aria-hidden="true">{active ? '▸ ' : '  '}</span>
+              <span aria-hidden="true" className={cn(active && 'text-contrast')}>
+                {active ? '▸ ' : '\u00a0\u00a0'}
+              </span>
               {PROMPTS[id].label}
             </button>
           );
@@ -550,7 +552,7 @@ function DistributionScreen({
                       x={chartWidth}
                       y={-4}
                       textAnchor="end"
-                      className="fill-primary font-mono text-[11px] tabular-nums"
+                      className="fill-contrast font-mono text-[11px] tabular-nums"
                     >
                       {strategy === 'top-k'
                         ? `K = ${k}`
@@ -563,7 +565,7 @@ function DistributionScreen({
                       y2={rowHeight}
                       strokeWidth={1}
                       strokeDasharray="4 3"
-                      className="stroke-primary"
+                      className="stroke-contrast"
                     />
                   </g>
                 )}

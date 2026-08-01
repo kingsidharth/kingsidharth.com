@@ -47,10 +47,16 @@
   /* The accent hue, one level of indirection so a whole palette can be
      swapped by overriding three variables. Defaults to amber; the
      [data-accent] blocks further down replace them. */
-  --hue-500: var(--amber-500);
-  --hue-600: var(--amber-600);
-  --hue-700: var(--amber-700);
-  --hue-phosphor: var(--phosphor);
+  --hue-500: oklch(0.75 0.19 352);
+  --hue-600: oklch(0.64 0.22 353);
+  --hue-700: oklch(0.55 0.21 355);
+  --hue-phosphor: oklch(0.8 0.17 350);
+
+  /* The contrast accent. Always a different hue from the dominant one,
+     and used in only three places site-wide — indicator lamps, the
+     chart's cut line, and the active prompt marker. Sparing is the
+     point: it reads as contrast precisely because it is rationed. */
+  --contrast: oklch(0.52 0.11 195);
 
   /* Green means correct / live / running. On cream paper a vivid green
      fails contrast, so light mode gets a darker, denser one and dark
@@ -156,6 +162,8 @@
 
   --rule: oklch(0.26 0.01 62);
 
+  --contrast: oklch(0.82 0.13 190);
+
   /* Vivid on the dark bench; this is the "it works" colour. */
   --success: oklch(0.82 0.2 148);
   --success-screen: oklch(0.86 0.21 148);
@@ -198,6 +206,7 @@
   --color-well: var(--well);
   --color-success: var(--success);
   --color-success-screen: var(--success-screen);
+  --color-contrast: var(--contrast);
 
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
@@ -478,12 +487,12 @@
   }
 
   .led-on {
-    background: radial-gradient(circle at 36% 30%, color-mix(in oklch, var(--hue-500) 55%, white), var(--hue-500) 62%, var(--hue-700));
+    background: radial-gradient(circle at 36% 30%, color-mix(in oklch, var(--contrast) 55%, white), var(--contrast) 62%, color-mix(in oklch, var(--contrast) 70%, black));
     box-shadow:
       inset 0 -1px 1px rgb(0 0 0 / 0.4),
       0 0 0 1px var(--bevel-dark),
-      0 0 8px oklch(0.76 0.155 72 / 0.85),
-      0 0 16px oklch(0.76 0.155 72 / 0.45);
+      0 0 8px color-mix(in oklch, var(--contrast) 80%, transparent),
+      0 0 16px color-mix(in oklch, var(--contrast) 45%, transparent);
   }
 
   /* ── recessed channel ────────────────────────────────────────────
@@ -834,11 +843,11 @@
   --hue-phosphor: oklch(0.8 0.15 305);
 }
 
-:root[data-accent='pink'] {
-  --hue-500: oklch(0.76 0.16 350);
-  --hue-600: oklch(0.65 0.2 350);
-  --hue-700: oklch(0.55 0.2 352);
-  --hue-phosphor: oklch(0.8 0.16 350);
+:root[data-accent='amber'] {
+  --hue-500: var(--amber-500);
+  --hue-600: var(--amber-600);
+  --hue-700: var(--amber-700);
+  --hue-phosphor: var(--phosphor);
 }
 
 :root[data-accent='teal'] {
@@ -846,6 +855,12 @@
   --hue-600: oklch(0.65 0.12 194);
   --hue-700: oklch(0.53 0.11 196);
   --hue-phosphor: oklch(0.83 0.13 190);
+  /* Teal cannot contrast against itself. */
+  --contrast: oklch(0.55 0.2 352);
+}
+
+.dark[data-accent='teal'] {
+  --contrast: oklch(0.8 0.17 350);
 }
 
 :root[data-accent='cool'] {
@@ -857,7 +872,7 @@
 
 /* The cool palettes want a cooler bench and paper too, or the warm
    greys underneath fight the accent. */
-:root:is([data-accent='purple'], [data-accent='pink'], [data-accent='teal'], [data-accent='cool']) {
+:root:not([data-accent='amber']) {
   --background: oklch(0.98 0.005 265);
   --muted: oklch(0.94 0.008 265);
   --card: oklch(0.965 0.006 265);
@@ -870,7 +885,7 @@
   --border: oklch(0.87 0.008 265);
 }
 
-.dark:is([data-accent='purple'], [data-accent='pink'], [data-accent='teal'], [data-accent='cool']) {
+.dark:not([data-accent='amber']) {
   --background: oklch(0.16 0.012 275);
   --muted: oklch(0.23 0.014 275);
   --card: oklch(0.19 0.013 275);

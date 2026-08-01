@@ -21,9 +21,9 @@ const ACCENT_SWATCH: Record<Accent, string> = {
 };
 
 const ACCENT_OPTIONS: { value: Accent; label: string }[] = [
-  { value: 'amber', label: 'Amber (default)' },
+  { value: 'pink', label: 'Pink (default)' },
   { value: 'purple', label: 'Purple' },
-  { value: 'pink', label: 'Pink' },
+  { value: 'amber', label: 'Amber' },
   { value: 'teal', label: 'Teal' },
   { value: 'cool', label: 'Cool blue' },
 ];
@@ -45,13 +45,13 @@ const TYPESET_OPTIONS: { value: Typeset; label: string; description: string }[] 
 function readAccent(): Accent {
   try {
     const stored = localStorage.getItem(ACCENT_KEY);
-    if (stored === 'purple' || stored === 'pink' || stored === 'teal' || stored === 'cool') {
+    if (stored === 'purple' || stored === 'amber' || stored === 'teal' || stored === 'cool') {
       return stored;
     }
   } catch {
     /* private mode: fall back to the default */
   }
-  return 'amber';
+  return 'pink';
 }
 
 function readTypeset(): Typeset {
@@ -65,13 +65,13 @@ function readTypeset(): Typeset {
 }
 
 function applyAccent(accent: Accent) {
-  if (accent === 'amber') {
+  if (accent === 'pink') {
     document.documentElement.removeAttribute('data-accent');
   } else {
     document.documentElement.setAttribute('data-accent', accent);
   }
   try {
-    if (accent === 'amber') {
+    if (accent === 'pink') {
       localStorage.removeItem(ACCENT_KEY);
     } else {
       localStorage.setItem(ACCENT_KEY, accent);
@@ -164,7 +164,7 @@ const TABS: { id: Tab; label: string }[] = [
 export default function DesignSettings() {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('typesetting');
-  const [accent, setAccent] = useState<Accent>('amber');
+  const [accent, setAccent] = useState<Accent>('pink');
   const [typeset, setTypeset] = useState<Typeset>('default');
   const [themeMode, setThemeMode] = useState<ThemeMode>('light');
   const [mounted, setMounted] = useState(false);
