@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useId, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 /* ────────────────────────────────────────────────────────────────────
@@ -180,8 +180,32 @@ interface TapeEntry {
   probability: number;
 }
 
+/** Sanitise a `useId()` value for use inside `url(#…)` — raw ids contain
+ * `:` delimiters that are invalid there and silently fall back to black. */
+function sanitiseId(id: string): string {
+  return id.replace(/[^a-zA-Z0-9]/g, '');
+}
+
 /* ────────────────────────────────────────────────────────────────────
-   Rotary knob
+   Small hardware primitives
+   ──────────────────────────────────────────────────────────────────── */
+function Screw({ className }: { className?: string }) {
+  return <span aria-hidden="true" className={cn('screw absolute', className)} />;
+}
+
+function GaugeCell({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="gauge-value tabular-nums">{value}</span>
+      <span className="gauge-label">{label}</span>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   Rotary knob — machined dial with tick scale, knurled rim and a
+   raised cap. Interaction/keyboard logic is unchanged from the math
+   spec above; only the render is a full visual rebuild.
    ──────────────────────────────────────────────────────────────────── */
 interface TemperatureKnobProps {
   temperature: number;
@@ -191,6 +215,7 @@ interface TemperatureKnobProps {
 function TemperatureKnob({ temperature, onChange }: TemperatureKnobProps) {
   const knobRef = useRef<SVGSVGElement>(null);
   const draggingRef = useRef(false);
+  const gradientId = `knob-face-${sanitiseId(useId())}`;
 
   const angle = temperatureToAngle(temperature);
 
@@ -225,7 +250,7 @@ function TemperatureKnob({ temperature, onChange }: TemperatureKnobProps) {
 
   const handleKeyDown = (event: React.KeyboardEvent<SVGSVGElement>) => {
     const coarse = event.shiftKey;
-    let logStep = coarse ? 0.15 : 0.03;
+    const logStep = coarse ? 0.15 : 0.03;
     let delta = 0;
     if (event.key === 'ArrowRight' || event.key === 'ArrowUp') delta = 1;
     else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') delta = -1;
@@ -238,25 +263,27 @@ function TemperatureKnob({ temperature, onChange }: TemperatureKnobProps) {
     onChange(Math.exp(nextLog));
   };
 
-  const knurlCount = 32;
-  const knurls = Array.from({ length: knurlCount }, (_, i) => {
-    const deg = (360 / knurlCount) * i;
-    return deg;
-  });
+  const size = 150;
+  const cx = size / 2;
+  const cy = size / 2;
+  const radius = 54;
 
-  const ticks = [
+  // 11 ticks across the full sweep — below the current value read amber
+  // (temperature already "dialled in"), above read dim (headroom).
+  const tickCount = 11;
+  const ticks = Array.from({ length: tickCount }, (_, i) => ANGLE_MIN + (i / (tickCount - 1)) * (ANGLE_MAX - ANGLE_MIN));
+
+  const knurlCount = 48;
+  const knurls = Array.from({ length: knurlCount }, (_, i) => (360 / knurlCount) * i);
+
+  const scaleLabels = [
     { value: TEMP_MIN, label: '0.05' },
     { value: 0.32, label: '0.32' },
     { value: TEMP_MAX, label: '2.0' },
   ];
 
-  const size = 132;
-  const cx = size / 2;
-  const cy = size / 2;
-  const radius = 50;
-
   return (
-    <div className="relative mx-auto" style={{ width: size, height: size + 34 }}>
+    <div className="relative mx-auto shrink-0" style={{ width: size, height: size + 20 }}>
       <svg
         ref={knobRef}
         role="slider"
@@ -275,42 +302,47 @@ function TemperatureKnob({ temperature, onChange }: TemperatureKnobProps) {
         onPointerUp={handlePointerUp}
         onKeyDown={handleKeyDown}
       >
-        {/* Outer tick scale */}
-        {Array.from({ length: 25 }, (_, i) => i).map((i) => {
-          const deg = ANGLE_MIN + (i / 24) * (ANGLE_MAX - ANGLE_MIN);
+        <defs>
+          {/* Off-centre highlight (top-left) fading to the darkest chassis
+              tone (bottom-right) — reads as a lit, milled metal face in
+              both themes since both stops are theme tokens. */}
+          <radialGradient id={gradientId} cx="35%" cy="30%" r="80%">
+            <stop offset="0%" style={{ stopColor: 'var(--color-chassis-hi)' }} />
+            <stop offset="60%" style={{ stopColor: 'var(--color-chassis-lo)' }} />
+            <stop offset="100%" style={{ stopColor: 'var(--color-chassis-edge)' }} />
+          </radialGradient>
+        </defs>
+
+        {/* Tick scale */}
+        {ticks.map((deg) => {
           const isBelow = deg <= angle;
           const rad = (deg * Math.PI) / 180;
           const x1 = cx + Math.sin(rad) * (radius + 8);
           const y1 = cy - Math.cos(rad) * (radius + 8);
-          const x2 = cx + Math.sin(rad) * (radius + 13);
-          const y2 = cy - Math.cos(rad) * (radius + 13);
+          const x2 = cx + Math.sin(rad) * (radius + 15);
+          const y2 = cy - Math.cos(rad) * (radius + 15);
           return (
             <line
-              key={i}
+              key={deg}
               x1={x1}
               y1={y1}
               x2={x2}
               y2={y2}
-              strokeWidth={1}
-              className={isBelow ? 'stroke-accent' : 'stroke-muted-foreground/50'}
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              className={isBelow ? 'stroke-primary' : 'stroke-muted-foreground/40'}
             />
           );
         })}
 
-        {/* Knob body */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={radius}
-          className="fill-chassis-hi stroke-chassis-edge"
-          strokeWidth={1.5}
-        />
+        {/* Outer ring */}
+        <circle cx={cx} cy={cy} r={radius} className="fill-chassis-hi stroke-chassis-edge" strokeWidth={1.5} />
 
-        {/* Knurling around the rim */}
+        {/* Knurled rim */}
         {knurls.map((deg) => {
           const rad = (deg * Math.PI) / 180;
-          const x1 = cx + Math.sin(rad) * (radius - 6);
-          const y1 = cy - Math.cos(rad) * (radius - 6);
+          const x1 = cx + Math.sin(rad) * (radius - 5);
+          const y1 = cy - Math.cos(rad) * (radius - 5);
           const x2 = cx + Math.sin(rad) * (radius - 1);
           const y2 = cy - Math.cos(rad) * (radius - 1);
           return (
@@ -321,35 +353,39 @@ function TemperatureKnob({ temperature, onChange }: TemperatureKnobProps) {
               x2={x2}
               y2={y2}
               strokeWidth={1}
-              className="stroke-chassis-edge"
+              className="stroke-chassis-edge/70"
             />
           );
         })}
 
-        <circle cx={cx} cy={cy} r={radius - 10} className="fill-chassis-lo" />
+        {/* Knob face */}
+        <circle cx={cx} cy={cy} r={radius - 8} fill={`url(#${gradientId})`} stroke="var(--color-chassis-edge)" strokeWidth={1} />
 
-        {/* Pointer line */}
+        {/* Inner raised cap */}
+        <circle cx={cx} cy={cy} r={radius - 26} className="fill-chassis-hi/80 stroke-chassis-edge/60" strokeWidth={1} />
+
+        {/* Pointer */}
         <line
           x1={cx}
           y1={cy}
           x2={cx + Math.sin((angle * Math.PI) / 180) * (radius - 14)}
           y2={cy - Math.cos((angle * Math.PI) / 180) * (radius - 14)}
-          strokeWidth={2.5}
+          strokeWidth={3}
           strokeLinecap="round"
           className="stroke-primary"
         />
-        <circle cx={cx} cy={cy} r={3} className="fill-primary" />
+        <circle cx={cx} cy={cy} r={3.5} className="fill-chassis-edge" />
       </svg>
 
-      {ticks.map((tick) => {
+      {scaleLabels.map((tick) => {
         const deg = temperatureToAngle(tick.value);
         const rad = (deg * Math.PI) / 180;
-        const x = cx + Math.sin(rad) * (radius + 24);
-        const y = cy - Math.cos(rad) * (radius + 24);
+        const x = cx + Math.sin(rad) * (radius + 26);
+        const y = cy - Math.cos(rad) * (radius + 26);
         return (
           <span
             key={tick.value}
-            className="readout absolute -translate-x-1/2 -translate-y-1/2 text-[10px] text-muted-foreground"
+            className="absolute -translate-x-1/2 -translate-y-1/2 font-mono text-[10px] tabular-nums text-muted-foreground"
             style={{ left: x, top: y }}
           >
             {tick.label}
@@ -361,9 +397,9 @@ function TemperatureKnob({ temperature, onChange }: TemperatureKnobProps) {
 }
 
 /* ────────────────────────────────────────────────────────────────────
-   Rocker switch bank
+   Truncation toggle bank — vertical bat-handle switches.
    ──────────────────────────────────────────────────────────────────── */
-interface RockerBankProps {
+interface ToggleBankProps {
   mode: TruncationMode;
   onChange: (mode: TruncationMode) => void;
 }
@@ -374,9 +410,9 @@ const MODE_LABELS: { value: TruncationMode; label: string }[] = [
   { value: 'top-p', label: 'Top-p' },
 ];
 
-function RockerBank({ mode, onChange }: RockerBankProps) {
+function ToggleBank({ mode, onChange }: ToggleBankProps) {
   return (
-    <div role="group" aria-label="Truncation mode" className="flex gap-2">
+    <div role="group" aria-label="Truncation mode" className="flex justify-between gap-3">
       {MODE_LABELS.map((item) => {
         const engaged = mode === item.value;
         return (
@@ -385,16 +421,21 @@ function RockerBank({ mode, onChange }: RockerBankProps) {
             type="button"
             aria-pressed={engaged}
             onClick={() => onChange(item.value)}
-            className={cn(
-              'flex-1 rounded-md border border-chassis-edge bg-chassis-lo p-1 transition-colors',
-            )}
+            className="flex flex-1 flex-col items-center gap-2.5 focus-visible:outline-none"
           >
+            <span className="flex h-11 w-7 items-start justify-center rounded-sm border border-chassis-edge bg-chassis-lo/50 pt-1">
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'h-[34px] w-[3px] rounded-full bg-gradient-to-b from-chassis-hi to-chassis-lo shadow-[0_1px_1px_rgb(0_0_0_/_0.35)] transition-transform duration-150 ease-out motion-reduce:transition-none',
+                  engaged ? 'translate-y-2 from-primary to-primary' : 'translate-y-0',
+                )}
+              />
+            </span>
             <span
               className={cn(
-                'block rounded-sm border border-chassis-edge px-2 py-2 text-center text-2xs font-semibold uppercase tracking-wide transition-all duration-150',
-                engaged
-                  ? 'translate-y-0.5 bg-primary text-primary-foreground shadow-inner'
-                  : 'bg-chassis-hi text-muted-foreground',
+                'font-condensed text-[13px] uppercase tracking-[0.1em]',
+                engaged ? 'font-semibold text-primary' : 'text-muted-foreground',
               )}
             >
               {item.label}
@@ -407,37 +448,32 @@ function RockerBank({ mode, onChange }: RockerBankProps) {
 }
 
 /* ────────────────────────────────────────────────────────────────────
-   Bar chart
+   Bar chart — CRT readout of the sorted distribution.
    ──────────────────────────────────────────────────────────────────── */
 interface DistributionChartProps {
   scored: ScoredToken[];
-  keptCount: number;
   mode: TruncationMode;
   k: number;
   p: number;
   cutoffCumulative: number | null;
 }
 
-function DistributionChart({ scored, keptCount, mode, k, p, cutoffCumulative }: DistributionChartProps) {
-  // `useId()` returns delimiters like «r0» that are not valid inside a
-  // `url(#…)` reference — strip everything that is not alphanumeric or the
-  // fill silently falls back to black.
-  const patternId = `hatch-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+function DistributionChart({ scored, mode, k, p, cutoffCumulative }: DistributionChartProps) {
+  const idBase = sanitiseId(useId());
+  const stripeId = `stripe-${idBase}`;
+  const hatchId = `hatch-${idBase}`;
+
   const visible = scored.slice(0, CHART_ROWS);
   const remaining = scored.length - visible.length;
   const maxProb = scored[0]?.probability ?? 1;
 
-  const rowHeight = 22;
-  const labelWidth = 76;
-  const valueWidth = 56;
-  const chartWidth = 320;
-  const barMaxWidth = chartWidth - labelWidth - valueWidth;
-  const height = visible.length * rowHeight + 28;
+  const rowHeight = 24;
+  const labelWidth = 84;
+  const chartWidth = 420;
+  const barMaxWidth = chartWidth - labelWidth - 70;
+  const height = visible.length * rowHeight + 30;
 
-  const lastKeptIndex = visible.reduce(
-    (acc, t, i) => (t.kept ? i : acc),
-    -1,
-  );
+  const lastKeptIndex = visible.reduce((acc, t, i) => (t.kept ? i : acc), -1);
 
   return (
     <div className="w-full overflow-x-auto">
@@ -446,20 +482,33 @@ function DistributionChart({ scored, keptCount, mode, k, p, cutoffCumulative }: 
         viewBox={`0 0 ${chartWidth} ${height}`}
         role="img"
         aria-label="Token probability distribution"
-        className="min-w-[280px]"
+        className="min-w-[320px]"
       >
         <defs>
-          <pattern
-            id={patternId}
-            width={5}
-            height={5}
-            patternTransform="rotate(45)"
-            patternUnits="userSpaceOnUse"
-          >
+          {/* Kept bars: fine horizontal hatch over a darker amber base, so
+              the fill reads as a lined instrument-panel block, not a flat
+              rectangle. */}
+          <pattern id={stripeId} width={4} height={3} patternUnits="userSpaceOnUse">
+            <rect width={4} height={3} className="fill-primary" fillOpacity={0.32} />
+            <line x1={0} y1={0.5} x2={4} y2={0.5} strokeWidth={1} className="stroke-primary" />
+          </pattern>
+          {/* Discarded bars: dim diagonal hatch. */}
+          <pattern id={hatchId} width={5} height={5} patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
             <rect width={5} height={5} className="fill-transparent" />
-            <line x1={0} y1={0} x2={0} y2={5} strokeWidth={1.5} className="stroke-muted-foreground/60" />
+            <line x1={0} y1={0} x2={0} y2={5} strokeWidth={1} className="stroke-primary/35" />
           </pattern>
         </defs>
+
+        {/* Axis. Stops at the last row rather than at `height`, which
+            also spans the footer line beneath the chart. */}
+        <line
+          x1={labelWidth}
+          y1={0}
+          x2={labelWidth}
+          y2={visible.length * rowHeight}
+          strokeWidth={1}
+          className="stroke-primary/70"
+        />
 
         {visible.map((t, i) => {
           const y = i * rowHeight;
@@ -467,12 +516,12 @@ function DistributionChart({ scored, keptCount, mode, k, p, cutoffCumulative }: 
           return (
             <g key={t.token} transform={`translate(0, ${y})`}>
               <text
-                x={labelWidth - 6}
+                x={labelWidth - 8}
                 y={rowHeight / 2 + 4}
                 textAnchor="end"
                 className={cn(
-                  'font-mono text-[11px]',
-                  t.kept ? 'fill-foreground' : 'fill-muted-foreground',
+                  'font-mono text-[13px] tabular-nums',
+                  t.kept ? 'fill-primary' : 'fill-primary/40',
                 )}
               >
                 {t.token}
@@ -480,57 +529,39 @@ function DistributionChart({ scored, keptCount, mode, k, p, cutoffCumulative }: 
               <rect
                 x={labelWidth}
                 y={4}
-                width={barMaxWidth}
+                width={Math.max(barWidth, 0)}
                 height={rowHeight - 10}
-                className="fill-muted/40"
-              />
-              <rect
-                x={labelWidth}
-                y={4}
-                width={barWidth}
-                height={rowHeight - 10}
-                fill={t.kept ? undefined : `url(#${patternId})`}
-                className={cn(
-                  'transition-[width] duration-300 ease-out motion-reduce:transition-none',
-                  t.kept && 'fill-accent',
-                )}
+                fill={t.kept ? `url(#${stripeId})` : `url(#${hatchId})`}
+                className="transition-[width] duration-300 ease-out motion-reduce:transition-none"
               />
               <text
-                x={labelWidth + barMaxWidth + 8}
+                x={labelWidth + barWidth + 6}
                 y={rowHeight / 2 + 4}
-                className={cn(
-                  'font-mono text-[11px]',
-                  t.kept ? 'fill-foreground' : 'fill-muted-foreground',
-                )}
+                className="fill-primary/60 font-mono text-[11px] tabular-nums"
               >
                 {t.probability.toFixed(3)}
               </text>
               {i === lastKeptIndex && mode !== 'off' && (
                 <g>
+                  <text
+                    x={chartWidth}
+                    y={-4}
+                    textAnchor="end"
+                    className="fill-primary font-mono text-[11px] tabular-nums"
+                  >
+                    {mode === 'top-k'
+                      ? `K = ${k}`
+                      : `P = ${p.toFixed(2)} · Σ ${(cutoffCumulative ?? 0).toFixed(3)}`}
+                  </text>
                   <line
                     x1={0}
                     y1={rowHeight}
                     x2={chartWidth}
                     y2={rowHeight}
                     strokeWidth={1}
-                    strokeDasharray="3 3"
+                    strokeDasharray="4 3"
                     className="stroke-primary"
                   />
-                  {/* Parked at the right end of the bar track, just below
-                      the cut line. Discarded bars are short by definition,
-                      so that strip is always empty — unlike the token
-                      column on the left or the value column on the right,
-                      each of which the label would otherwise sit on top of. */}
-                  <text
-                    x={labelWidth + barMaxWidth - 4}
-                    y={rowHeight + 13}
-                    textAnchor="end"
-                    className="fill-primary font-mono text-[10px]"
-                  >
-                    {mode === 'top-k'
-                      ? `K = ${k}`
-                      : `P = ${p.toFixed(2)} · Σ ${(cutoffCumulative ?? 0).toFixed(3)}`}
-                  </text>
                 </g>
               )}
             </g>
@@ -538,15 +569,59 @@ function DistributionChart({ scored, keptCount, mode, k, p, cutoffCumulative }: 
         })}
 
         {remaining > 0 && (
-          <text
-            x={0}
-            y={height - 6}
-            className="fill-muted-foreground font-mono text-[10px]"
-          >
+          <text x={0} y={height - 6} className="fill-primary/45 font-mono text-[11px] tabular-nums">
             + {remaining} more below threshold
           </text>
         )}
       </svg>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   Fader — native range input for accessibility, with a knurled block
+   overlaid as the visual thumb sitting in an inset groove.
+   ──────────────────────────────────────────────────────────────────── */
+interface FaderProps {
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  disabled: boolean;
+  ariaLabel: string;
+  onChange: (value: number) => void;
+}
+
+function Fader({ value, min, max, step, disabled, ariaLabel, onChange }: FaderProps) {
+  const fraction = clamp((value - min) / (max - min), 0, 1);
+  return (
+    <div className="relative h-[26px] w-full">
+      <div className="groove absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 rounded-full" />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-primary/50"
+        style={{ width: `${fraction * 100}%` }}
+      />
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(Number(e.target.value))}
+        aria-label={ariaLabel}
+        className={cn(
+          'absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent disabled:cursor-not-allowed',
+          '[&::-webkit-slider-thumb]:h-[26px] [&::-webkit-slider-thumb]:w-[18px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:opacity-0',
+          '[&::-moz-range-thumb]:h-[26px] [&::-moz-range-thumb]:w-[18px] [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:opacity-0',
+        )}
+      />
+      <div
+        aria-hidden="true"
+        className="knurl pointer-events-none absolute top-1/2 h-[26px] w-[18px] -translate-y-1/2 -translate-x-1/2 rounded-sm border border-chassis-edge shadow-sm"
+        style={{ left: `${fraction * 100}%` }}
+      />
     </div>
   );
 }
@@ -584,89 +659,104 @@ export default function TemperatureInstrument() {
     );
   }, [distribution, temperature, mode]);
 
+  const latest = tape[0];
+
   return (
-    <div className="chassis w-full p-4 sm:p-5">
-      <div className="mb-4 flex items-center justify-between border-b border-rule pb-3">
-        <span className="nameplate">Temperature visualiser</span>
-        <span className="flex items-center gap-2">
-          <span
-            aria-hidden="true"
-            className="h-2 w-2 rounded-full bg-primary"
-            style={{ boxShadow: '0 0 6px var(--color-primary)' }}
-          />
-          <span className="nameplate text-muted-foreground">live</span>
+    <div className="chassis relative w-full">
+      <Screw className="left-2.5 top-2.5" />
+      <Screw className="right-2.5 top-2.5" />
+      <Screw className="bottom-2.5 left-2.5" />
+      <Screw className="bottom-2.5 right-2.5" />
+
+      {/* Header strip */}
+      <div className="panel-divider-h flex flex-wrap items-center justify-between gap-3 px-6 py-3.5 sm:px-8">
+        <span className="plaque flex items-center gap-2.5 px-3 py-1.5 text-[13px] font-semibold uppercase tracking-[0.14em]">
+          <span aria-hidden="true" className="led led-on" />
+          Next-token distribution
+        </span>
+        <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          Model — local · {CANDIDATES.length} candidates · recomputed live
         </span>
       </div>
 
-      <div className="flex flex-col gap-5 min-[820px]:flex-row">
-        <div className="flex flex-col gap-5 max-[819px]:w-full min-[820px]:w-[264px] min-[820px]:shrink-0">
-          <div className="flex flex-col items-center gap-2 rounded-md border border-border bg-card p-4">
-            <TemperatureKnob temperature={temperature} onChange={setTemperature} />
-            <span className="readout text-base">{temperature.toFixed(2)}</span>
-            <span className="nameplate text-muted-foreground">temperature</span>
+      <div className="flex flex-col min-[900px]:flex-row">
+        {/* Left control panel */}
+        <div className="flex flex-col gap-9 px-6 py-7 sm:px-8 min-[900px]:w-[370px] min-[900px]:shrink-0">
+          {/* Temperature */}
+          <div className="flex flex-col gap-4">
+            <span className="nameplate text-[13px] tracking-[0.18em]">Temperature</span>
+            <div className="flex items-center gap-6">
+              <TemperatureKnob temperature={temperature} onChange={setTemperature} />
+              <div className="flex flex-col">
+                <span className="readout-xl tabular-nums">{temperature.toFixed(2)}</span>
+                <span className="nameplate mt-1">T</span>
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2 rounded-md border border-border bg-card p-4">
-            <span className="nameplate mb-1">Truncation</span>
-            <RockerBank mode={mode} onChange={setMode} />
+          {/* Truncation */}
+          <div className="flex flex-col gap-5">
+            <span className="nameplate">Truncation</span>
+            <ToggleBank mode={mode} onChange={setMode} />
 
-            <div className={cn('mt-3 flex flex-col gap-1.5', mode === 'off' && 'opacity-40')}>
+            <div className={cn('flex flex-col gap-2 transition-opacity', mode === 'off' && 'opacity-40')}>
               <div className="flex items-center justify-between">
-                <span className="nameplate text-muted-foreground">
+                <span className="font-condensed text-[13px] uppercase tracking-[0.1em] text-muted-foreground">
                   {mode === 'top-p' ? 'p' : 'k'}
                 </span>
-                <span className="readout">
+                <span className="font-mono text-lg tabular-nums text-primary">
                   {mode === 'top-p' ? p.toFixed(2) : k}
                 </span>
               </div>
               {mode === 'top-p' ? (
-                <input
-                  type="range"
+                <Fader
+                  value={p}
                   min={0.05}
                   max={1}
                   step={0.01}
-                  value={p}
                   disabled={mode !== 'top-p'}
-                  onChange={(e) => setP(Number(e.target.value))}
-                  aria-label="Top-p threshold"
-                  className="w-full accent-primary disabled:cursor-not-allowed"
+                  ariaLabel="Top-p threshold"
+                  onChange={setP}
                 />
               ) : (
-                <input
-                  type="range"
+                <Fader
+                  value={k}
                   min={1}
                   max={20}
                   step={1}
-                  value={k}
                   disabled={mode !== 'top-k'}
-                  onChange={(e) => setK(Number(e.target.value))}
-                  aria-label="Top-k count"
-                  className="w-full accent-primary disabled:cursor-not-allowed"
+                  ariaLabel="Top-k count"
+                  onChange={setK}
                 />
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 rounded-md border border-border bg-card p-4">
-            <Readout label="entropy" value={`${distribution.entropyBits.toFixed(2)} bit`} />
-            <Readout label="kept" value={`${distribution.keptCount}`} />
-            <Readout label="top p" value={distribution.topProbability.toFixed(3)} />
-            <Readout label="discarded" value={`${distribution.discardedMassPct.toFixed(1)}%`} />
+          {/* Gauges */}
+          <div className="panel-divider-h pt-6">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+              <GaugeCell value={`${distribution.entropyBits.toFixed(2)}`} label="entropy bits" />
+              <GaugeCell value={`${distribution.keptCount}`} label="kept" />
+              <GaugeCell value={distribution.topProbability.toFixed(3)} label="p top" />
+              <GaugeCell value={`${distribution.discardedMassPct.toFixed(1)}%`} label="discarded" />
+            </div>
           </div>
-
-          <button
-            type="button"
-            onClick={handleDraw}
-            className="rounded-md border border-chassis-edge bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-transform active:translate-y-px"
-          >
-            Draw a token
-          </button>
         </div>
 
-        <div className="crt min-w-0 flex-1 p-4">
+        <div className="panel-divider-v hidden min-[900px]:block" />
+
+        {/* Right screen */}
+        <div className="crt min-w-0 flex-1 p-5 sm:p-6">
+          <p className="mb-4 font-mono text-[13px]">
+            <span className="text-screen-dim">prompt → </span>
+            <span className="text-screen-fg">the best way to learn ai is to</span>
+            <span
+              aria-hidden="true"
+              className="ml-0.5 inline-block h-[1em] w-[0.5em] translate-y-[0.15em] bg-screen-fg align-middle motion-safe:animate-pulse"
+            />
+          </p>
           <DistributionChart
             scored={distribution.scored}
-            keptCount={distribution.keptCount}
             mode={mode}
             k={k}
             p={p}
@@ -675,32 +765,26 @@ export default function TemperatureInstrument() {
         </div>
       </div>
 
-      <div className="mt-5 border-t border-rule pt-3">
-        <span className="nameplate mb-2 block text-muted-foreground">Paper tape</span>
-        {tape.length === 0 ? (
-          <p className="readout text-muted-foreground">No draws yet — pull the lever.</p>
-        ) : (
-          <ul className="flex flex-col gap-1">
-            {tape.map((entry) => (
-              <li key={entry.id} className="readout flex flex-wrap gap-3 text-xs">
-                <span className="text-muted-foreground">T={entry.temperature.toFixed(2)}</span>
-                <span className="text-muted-foreground">{entry.mode}</span>
-                <span className="font-semibold text-foreground">{entry.token}</span>
-                <span className="text-screen-fg">p={entry.probability.toFixed(3)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+      {/* Tape strip */}
+      <div className="panel-divider-h flex flex-wrap items-center justify-between gap-3 px-6 py-4 sm:px-8">
+        <span className="font-mono text-[13px] tabular-nums">
+          <span className="text-muted-foreground">Tape — </span>
+          {latest ? (
+            <span className="text-primary">
+              {latest.token} · p={latest.probability.toFixed(3)}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">no draws yet</span>
+          )}
+        </span>
+        <button
+          type="button"
+          onClick={handleDraw}
+          className="rounded-sm border border-chassis-edge bg-primary px-4 py-2 font-condensed text-[13px] font-semibold uppercase tracking-[0.12em] text-primary-foreground shadow-[inset_0_1px_0_rgb(255_255_255_/_0.25),inset_0_-1px_0_rgb(0_0_0_/_0.25)] transition-transform active:translate-y-px"
+        >
+          Draw a token
+        </button>
       </div>
-    </div>
-  );
-}
-
-function Readout({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col">
-      <span className="nameplate text-muted-foreground">{label}</span>
-      <span className="readout text-sm">{value}</span>
     </div>
   );
 }

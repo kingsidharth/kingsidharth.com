@@ -10,18 +10,22 @@ const { locale } = Astro.props;
 const t = useTranslations(locale);
 ---
 
+<!-- A slide switch sunk into the panel: recessed track, knurled slug
+     that travels and lights when the bench goes dark. -->
 <button
   type="button"
   data-theme-toggle
-  class="group relative grid h-8 w-14 shrink-0 place-items-center rounded-full border border-chassis-edge bg-linear-to-b from-chassis-hi to-chassis-lo shadow-[inset_0_1px_0_rgb(255_255_255/0.14),inset_0_-1px_2px_rgb(0_0_0/0.25)] transition-colors"
+  class="groove relative h-7 w-13 shrink-0 cursor-pointer border-0 p-0"
   aria-label={t('theme.toggle')}
   aria-pressed="false"
 >
-  <!-- The travelling slug. Reads as a physical rocker switch. -->
   <span
     data-theme-slug
-    class="pointer-events-none absolute left-1 h-6 w-6 rounded-full border border-chassis-edge bg-linear-to-b from-[oklch(0.72_0.02_80)] to-[oklch(0.5_0.02_75)] shadow-[0_1px_3px_rgb(0_0_0/0.5),inset_0_1px_0_rgb(255_255_255/0.35)] transition-transform duration-200 ease-[cubic-bezier(.3,1.4,.5,1)] dark:translate-x-6 dark:from-[var(--amber-500)] dark:to-[var(--amber-700)]"
+    class="cap pointer-events-none absolute top-1/2 left-0.5 h-6 w-6 -translate-y-1/2 rounded-full border border-chassis-edge transition-transform duration-200 ease-[cubic-bezier(.3,1.4,.5,1)] dark:translate-x-6"
   ></span>
+  <span
+    class="pointer-events-none absolute top-1/2 right-2 size-1.5 -translate-y-1/2 rounded-full bg-muted-foreground/40 transition-colors dark:bg-transparent"
+    aria-hidden="true"></span>
   <span class="sr-only" data-theme-label>{t('theme.light')}</span>
 </button>
 

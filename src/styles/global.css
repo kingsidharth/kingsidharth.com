@@ -66,14 +66,33 @@
   --ring: var(--amber-600);
   --radius: 0.25rem;
 
-  /* -- instrument hardware (the chassis, screen, screws) ----------- */
-  --chassis-hi: oklch(0.93 0.012 85);
-  --chassis-lo: oklch(0.84 0.016 82);
-  --chassis-edge: oklch(0.72 0.018 78);
+  /* -- instrument hardware -----------------------------------------
+     Light is a cream-and-graphite bench instrument: anodised panel,
+     engraved lettering, a paper-white readout under glass. */
+  --chassis-hi: oklch(0.945 0.011 85);
+  --chassis-lo: oklch(0.885 0.015 82);
+  --chassis-edge: oklch(0.76 0.018 78);
+
+  /* Bevels. `light` is the lit top edge, `dark` the shaded bottom one.
+     Every raised or recessed part is built from this pair. */
+  --bevel-light: rgb(255 255 255 / 0.9);
+  --bevel-dark: rgb(90 74 52 / 0.28);
+  --bevel-deep: rgb(70 56 38 / 0.42);
+
+  --screw-hi: oklch(0.9 0.012 85);
+  --screw-lo: oklch(0.68 0.016 78);
+  --screw-slot: oklch(0.6 0.018 76);
+
+  /* The recessed well a screen or a fader track sits inside. */
+  --well: oklch(0.855 0.016 82);
+
   --screen-bg: oklch(0.965 0.012 88);
   --screen-fg: var(--amber-700);
-  --screen-dim: oklch(0.68 0.09 70);
+  --screen-dim: oklch(0.7 0.085 70);
   --screen-glow: 0 0 0 rgb(0 0 0 / 0);
+  --screen-scanline: rgb(90 70 40 / 0.05);
+  --screen-vignette: rgb(120 96 60 / 0.16);
+
   --rule: oklch(0.88 0.014 82);
 
   color-scheme: light;
@@ -100,13 +119,27 @@
   --input: oklch(0.28 0.01 62);
   --ring: var(--amber-500);
 
-  --chassis-hi: oklch(0.32 0.012 68);
-  --chassis-lo: oklch(0.2 0.009 62);
-  --chassis-edge: oklch(0.12 0.006 55);
-  --screen-bg: oklch(0.13 0.012 155);
+  --chassis-hi: oklch(0.295 0.011 68);
+  --chassis-lo: oklch(0.185 0.008 62);
+  --chassis-edge: oklch(0.105 0.005 55);
+
+  --bevel-light: rgb(255 255 255 / 0.14);
+  --bevel-dark: rgb(0 0 0 / 0.65);
+  --bevel-deep: rgb(0 0 0 / 0.85);
+
+  --screw-hi: oklch(0.56 0.014 72);
+  --screw-lo: oklch(0.22 0.008 60);
+  --screw-slot: oklch(0.11 0.005 55);
+
+  --well: oklch(0.14 0.006 58);
+
+  --screen-bg: oklch(0.135 0.01 120);
   --screen-fg: var(--phosphor);
-  --screen-dim: oklch(0.5 0.08 72);
-  --screen-glow: 0 0 24px oklch(0.82 0.135 78 / 0.12);
+  --screen-dim: oklch(0.53 0.085 72);
+  --screen-glow: 0 0 26px oklch(0.82 0.135 78 / 0.1);
+  --screen-scanline: rgb(0 0 0 / 0.3);
+  --screen-vignette: rgb(0 0 0 / 0.62);
+
   --rule: oklch(0.26 0.01 62);
 
   color-scheme: dark;
@@ -144,6 +177,7 @@
   --color-screen: var(--screen-bg);
   --color-screen-fg: var(--screen-fg);
   --color-screen-dim: var(--screen-dim);
+  --color-well: var(--well);
 
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
@@ -277,82 +311,347 @@
    ══════════════════════════════════════════════════════════════════ */
 
 @layer components {
-  /* A milled metal panel. Reads as brushed steel in dark, as a
-     laminated card in light. */
-  .chassis {
-    background: linear-gradient(180deg, var(--color-chassis-hi) 0%, var(--color-chassis-lo) 100%);
-    border: 1px solid var(--color-chassis-edge);
-    border-radius: var(--radius-lg);
+  /* ════════════════════════════════════════════════════════════════
+     THE HARDWARE VOCABULARY
+
+     Everything here is built from one idea: light falls from above.
+     A raised part is lit on its top edge and shaded on its bottom
+     one; a recessed part is the exact inverse. Every bevel below is
+     a `--bevel-light` / `--bevel-dark` pair applied in that order,
+     which is what keeps the panel reading as a single object lit by
+     a single lamp rather than a pile of unrelated boxes.
+     ════════════════════════════════════════════════════════════════ */
+
+  /* ── screw head ──────────────────────────────────────────────────
+     A pan-head screw, lit top-left. Purely decorative, so it is
+     inert to pointers and hidden from the accessibility tree. */
+  .screw {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    pointer-events: none;
+    background:
+      /* The slot: a dark cut with a lit lip on its lower edge. Both
+         halves are required — a single dark line reads as a painted
+         mark, the lip is what makes it read as depth. */
+      linear-gradient(
+        118deg,
+        transparent 0 44%,
+        var(--screw-slot) 44% 53%,
+        var(--bevel-light) 53% 57%,
+        transparent 57% 100%
+      ),
+      radial-gradient(
+        circle at 33% 28%,
+        var(--screw-hi) 0%,
+        var(--screw-lo) 68%,
+        var(--color-chassis-edge) 100%
+      );
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.14),
-      inset 0 -1px 0 rgb(0 0 0 / 0.25),
-      0 6px 24px rgb(0 0 0 / 0.12);
+      inset 0 0 0 1px var(--bevel-dark),
+      0 1px 1px var(--bevel-dark);
+  }
+
+  /* A turned metal cap — the top of a knob, or the slug of a switch. */
+  .cap {
+    background: radial-gradient(
+      circle at 34% 27%,
+      var(--screw-hi) 0%,
+      var(--screw-lo) 72%,
+      var(--color-chassis-edge) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 var(--bevel-light),
+      inset 0 -1px 1px var(--bevel-dark),
+      0 1px 3px var(--bevel-dark);
+  }
+
+  /* ── chassis ─────────────────────────────────────────────────────
+     A milled panel. The repeating gradient is a brushed-metal grain,
+     kept far below the threshold of conscious notice — it exists to
+     stop the large flat area from banding. */
+  .chassis {
+    position: relative;
+    border-radius: 6px;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgb(255 255 255 / 0.014) 0 1px,
+        transparent 1px 3px
+      ),
+      linear-gradient(180deg, var(--color-chassis-hi) 0%, var(--color-chassis-lo) 100%);
+    border: 1px solid var(--color-chassis-edge);
+    box-shadow:
+      inset 0 1px 0 var(--bevel-light),
+      inset 1px 0 0 rgb(255 255 255 / 0.05),
+      inset -1px 0 0 var(--bevel-dark),
+      inset 0 -1px 0 var(--bevel-dark),
+      0 1px 1px rgb(0 0 0 / 0.18),
+      0 8px 22px -6px rgb(0 0 0 / 0.3),
+      0 26px 60px -18px rgb(0 0 0 / 0.35);
   }
 
   .dark .chassis {
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.09),
-      inset 0 -1px 0 rgb(0 0 0 / 0.6),
-      0 8px 28px rgb(0 0 0 / 0.5);
+      inset 0 1px 0 var(--bevel-light),
+      inset 1px 0 0 rgb(255 255 255 / 0.045),
+      inset -1px 0 0 var(--bevel-dark),
+      inset 0 -1px 0 var(--bevel-deep),
+      0 1px 1px rgb(0 0 0 / 0.5),
+      0 10px 26px -6px rgb(0 0 0 / 0.6),
+      0 30px 70px -20px rgb(0 0 0 / 0.75);
   }
 
-  /* A CRT. Scanlines and vignette only in dark — on paper it is just
-     a recessed readout, and fake scanlines on white look like dirt. */
+  /* ── engraved separators ─────────────────────────────────────────
+     A groove milled into the panel: one dark line for the cut, one
+     light line below it for the lip catching the light. */
+  .panel-divider-h {
+    border-bottom: 1px solid var(--color-chassis-edge);
+    box-shadow: 0 1px 0 var(--bevel-light);
+  }
+
+  .panel-divider-v {
+    border-right: 1px solid var(--color-chassis-edge);
+    box-shadow: 1px 0 0 var(--bevel-light);
+  }
+
+  /* ── raised nameplate ────────────────────────────────────────────
+     A metal plaque screwed onto the panel face. Raised, so it is lit
+     on top and drops a shadow onto the chassis beneath. */
+  .plaque {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 3px;
+    border: 1px solid var(--color-chassis-edge);
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--color-chassis-hi) 82%, white) 0%,
+      var(--color-chassis-lo) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 var(--bevel-light),
+      inset 0 -1px 0 var(--bevel-dark),
+      0 1px 2px var(--bevel-dark);
+  }
+
+  .dark .plaque {
+    background: linear-gradient(180deg, oklch(0.36 0.012 70) 0%, oklch(0.21 0.009 62) 100%);
+  }
+
+  /* ── indicator lamp ──────────────────────────────────────────────
+     Unlit is a dead grey bulb sunk into the panel; lit adds the
+     bloom. The inset shadow on both states is what makes it read as
+     a bulb in a hole rather than a dot painted on. */
+  .led {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--color-muted-foreground);
+    box-shadow:
+      inset 0 -1px 1px rgb(0 0 0 / 0.5),
+      inset 0 1px 1px rgb(255 255 255 / 0.25),
+      0 0 0 1px var(--bevel-dark);
+  }
+
+  .led-on {
+    background: radial-gradient(circle at 36% 30%, oklch(0.92 0.09 85), var(--amber-500) 62%, var(--amber-700));
+    box-shadow:
+      inset 0 -1px 1px rgb(0 0 0 / 0.4),
+      0 0 0 1px var(--bevel-dark),
+      0 0 8px oklch(0.76 0.155 72 / 0.85),
+      0 0 16px oklch(0.76 0.155 72 / 0.45);
+  }
+
+  /* ── recessed channel ────────────────────────────────────────────
+     Inverse bevel: dark at the top where the lip overhangs, light at
+     the bottom where the floor catches the lamp. */
+  .groove {
+    background: linear-gradient(180deg, var(--color-well) 0%, color-mix(in oklch, var(--color-well) 84%, white) 100%);
+    border-radius: 999px;
+    box-shadow:
+      inset 0 2px 4px rgb(0 0 0 / 0.45),
+      inset 0 -1px 0 var(--bevel-light),
+      0 1px 0 var(--bevel-light);
+  }
+
+  .dark .groove {
+    box-shadow:
+      inset 0 2px 5px rgb(0 0 0 / 0.9),
+      inset 0 -1px 0 rgb(255 255 255 / 0.06),
+      0 1px 0 rgb(255 255 255 / 0.05);
+  }
+
+  /* ── knurled metal ───────────────────────────────────────────────
+     The milled grip texture on a knob rim or a fader thumb. */
+  .knurl {
+    background-image:
+      repeating-linear-gradient(
+        90deg,
+        rgb(255 255 255 / 0.16) 0 1px,
+        transparent 1px 2px,
+        rgb(0 0 0 / 0.22) 2px 3px,
+        transparent 3px 4px
+      ),
+      linear-gradient(180deg, var(--screw-hi) 0%, var(--screw-lo) 55%, var(--color-chassis-edge) 100%);
+  }
+
+  /* ── the screen ──────────────────────────────────────────────────
+     Five stacked layers, outside in:
+       1. a bezel ring milled around the aperture
+       2. the hard shadow the bezel casts onto the glass
+       3. a vignette, because the phosphor is dimmer at the edges
+       4. scanlines
+       5. a diagonal sheen off the glass surface
+     Dropping any one of them is what makes a "screen" look like a
+     rectangle with a dark background. */
   .crt {
     position: relative;
     overflow: hidden;
+    border-radius: 8px;
     background: var(--color-screen);
-    border: 1px solid var(--color-chassis-edge);
-    border-radius: var(--radius-md);
     box-shadow:
-      inset 0 2px 8px rgb(0 0 0 / 0.12),
+      /* 1 — bezel band and its inner lip */
+      inset 0 0 0 5px var(--color-chassis-lo),
+      inset 0 0 0 6px var(--color-chassis-edge),
+      /* 2 — the aperture shadow falling onto the glass */
+      inset 0 8px 12px -4px rgb(0 0 0 / 0.5),
+      /* 3 — vignette */
+      inset 0 0 34px 6px var(--screen-vignette),
+      /* outer: the panel cutout */
+      0 0 0 1px var(--color-chassis-edge),
+      0 1px 0 var(--bevel-light),
       var(--screen-glow);
   }
 
   .dark .crt {
     box-shadow:
-      inset 0 0 0 5px oklch(0.12 0.006 55),
-      inset 0 0 28px rgb(0 0 0 / 0.9),
+      inset 0 0 0 5px oklch(0.155 0.007 58),
+      inset 0 0 0 6px oklch(0.09 0.004 55),
+      inset 0 8px 16px -4px rgb(0 0 0 / 0.9),
+      inset 0 0 40px 8px var(--screen-vignette),
+      0 0 0 1px oklch(0.09 0.004 55),
+      0 1px 0 var(--bevel-light),
       var(--screen-glow);
   }
 
-  .dark .crt::before {
+  /* 4 — scanlines */
+  .crt::before {
     content: '';
     position: absolute;
     inset: 0;
     z-index: 4;
     pointer-events: none;
-    background: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.26) 0 1px, transparent 1px 3px);
+    background: repeating-linear-gradient(
+      0deg,
+      var(--screen-scanline) 0 1px,
+      transparent 1px 3px
+    );
   }
 
-  .dark .crt::after {
+  /* 5 — glass sheen, plus a corner falloff the box-shadow cannot
+     reach because it is clipped by the bezel ring above. */
+  .crt::after {
     content: '';
     position: absolute;
     inset: 0;
     z-index: 5;
     pointer-events: none;
     background:
-      radial-gradient(120% 90% at 50% 50%, transparent 52%, rgb(0 0 0 / 0.55) 100%),
-      linear-gradient(122deg, rgb(255 255 255 / 0.07) 0%, transparent 42%);
+      radial-gradient(125% 95% at 50% 45%, transparent 55%, var(--screen-vignette) 100%),
+      linear-gradient(
+        122deg,
+        rgb(255 255 255 / 0.07) 0%,
+        rgb(255 255 255 / 0.02) 24%,
+        transparent 44%
+      );
   }
 
-  /* Engraved label. Condensed, spaced, small — the text on a machine,
-     never the text of an argument. */
+  /* ── the navigation bar ──────────────────────────────────────────
+     A control strip floating above the bench rather than a browser
+     chrome bar welded to the viewport edge. */
+  .navbar {
+    border-radius: 999px;
+    border: 1px solid var(--color-chassis-edge);
+    background:
+      repeating-linear-gradient(90deg, rgb(255 255 255 / 0.014) 0 1px, transparent 1px 3px),
+      linear-gradient(180deg, var(--color-chassis-hi) 0%, var(--color-chassis-lo) 100%);
+    box-shadow:
+      inset 0 1px 0 var(--bevel-light),
+      inset 0 -1px 0 var(--bevel-dark),
+      0 1px 2px rgb(0 0 0 / 0.2),
+      0 10px 28px -10px rgb(0 0 0 / 0.4);
+  }
+
+  .dark .navbar {
+    box-shadow:
+      inset 0 1px 0 var(--bevel-light),
+      inset 0 -1px 0 var(--bevel-deep),
+      0 2px 4px rgb(0 0 0 / 0.5),
+      0 14px 34px -12px rgb(0 0 0 / 0.8);
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     INSTRUMENT TYPOGRAPHY
+
+     Three voices, never mixed: condensed uppercase for anything
+     engraved on metal, mono for anything the machine measured, and
+     the sans for prose. Numbers are always tabular so a changing
+     readout does not jitter.
+     ════════════════════════════════════════════════════════════════ */
+
   .nameplate {
     font-family: var(--font-condensed);
     font-weight: 600;
-    font-size: var(--text-2xs);
-    letter-spacing: 0.16em;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+    letter-spacing: 0.17em;
     text-transform: uppercase;
     color: var(--color-muted-foreground);
   }
 
-  /* Readout text: monospace, tabular, the voice of the instrument. */
   .readout {
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     font-variant-numeric: tabular-nums;
+    letter-spacing: 0.06em;
     color: var(--color-screen-fg);
+  }
+
+  /* The headline measurement. Light weight, because at this size a
+     regular mono goes muddy. */
+  .readout-xl {
+    font-family: var(--font-mono);
+    font-weight: 300;
+    font-size: clamp(2.5rem, 4.2vw, 3.25rem);
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-foreground);
+  }
+
+  .gauge-value {
+    font-family: var(--font-mono);
+    font-weight: 300;
+    font-size: 1.875rem;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-foreground);
+  }
+
+  .gauge-label {
+    display: block;
+    margin-top: 0.4rem;
+    font-family: var(--font-condensed);
+    font-weight: 500;
+    font-size: 0.6875rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
   }
 
   .rule {
@@ -360,7 +659,10 @@
     border-top: 1px solid var(--color-rule);
   }
 
-  /* Prose — the reading surface for blog + guides. */
+  /* ════════════════════════════════════════════════════════════════
+     PROSE
+     ════════════════════════════════════════════════════════════════ */
+
   .prose-bench {
     max-width: var(--container-measure);
     font-size: var(--text-base);
@@ -453,6 +755,31 @@
 
   .prose-bench ol::marker {
     font-family: var(--font-mono);
+  }
+
+  .prose-bench table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+
+  .prose-bench th {
+    font-family: var(--font-condensed);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: left;
+    color: var(--color-muted-foreground);
+  }
+
+  .prose-bench th,
+  .prose-bench td {
+    border-bottom: 1px solid var(--color-rule);
+    padding: 0.5em 0.75em 0.5em 0;
+  }
+
+  .prose-bench td {
+    font-variant-numeric: tabular-nums;
   }
 }
 

@@ -26,31 +26,25 @@ const isCurrent = (href: string) => {
 };
 ---
 
-<header
-  class="sticky top-0 z-40 border-b border-chassis-edge bg-linear-to-b from-chassis-hi to-chassis-lo/95 backdrop-blur-sm supports-[backdrop-filter]:bg-linear-to-b"
->
+<!-- The bar floats over the bench rather than spanning the viewport,
+     so it reads as a control strip sitting on the same surface as the
+     instruments below it. -->
+<header class="sticky top-0 z-40 px-(--spacing-gutter) pt-3 pb-2">
   <nav
-    class="mx-auto flex max-w-(--container-wide) flex-wrap items-center justify-between gap-x-6 gap-y-3 px-(--spacing-gutter) py-3"
+    class="navbar relative mx-auto flex max-w-(--container-wide) flex-wrap items-center justify-between gap-x-6 gap-y-3 py-2.5 pr-3 pl-6"
     aria-label="Primary"
   >
+    <span class="screw top-1/2 left-2.5 -translate-y-1/2" aria-hidden="true"></span>
+
     <a
       href={localePath(locale)}
-      class="flex items-center gap-2.5 text-[1.0625rem] font-semibold tracking-[-0.03em]"
+      class="flex items-center gap-2.5 ps-3 text-[1.0625rem] font-semibold tracking-[-0.03em]"
     >
-      <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true" class="shrink-0">
-        <circle cx="6" cy="6" r="5.4" class="fill-chassis-hi stroke-chassis-edge" stroke-width=".8"
-        ></circle>
-        <path
-          d="M2.8 6.9 L9.2 5.1"
-          class="stroke-chassis-edge"
-          stroke-width="1.5"
-          stroke-linecap="round"></path>
-      </svg>
       Sidharth
       <span class="nameplate text-primary">instruments</span>
     </a>
 
-    <div class="flex items-center gap-5">
+    <div class="flex items-center gap-4">
       <ul class="flex flex-wrap items-center gap-x-5 gap-y-1 font-mono text-xs">
         {
           links.map((l) => (
