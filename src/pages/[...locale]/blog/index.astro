@@ -1,0 +1,54 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '@/layouts/Base.astro';
+import SectionHead from '@/components/SectionHead.astro';
+import NoteRow from '@/components/NoteRow.astro';
+import { getLocalized } from '@/lib/content';
+import { localeStaticPaths, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+export const getStaticPaths = (() => localeStaticPaths()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props as { locale: Locale };
+const t = useTranslations(locale);
+
+const notes = await getLocalized('blog', locale);
+
+// Group by year so a long archive stays scannable.
+const byYear = new Map<number, typeof notes>();
+for (const note of notes) {
+  const year = note.data.pubDate.getFullYear();
+  const bucket = byYear.get(year);
+  if (bucket) bucket.push(note);
+  else byYear.set(year, [note]);
+}
+const years = [...byYear.entries()].sort((a, b) => b[0] - a[0]);
+---
+
+<Base
+  locale={locale}
+  title={t('notes.title')}
+  description="Findings, not claims. Short notes and essays on building with AI."
+  path="blog"
+>
+  <div class="mx-auto max-w-3xl px-(--spacing-gutter) py-14">
+    <SectionHead title={t('notes.title')} sub={t('notes.sub')} glyph="note" as="h1" />
+
+    {
+      years.length === 0 && (
+        <p class="text-muted-foreground">{t('notes.empty')}</p>
+      )
+    }
+
+    {
+      years.map(([year, entries]) => (
+        <section class="mb-10">
+          <h2 class="nameplate mb-2 border-b border-rule pb-2">{year}</h2>
+          {entries.map((entry) => (
+            <NoteRow entry={entry} locale={locale} />
+          ))}
+        </section>
+      ))
+    }
+  </div>
+</Base>

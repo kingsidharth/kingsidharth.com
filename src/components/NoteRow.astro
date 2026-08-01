@@ -1,0 +1,47 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { readingTime, splitId } from '@/lib/content';
+import { formatDate, localePath, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+interface Props {
+  entry: CollectionEntry<'blog'>;
+  locale: Locale;
+}
+
+const { entry, locale } = Astro.props;
+const t = useTranslations(locale);
+const { slug } = splitId(entry.id);
+
+// TILs are short by definition — a reading time on them is noise.
+const flag = entry.data.draft
+  ? { text: t('notes.draft'), dim: true }
+  : entry.data.kind === 'til'
+    ? { text: 'TIL', dim: false }
+    : { text: `${readingTime(entry.body)} ${t('notes.readingTime')}`, dim: false };
+---
+
+<a
+  href={localePath(locale, `blog/${slug}`)}
+  class="group flex items-baseline gap-4 border-b border-rule py-3 transition-[padding,background-color] hover:bg-primary/5 hover:ps-2"
+>
+  <time
+    datetime={entry.data.pubDate.toISOString()}
+    class="w-16 shrink-0 font-mono text-xs text-muted-foreground"
+  >
+    {formatDate(entry.data.pubDate, locale, { year: undefined })}
+  </time>
+
+  <span class="min-w-0 flex-1 transition-colors group-hover:text-primary">
+    {entry.data.title}
+  </span>
+
+  <span
+    class:list={[
+      'shrink-0 font-mono text-2xs uppercase',
+      flag.dim ? 'text-muted-foreground' : 'text-primary',
+    ]}
+  >
+    {flag.text}
+  </span>
+</a>

@@ -1,0 +1,47 @@
+---
+import { localePath } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+
+const elsewhere = [
+  { href: 'https://xperiments.app', label: 'xperiments.app' },
+  { href: 'https://youtube.com/@kingsidharth', label: 'YouTube' },
+  { href: 'https://github.com/kingsidharth', label: 'GitHub' },
+  { href: 'https://huggingface.co/kingsidharth', label: 'Hugging Face' },
+  { href: 'https://x.com/kingsidharth', label: 'X' },
+];
+---
+
+<footer class="mt-24 border-t border-rule">
+  <div
+    class="mx-auto flex max-w-(--container-wide) flex-wrap justify-between gap-6 px-(--spacing-gutter) py-8 font-mono text-xs text-muted-foreground"
+  >
+    <p>Bengaluru · everything here runs in a browser tab</p>
+
+    <ul class="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <li>
+        <a href={localePath(locale, 'blog')} class="transition-colors hover:text-foreground">
+          Notes
+        </a>
+      </li>
+      {
+        elsewhere.map((l) => (
+          <li>
+            <a
+              href={l.href}
+              rel="me noopener"
+              class="transition-colors hover:text-foreground"
+            >
+              {l.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</footer>

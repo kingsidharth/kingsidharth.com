@@ -1,0 +1,40 @@
+[
+  {
+    "id": "temperature-visualiser",
+    "name": "Temperature visualiser",
+    "blurb": "Turn the knob and watch top-k and top-p disagree about the same distribution.",
+    "status": "live",
+    "version": "0.9",
+    "screen": "distribution",
+    "href": "/instruments/temperature-visualiser",
+    "figure": 1
+  },
+  {
+    "id": "agents-md-generator",
+    "name": "AGENTS.md generator",
+    "blurb": "Reads the repo, asks four questions, writes the file your agent actually obeys.",
+    "status": "beta",
+    "version": "0.2",
+    "screen": "typewriter",
+    "figure": 2
+  },
+  {
+    "id": "freshcast",
+    "name": "Freshcast",
+    "blurb": "Turns a reading list into a podcast on a schedule. Runs as an MCP server.",
+    "status": "live",
+    "version": "0.4",
+    "screen": "player",
+    "href": "https://freshcast.app",
+    "figure": 3
+  },
+  {
+    "id": "tokenizer-explorer",
+    "name": "Tokenizer explorer",
+    "blurb": "Shows where your prompt actually splits — and what that costs you.",
+    "status": "rough",
+    "version": "0.1",
+    "screen": "tokens",
+    "figure": 4
+  }
+]

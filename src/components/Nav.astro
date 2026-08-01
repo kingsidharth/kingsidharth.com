@@ -1,0 +1,76 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+import LocaleSwitcher from './LocaleSwitcher.astro';
+import { localePath, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+
+const links = [
+  { href: localePath(locale, 'broadcasts'), label: t('nav.watch') },
+  { href: localePath(locale, 'instruments'), label: t('nav.tools') },
+  { href: localePath(locale, 'guides'), label: t('nav.guides') },
+  { href: localePath(locale, 'blog'), label: t('nav.notes') },
+  { href: localePath(locale, 'about'), label: t('nav.about') },
+];
+
+const here = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isCurrent = (href: string) => {
+  const clean = href.replace(/\/$/, '') || '/';
+  return clean === '/' ? here === '/' : here === clean || here.startsWith(`${clean}/`);
+};
+---
+
+<header
+  class="sticky top-0 z-40 border-b border-chassis-edge bg-linear-to-b from-chassis-hi to-chassis-lo/95 backdrop-blur-sm supports-[backdrop-filter]:bg-linear-to-b"
+>
+  <nav
+    class="mx-auto flex max-w-(--container-wide) flex-wrap items-center justify-between gap-x-6 gap-y-3 px-(--spacing-gutter) py-3"
+    aria-label="Primary"
+  >
+    <a
+      href={localePath(locale)}
+      class="flex items-center gap-2.5 text-[1.0625rem] font-semibold tracking-[-0.03em]"
+    >
+      <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true" class="shrink-0">
+        <circle cx="6" cy="6" r="5.4" class="fill-chassis-hi stroke-chassis-edge" stroke-width=".8"
+        ></circle>
+        <path
+          d="M2.8 6.9 L9.2 5.1"
+          class="stroke-chassis-edge"
+          stroke-width="1.5"
+          stroke-linecap="round"></path>
+      </svg>
+      Sidharth
+      <span class="nameplate text-primary">instruments</span>
+    </a>
+
+    <div class="flex items-center gap-5">
+      <ul class="flex flex-wrap items-center gap-x-5 gap-y-1 font-mono text-xs">
+        {
+          links.map((l) => (
+            <li>
+              <a
+                href={l.href}
+                aria-current={isCurrent(l.href) ? 'page' : undefined}
+                class="border-b border-transparent pb-0.5 text-muted-foreground transition-colors hover:border-primary hover:text-foreground aria-[current=page]:border-primary aria-[current=page]:text-foreground"
+              >
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <div class="flex items-center gap-2.5">
+        <LocaleSwitcher locale={locale} />
+        <ThemeToggle locale={locale} />
+      </div>
+    </div>
+  </nav>
+</header>

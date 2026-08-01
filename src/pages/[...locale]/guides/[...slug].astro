@@ -1,0 +1,133 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection, render } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import { chapterNeighbours, getGuides, splitId } from '@/lib/content';
+import { LOCALES, formatDate, localeParam, localePath, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+export const getStaticPaths = (async () => {
+  const paths = [];
+
+  for (const locale of LOCALES) {
+    for (const guide of await getGuides(locale)) {
+      for (const entry of [guide.root, ...guide.chapters]) {
+        // A guide root lives at `<guide>/index.mdx` but must be served
+        // from `/guides/<guide>`, not `/guides/<guide>/index`.
+        const slug = splitId(entry.id).slug.replace(/\/index$/, '');
+        paths.push({
+          params: { locale: localeParam(locale), slug },
+          props: { entry, guide, locale },
+        });
+      }
+    }
+  }
+
+  return paths;
+}) satisfies GetStaticPaths;
+
+type Props = {
+  entry: Awaited<ReturnType<typeof getCollection<'guides'>>>[number];
+  guide: Awaited<ReturnType<typeof getGuides>>[number];
+  locale: Locale;
+};
+
+const { entry, guide, locale } = Astro.props as Props;
+const t = useTranslations(locale);
+const { Content } = await render(entry);
+
+const { prev, next } = chapterNeighbours(guide, entry);
+const chapterHref = (e: Props['entry']) =>
+  localePath(locale, `guides/${splitId(e.id).slug.replace(/\/index$/, '')}`);
+
+const isRoot = entry.data.part === 0;
+const sequence = [guide.root, ...guide.chapters];
+---
+
+<Base
+  locale={locale}
+  title={entry.data.title}
+  description={entry.data.description}
+  path={`guides/${splitId(entry.id).slug.replace(/\/index$/, '')}`}
+>
+  <div
+    class="mx-auto grid max-w-6xl gap-10 px-(--spacing-gutter) py-14 lg:grid-cols-[15rem_minmax(0,1fr)]"
+  >
+    <!-- ── Chapter rail ─────────────────────────────────────── -->
+    <nav class="lg:sticky lg:top-24 lg:self-start" aria-label={t('guides.contents')}>
+      <p class="nameplate mb-3">{t('guides.contents')}</p>
+
+      <ol class="space-y-1.5 border-s border-rule ps-3 font-mono text-xs">
+        {
+          sequence.map((chapter) => {
+            const current = chapter.id === entry.id;
+            return (
+              <li>
+                <a
+                  href={chapterHref(chapter)}
+                  aria-current={current ? 'page' : undefined}
+                  class:list={[
+                    'block transition-colors hover:text-primary',
+                    current ? 'text-primary' : 'text-muted-foreground',
+                  ]}
+                >
+                  <span class="opacity-60">{String(chapter.data.part).padStart(2, '0')}</span>{' '}
+                  {chapter.data.navLabel ?? chapter.data.title}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ol>
+    </nav>
+
+    <!-- ── Chapter body ─────────────────────────────────────── -->
+    <article class="min-w-0">
+      <header class="mb-8">
+        <p class="nameplate mb-3 flex flex-wrap gap-x-3">
+          <a href={localePath(locale, `guides/${guide.slug}`)} class="hover:text-primary">
+            {guide.root.data.title}
+          </a>
+          {!isRoot && <span class="text-primary">{t('guides.part')} {entry.data.part}</span>}
+          <time datetime={entry.data.pubDate.toISOString()}>
+            {formatDate(entry.data.pubDate, locale)}
+          </time>
+        </p>
+
+        <h1 class="text-3xl">{entry.data.title}</h1>
+        <p class="mt-3 text-lg text-muted-foreground">{entry.data.description}</p>
+      </header>
+
+      <div class="prose-bench">
+        <Content />
+      </div>
+
+      <!-- ── Prev / next ────────────────────────────────────── -->
+      {
+        (prev || next) && (
+          <nav class="mt-14 grid gap-3 border-t border-rule pt-6 sm:grid-cols-2">
+            {prev ? (
+              <a href={chapterHref(prev)} class="group chassis p-4">
+                <span class="nameplate">← {t('guides.prev')}</span>
+                <span class="mt-1 block text-sm transition-colors group-hover:text-primary">
+                  {prev.data.navLabel ?? prev.data.title}
+                </span>
+              </a>
+            ) : (
+              <span />
+            )}
+
+            {next && (
+              <a href={chapterHref(next)} class="group chassis p-4 sm:text-end">
+                <span class="nameplate">{t('guides.next')} →</span>
+                <span class="mt-1 block text-sm transition-colors group-hover:text-primary">
+                  {next.data.navLabel ?? next.data.title}
+                </span>
+              </a>
+            )}
+          </nav>
+        )
+      }
+    </article>
+  </div>
+</Base>

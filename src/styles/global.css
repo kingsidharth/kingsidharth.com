@@ -1,0 +1,476 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* Self-hosted, no external requests. Variable where available. */
+@import '@fontsource-variable/ibm-plex-sans';
+@import '@fontsource/ibm-plex-mono/300.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-sans-condensed/500.css';
+@import '@fontsource/ibm-plex-sans-condensed/600.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ══════════════════════════════════════════════════════════════════
+   PALETTE — the workbench
+   Dark  = the bench at night: warm near-black, brushed steel, amber
+           phosphor glowing off a CRT.
+   Light = the blueprint on paper: warm cream stock, graphite ink,
+           the same amber as the ink you annotate with.
+   Both share hue families so the accent never shifts identity.
+   ══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* -- raw material ------------------------------------------------ */
+  --bench-950: oklch(0.16 0.008 60);
+  --bench-900: oklch(0.19 0.009 60);
+  --bench-850: oklch(0.23 0.011 60);
+  --steel-700: oklch(0.35 0.012 70);
+  --steel-500: oklch(0.48 0.014 70);
+  --steel-300: oklch(0.64 0.014 75);
+
+  --paper-50: oklch(0.98 0.008 85);
+  --paper-100: oklch(0.955 0.012 85);
+  --paper-200: oklch(0.915 0.016 85);
+  --paper-300: oklch(0.86 0.018 82);
+
+  --ink-900: oklch(0.22 0.014 60);
+  --ink-700: oklch(0.36 0.014 62);
+  --ink-500: oklch(0.52 0.012 65);
+
+  --amber-500: oklch(0.76 0.155 72);
+  --amber-600: oklch(0.66 0.155 66);
+  --amber-700: oklch(0.55 0.145 60);
+  --phosphor: oklch(0.82 0.135 78);
+  --rust-500: oklch(0.64 0.165 42);
+
+  /* -- semantic (light is the default document) -------------------- */
+  --background: var(--paper-50);
+  --foreground: var(--ink-900);
+  --muted: var(--paper-200);
+  --muted-foreground: var(--ink-500);
+  --card: var(--paper-100);
+  --card-foreground: var(--ink-900);
+  --popover: var(--paper-50);
+  --popover-foreground: var(--ink-900);
+  --primary: var(--amber-700);
+  --primary-foreground: var(--paper-50);
+  --secondary: var(--paper-200);
+  --secondary-foreground: var(--ink-900);
+  --accent: var(--amber-600);
+  --accent-foreground: var(--ink-900);
+  --destructive: var(--rust-500);
+  --destructive-foreground: var(--paper-50);
+  --border: oklch(0.86 0.014 82);
+  --input: oklch(0.86 0.014 82);
+  --ring: var(--amber-600);
+  --radius: 0.25rem;
+
+  /* -- instrument hardware (the chassis, screen, screws) ----------- */
+  --chassis-hi: oklch(0.93 0.012 85);
+  --chassis-lo: oklch(0.84 0.016 82);
+  --chassis-edge: oklch(0.72 0.018 78);
+  --screen-bg: oklch(0.965 0.012 88);
+  --screen-fg: var(--amber-700);
+  --screen-dim: oklch(0.68 0.09 70);
+  --screen-glow: 0 0 0 rgb(0 0 0 / 0);
+  --rule: oklch(0.88 0.014 82);
+
+  color-scheme: light;
+}
+
+.dark {
+  --background: var(--bench-950);
+  --foreground: oklch(0.93 0.012 85);
+  --muted: var(--bench-850);
+  --muted-foreground: var(--steel-300);
+  --card: var(--bench-900);
+  --card-foreground: oklch(0.93 0.012 85);
+  --popover: var(--bench-900);
+  --popover-foreground: oklch(0.93 0.012 85);
+  --primary: var(--amber-500);
+  --primary-foreground: var(--bench-950);
+  --secondary: var(--bench-850);
+  --secondary-foreground: oklch(0.93 0.012 85);
+  --accent: var(--amber-500);
+  --accent-foreground: var(--bench-950);
+  --destructive: var(--rust-500);
+  --destructive-foreground: var(--bench-950);
+  --border: oklch(0.28 0.01 62);
+  --input: oklch(0.28 0.01 62);
+  --ring: var(--amber-500);
+
+  --chassis-hi: oklch(0.32 0.012 68);
+  --chassis-lo: oklch(0.2 0.009 62);
+  --chassis-edge: oklch(0.12 0.006 55);
+  --screen-bg: oklch(0.13 0.012 155);
+  --screen-fg: var(--phosphor);
+  --screen-dim: oklch(0.5 0.08 72);
+  --screen-glow: 0 0 24px oklch(0.82 0.135 78 / 0.12);
+  --rule: oklch(0.26 0.01 62);
+
+  color-scheme: dark;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   THEME — expose tokens to Tailwind utilities
+   ══════════════════════════════════════════════════════════════════ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-rule: var(--rule);
+
+  --color-chassis-hi: var(--chassis-hi);
+  --color-chassis-lo: var(--chassis-lo);
+  --color-chassis-edge: var(--chassis-edge);
+  --color-screen: var(--screen-bg);
+  --color-screen-fg: var(--screen-fg);
+  --color-screen-dim: var(--screen-dim);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+
+  --font-sans:
+    'IBM Plex Sans Variable', 'Noto Sans Devanagari Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+  --font-condensed: 'IBM Plex Sans Condensed', 'IBM Plex Sans Variable', ui-sans-serif, sans-serif;
+
+  /* ── Type scale ──────────────────────────────────────────────────
+     A 1.25 (major third) scale at text sizes, opening up to a fluid
+     display range. Tracking tightens as size grows — the correction
+     large type needs and small type must not get. */
+  --text-2xs: 0.6875rem;      /* 11px  — nameplates, dims */
+  --text-2xs--line-height: 1.35;
+  --text-2xs--letter-spacing: 0.12em;
+
+  --text-xs: 0.75rem;         /* 12px  — meta, tape */
+  --text-xs--line-height: 1.45;
+  --text-xs--letter-spacing: 0.04em;
+
+  --text-sm: 0.875rem;        /* 14px  — captions, card body */
+  --text-sm--line-height: 1.55;
+  --text-sm--letter-spacing: 0;
+
+  --text-base: 1.0625rem;     /* 17px  — body. 16 is too small for prose. */
+  --text-base--line-height: 1.65;
+  --text-base--letter-spacing: -0.003em;
+
+  --text-lg: 1.1875rem;       /* 19px  — lede */
+  --text-lg--line-height: 1.6;
+  --text-lg--letter-spacing: -0.006em;
+
+  --text-xl: 1.375rem;        /* 22px  — h3 */
+  --text-xl--line-height: 1.4;
+  --text-xl--letter-spacing: -0.012em;
+
+  --text-2xl: 1.75rem;        /* 28px  — h2 */
+  --text-2xl--line-height: 1.25;
+  --text-2xl--letter-spacing: -0.018em;
+
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 1.15;
+  --text-3xl--letter-spacing: -0.022em;
+
+  --text-4xl: 3rem;
+  --text-4xl--line-height: 1.08;
+  --text-4xl--letter-spacing: -0.028em;
+
+  --text-5xl: 3.75rem;
+  --text-5xl--line-height: 1.03;
+  --text-5xl--letter-spacing: -0.032em;
+
+  --spacing-gutter: clamp(1.25rem, 5vw, 4rem);
+  --container-measure: 68ch;
+  --container-wide: 84rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    letter-spacing: var(--text-base--letter-spacing);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  /* Headings inherit optical tracking from the scale above. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 600;
+    text-wrap: balance;
+  }
+
+  p,
+  li {
+    text-wrap: pretty;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-accent-foreground);
+  }
+
+  /* Devanagari sits optically smaller than Latin at the same px and
+     needs more leading. Correct it wherever the lang attribute says so. */
+  :lang(hi) {
+    font-size: 1.06em;
+    line-height: 1.8;
+    letter-spacing: 0;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   COMPONENT PRIMITIVES — the hardware vocabulary
+   ══════════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* A milled metal panel. Reads as brushed steel in dark, as a
+     laminated card in light. */
+  .chassis {
+    background: linear-gradient(180deg, var(--color-chassis-hi) 0%, var(--color-chassis-lo) 100%);
+    border: 1px solid var(--color-chassis-edge);
+    border-radius: var(--radius-lg);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.14),
+      inset 0 -1px 0 rgb(0 0 0 / 0.25),
+      0 6px 24px rgb(0 0 0 / 0.12);
+  }
+
+  .dark .chassis {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.09),
+      inset 0 -1px 0 rgb(0 0 0 / 0.6),
+      0 8px 28px rgb(0 0 0 / 0.5);
+  }
+
+  /* A CRT. Scanlines and vignette only in dark — on paper it is just
+     a recessed readout, and fake scanlines on white look like dirt. */
+  .crt {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-screen);
+    border: 1px solid var(--color-chassis-edge);
+    border-radius: var(--radius-md);
+    box-shadow:
+      inset 0 2px 8px rgb(0 0 0 / 0.12),
+      var(--screen-glow);
+  }
+
+  .dark .crt {
+    box-shadow:
+      inset 0 0 0 5px oklch(0.12 0.006 55),
+      inset 0 0 28px rgb(0 0 0 / 0.9),
+      var(--screen-glow);
+  }
+
+  .dark .crt::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.26) 0 1px, transparent 1px 3px);
+  }
+
+  .dark .crt::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 90% at 50% 50%, transparent 52%, rgb(0 0 0 / 0.55) 100%),
+      linear-gradient(122deg, rgb(255 255 255 / 0.07) 0%, transparent 42%);
+  }
+
+  /* Engraved label. Condensed, spaced, small — the text on a machine,
+     never the text of an argument. */
+  .nameplate {
+    font-family: var(--font-condensed);
+    font-weight: 600;
+    font-size: var(--text-2xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+
+  /* Readout text: monospace, tabular, the voice of the instrument. */
+  .readout {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-screen-fg);
+  }
+
+  .rule {
+    border: 0;
+    border-top: 1px solid var(--color-rule);
+  }
+
+  /* Prose — the reading surface for blog + guides. */
+  .prose-bench {
+    max-width: var(--container-measure);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+  }
+
+  .prose-bench > * + * {
+    margin-top: 1.15em;
+  }
+
+  .prose-bench h2 {
+    font-size: var(--text-2xl);
+    line-height: var(--text-2xl--line-height);
+    letter-spacing: var(--text-2xl--letter-spacing);
+    margin-top: 2.4em;
+    margin-bottom: 0.6em;
+  }
+
+  .prose-bench h3 {
+    font-size: var(--text-xl);
+    line-height: var(--text-xl--line-height);
+    letter-spacing: var(--text-xl--letter-spacing);
+    margin-top: 1.9em;
+    margin-bottom: 0.5em;
+  }
+
+  .prose-bench a:not(.not-prose) {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    text-decoration-color: color-mix(in oklch, var(--color-primary) 40%, transparent);
+    transition: text-decoration-color 0.15s;
+  }
+
+  .prose-bench a:not(.not-prose):hover {
+    text-decoration-color: var(--color-primary);
+  }
+
+  .prose-bench blockquote {
+    border-left: 2px solid var(--color-primary);
+    padding-left: 1.1em;
+    font-style: normal;
+    color: var(--color-muted-foreground);
+  }
+
+  .prose-bench code:not(pre code) {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    background: var(--color-muted);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  .prose-bench pre {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    padding: 1rem 1.1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    overflow-x: auto;
+  }
+
+  .prose-bench ul,
+  .prose-bench ol {
+    padding-left: 1.3em;
+  }
+
+  .prose-bench ul {
+    list-style: none;
+  }
+
+  .prose-bench ul > li {
+    position: relative;
+  }
+
+  .prose-bench ul > li::before {
+    content: '';
+    position: absolute;
+    left: -1.05em;
+    top: 0.72em;
+    width: 5px;
+    height: 1px;
+    background: var(--color-primary);
+  }
+
+  .prose-bench ol {
+    list-style: decimal;
+  }
+
+  .prose-bench ol::marker {
+    font-family: var(--font-mono);
+  }
+}
+
+/* Shiki dual-theme: follow the document theme, not the OS. */
+.dark .astro-code,
+.dark .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

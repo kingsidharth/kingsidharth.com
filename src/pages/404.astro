@@ -1,0 +1,22 @@
+---
+import Base from '@/layouts/Base.astro';
+import { DEFAULT_LOCALE, localePath, useTranslations } from '@/lib/i18n';
+
+// A static 404 cannot know the visitor's locale, so it answers in the default.
+const locale = DEFAULT_LOCALE;
+const t = useTranslations(locale);
+---
+
+<Base locale={locale} title={t('error.404.title')} description={t('error.404.body')} path="404">
+  <div class="mx-auto flex min-h-[60vh] max-w-2xl flex-col justify-center px-(--spacing-gutter)">
+    <p class="nameplate mb-4 text-primary">Error 404 · no signal</p>
+    <h1 class="text-4xl">{t('error.404.title')}</h1>
+    <p class="mt-4 text-lg text-muted-foreground">{t('error.404.body')}</p>
+
+    <p class="mt-8 font-mono text-xs">
+      <a href={localePath(locale)} class="text-primary hover:underline">
+        ← {t('error.404.home')}
+      </a>
+    </p>
+  </div>
+</Base>

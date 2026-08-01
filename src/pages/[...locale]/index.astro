@@ -1,0 +1,106 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import SectionHead from '@/components/SectionHead.astro';
+import InstrumentCard from '@/components/InstrumentCard.astro';
+import BroadcastCard from '@/components/BroadcastCard.astro';
+import NoteRow from '@/components/NoteRow.astro';
+import TemperatureInstrument from '@/components/instruments/TemperatureInstrument';
+import { getLocalized } from '@/lib/content';
+import { localePath, localeStaticPaths, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+export const getStaticPaths = (() => localeStaticPaths()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props as { locale: Locale };
+const t = useTranslations(locale);
+
+const instruments = (await getCollection('instruments')).sort(
+  (a, b) => a.data.figure - b.data.figure
+);
+const broadcasts = (await getCollection('broadcasts'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 4);
+const notes = (await getLocalized('blog', locale)).slice(0, 5);
+---
+
+<Base
+  locale={locale}
+  title="Sidharth — The Instrument Maker"
+  description="I build instruments to understand AI. Interactive tools, field notes, and long-form demonstrations from Bengaluru."
+  bareTitle
+>
+  <!-- ── Hero + Instrument 01 ─────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-12 sm:pt-16">
+    <p class="nameplate mb-5 text-primary">Instrument 01 · decoding</p>
+
+    <h1 class="max-w-[19ch] text-4xl sm:text-5xl">
+      I build instruments to understand AI.{' '}
+      <span class="text-muted-foreground">Here's one, wired open.</span>
+    </h1>
+
+    <p class="mt-5 max-w-[52ch] text-lg text-muted-foreground">
+      Temperature means nothing without the sampling strategy. Turn the knob and watch top-k and
+      top-p disagree about the same distribution.
+    </p>
+
+    <div class="mt-10">
+      <TemperatureInstrument client:visible />
+    </div>
+  </section>
+
+  <!-- ── The shelf ────────────────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
+    <SectionHead
+      title={t('shelf.title')}
+      sub={`${instruments.length} ${t('shelf.sub')}`}
+      glyph="shelf"
+    />
+
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {instruments.map((entry) => <InstrumentCard entry={entry} locale={locale} />)}
+    </div>
+
+    <!-- The board the units stand on. Purely scenographic. -->
+    <div
+      class="mt-8 h-3.5 rounded-xs bg-linear-to-b from-chassis-hi via-chassis-lo to-chassis-edge shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_8px_20px_rgb(0_0_0/0.25)]"
+      aria-hidden="true"
+    >
+    </div>
+  </section>
+
+  <!-- ── Broadcasts ───────────────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
+    <SectionHead title={t('broadcasts.title')} sub={t('broadcasts.sub')} glyph="reel" />
+
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {broadcasts.map((entry) => <BroadcastCard entry={entry} locale={locale} />)}
+    </div>
+  </section>
+
+  <!-- ── Field notes ──────────────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
+    <SectionHead title={t('notes.title')} sub={t('notes.sub')} glyph="note" />
+
+    <div class="max-w-3xl">
+      {notes.map((entry) => <NoteRow entry={entry} locale={locale} />)}
+
+      <p class="mt-5 font-mono text-xs text-muted-foreground">
+        <a href={localePath(locale, 'blog')} class="text-primary hover:underline">
+          {t('notes.all')} →
+        </a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ── About ────────────────────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
+    <p class="max-w-[32ch] text-3xl">Product builder. Sixteen years, mostly in public.</p>
+    <p class="mt-4 max-w-[50ch] text-muted-foreground">
+      I make instruments so the rest of us can see how AI actually works. Making AI useful for
+      50,000 engineers — and the rest of us. Instamojo (founding team), Headout, now product &amp;
+      design at Outskill.
+    </p>
+  </section>
+</Base>

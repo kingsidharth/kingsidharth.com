@@ -1,0 +1,50 @@
+[
+  {
+    "id": "your-job-title-is-dead",
+    "title": "Your job title is dead",
+    "series": "NP",
+    "episode": "E01",
+    "duration": "10:42",
+    "pubDate": "2025-08-01",
+    "views": 31400,
+    "url": "https://youtube.com/watch?v=placeholder-1",
+    "motif": "reach",
+    "seed": 7
+  },
+  {
+    "id": "burn-your-tools",
+    "title": "Burn your tools",
+    "series": "BT",
+    "episode": "E03",
+    "duration": "13:22",
+    "pubDate": "2025-07-25",
+    "views": 44800,
+    "url": "https://youtube.com/watch?v=placeholder-2",
+    "motif": "shards",
+    "seed": 31
+  },
+  {
+    "id": "agents-md-is-the-new-readme",
+    "title": "AGENTS.md is the new README",
+    "series": "EN",
+    "episode": "E01",
+    "duration": "12:44",
+    "pubDate": "2025-07-18",
+    "views": 33100,
+    "url": "https://youtube.com/watch?v=placeholder-3",
+    "motif": "grid",
+    "seed": 84
+  },
+  {
+    "id": "temperature-lies-to-you",
+    "title": "Temperature lies to you",
+    "series": "EN",
+    "episode": "E05",
+    "duration": "11:02",
+    "pubDate": "2025-07-04",
+    "views": 16400,
+    "url": "https://youtube.com/watch?v=placeholder-4",
+    "motif": "tunnel",
+    "seed": 52
+  }
+]

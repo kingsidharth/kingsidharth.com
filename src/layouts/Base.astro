@@ -1,0 +1,81 @@
+---
+import '@/styles/global.css';
+import ThemeScript from '@/components/ThemeScript.astro';
+import Nav from '@/components/Nav.astro';
+import Footer from '@/components/Footer.astro';
+import { DEFAULT_LOCALE, LOCALE_META, LOCALES, localePath, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  /** Path without locale prefix, e.g. `blog/evals`. Drives hreflang. */
+  path?: string;
+  /** Suppress the site-name suffix on the home page. */
+  bareTitle?: boolean;
+}
+
+const { locale, title, description, path = '', bareTitle = false } = Astro.props;
+const t = useTranslations(locale);
+
+const SITE_NAME = 'Sidharth';
+const fullTitle = bareTitle ? title : `${title} — ${SITE_NAME}`;
+const canonical = new URL(localePath(locale, path), Astro.site);
+---
+
+<!doctype html>
+<html lang={locale} dir={LOCALE_META[locale].dir} class="scroll-pt-20">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    {
+      LOCALES.map((l) => (
+        <link rel="alternate" hreflang={l} href={new URL(localePath(l, path), Astro.site)} />
+      ))
+    }
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href={new URL(localePath(DEFAULT_LOCALE, path), Astro.site)}
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={locale === 'hi' ? 'hi_IN' : 'en_GB'} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={`${SITE_NAME} — ${t('notes.title')}`}
+      href={localePath(locale, 'rss.xml')}
+    />
+
+    <ThemeScript />
+  </head>
+
+  <body class="min-h-dvh bg-background text-foreground antialiased">
+    <a
+      href="#main"
+      class="sr-only rounded-sm bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50"
+    >
+      {t('nav.skipToContent')}
+    </a>
+
+    <Nav locale={locale} />
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <Footer locale={locale} />
+  </body>
+</html>

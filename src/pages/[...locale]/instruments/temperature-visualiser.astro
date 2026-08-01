@@ -1,0 +1,49 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '@/layouts/Base.astro';
+import TemperatureInstrument from '@/components/instruments/TemperatureInstrument';
+import { localePath, localeStaticPaths, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+export const getStaticPaths = (() => localeStaticPaths()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props as { locale: Locale };
+const t = useTranslations(locale);
+---
+
+<Base
+  locale={locale}
+  title="Temperature visualiser"
+  description="Turn the knob and watch top-k and top-p disagree about the same distribution."
+  path="instruments/temperature-visualiser"
+>
+  <div class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-14">
+    <p class="nameplate mb-4">
+      <a href={localePath(locale, 'instruments')} class="hover:text-primary">
+        ← {t('shelf.title')}
+      </a>
+    </p>
+
+    <h1 class="max-w-[22ch] text-4xl">Temperature visualiser</h1>
+    <p class="mt-4 max-w-[54ch] text-lg text-muted-foreground">
+      Temperature reshapes the distribution before truncation ever looks at it. That is why a
+      top-p value quoted on its own tells you nothing.
+    </p>
+
+    <div class="mt-10">
+      <TemperatureInstrument client:load />
+    </div>
+
+    <p class="mt-8 max-w-[60ch] text-sm text-muted-foreground">
+      The logits here are hand-authored rather than sampled from a live model, so the shape is
+      stable enough to reason about. The maths — softmax, top-k, nucleus, entropy — is the same
+      code path a real sampler runs. See{' '}
+      <a
+        href={localePath(locale, 'guides/sampling/truncation')}
+        class="text-primary hover:underline"
+      >
+        the guide
+      </a>{' '}for the full explanation.
+    </p>
+  </div>
+</Base>

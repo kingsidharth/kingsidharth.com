@@ -1,0 +1,46 @@
+---
+title: Truncation — top-k, top-p, and why order matters
+description: Both cut the tail off. They disagree about where the tail starts.
+pubDate: 2025-07-12
+part: 2
+navLabel: Truncation
+tags: [sampling]
+instruments: [temperature-visualiser]
+---
+
+Once you have a distribution you still have a problem: the long tail. Thousands
+of tokens each hold a vanishing sliver of probability, and in aggregate that
+sliver is large enough to get picked. Truncation throws the tail away before
+sampling.
+
+## Top-k
+
+Keep the `k` highest-probability tokens, renormalise, sample. Simple and
+predictable — you always have exactly `k` candidates.
+
+That predictability is also the flaw. When the model is certain, `k=40` drags in
+39 tokens it had already dismissed. When the model is genuinely torn between
+sixty options, `k=40` cuts off twenty reasonable ones.
+
+## Top-p (nucleus)
+
+Keep the smallest set of tokens whose cumulative probability reaches `p`. The
+candidate count now adapts: tight distributions yield few candidates, flat ones
+yield many.
+
+## The ordering trap
+
+Temperature is applied **before** truncation. This is the detail that makes
+shared configs meaningless:
+
+| Temperature | Tokens kept at `p = 0.9` |
+| ----------- | ------------------------ |
+| 0.4         | ~3                       |
+| 0.8         | ~8                       |
+| 1.6         | ~31                      |
+
+Same `p`, same logits, an order of magnitude apart. Reporting a top-p value
+without the temperature beside it communicates nothing.
+
+Turn the knob on the [temperature visualiser](/instruments/temperature-visualiser)
+and watch the cut line move.

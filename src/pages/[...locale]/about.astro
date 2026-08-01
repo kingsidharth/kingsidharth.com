@@ -1,0 +1,31 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '@/layouts/Base.astro';
+import { localeStaticPaths, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+export const getStaticPaths = (() => localeStaticPaths()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props as { locale: Locale };
+const t = useTranslations(locale);
+---
+
+<Base
+  locale={locale}
+  title={t('nav.about')}
+  description="Product builder. Sixteen years, mostly in public. Bengaluru."
+  path="about"
+>
+  <div class="mx-auto max-w-3xl px-(--spacing-gutter) py-14">
+    <h1 class="text-4xl">Product builder. Sixteen years, mostly in public.</h1>
+
+    <div class="prose-bench mt-8">
+      <p>
+        I make instruments so the rest of us can see how AI actually works. Making AI useful for
+        50,000 engineers — and the rest of us.
+      </p>
+      <p>Instamojo (founding team), Headout, now product &amp; design at Outskill.</p>
+      <p>Bengaluru. Everything here runs in a browser tab.</p>
+    </div>
+  </div>
+</Base>

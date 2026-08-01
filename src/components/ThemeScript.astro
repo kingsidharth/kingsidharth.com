@@ -1,0 +1,20 @@
+---
+/**
+ * Runs before first paint, so the page never flashes the wrong theme.
+ * Must stay inline and un-deferred — moving it to a module or adding
+ * `defer` reintroduces the flash.
+ */
+---
+
+<script is:inline>
+  (function () {
+    try {
+      var stored = localStorage.getItem('theme');
+      var dark = stored ? stored === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.classList.toggle('dark', dark);
+      document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+    } catch (e) {
+      /* private mode: fall through to the CSS default (light) */
+    }
+  })();
+</script>

@@ -1,0 +1,64 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '@/layouts/Base.astro';
+import SectionHead from '@/components/SectionHead.astro';
+import { getGuides, splitId } from '@/lib/content';
+import { formatDate, localePath, localeStaticPaths, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+export const getStaticPaths = (() => localeStaticPaths()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props as { locale: Locale };
+const t = useTranslations(locale);
+
+const guides = await getGuides(locale);
+---
+
+<Base
+  locale={locale}
+  title={t('guides.title')}
+  description="Long explanations, in order. The pieces that are too big for a note."
+  path="guides"
+>
+  <div class="mx-auto max-w-4xl px-(--spacing-gutter) py-14">
+    <SectionHead title={t('guides.title')} sub={t('guides.sub')} glyph="book" as="h1" />
+
+    <ul class="grid gap-5 sm:grid-cols-2">
+      {
+        guides.map((guide) => (
+          <li class="chassis p-5">
+            <p class="nameplate mb-2">
+              {guide.chapters.length + 1} {t('guides.parts')} ·{' '}
+              {formatDate(guide.root.data.pubDate, locale, { day: undefined })}
+            </p>
+
+            <h2 class="text-xl">
+              <a
+                href={localePath(locale, `guides/${guide.slug}`)}
+                class="transition-colors hover:text-primary"
+              >
+                {guide.root.data.title}
+              </a>
+            </h2>
+
+            <p class="mt-2 text-sm text-muted-foreground">{guide.root.data.description}</p>
+
+            <ol class="mt-4 space-y-1 font-mono text-xs">
+              {guide.chapters.map((chapter) => (
+                <li>
+                  <a
+                    href={localePath(locale, `guides/${splitId(chapter.id).slug}`)}
+                    class="text-muted-foreground transition-colors hover:text-primary"
+                  >
+                    <span class="text-primary">{String(chapter.data.part).padStart(2, '0')}</span>{' '}
+                    {chapter.data.navLabel ?? chapter.data.title}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Base>

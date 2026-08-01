@@ -1,0 +1,90 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection, getEntry, render } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import { readingTime, splitId } from '@/lib/content';
+import { formatDate, localeParam, localePath, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+export const getStaticPaths = (async () => {
+  const entries = await getCollection('blog', ({ data }) => import.meta.env.DEV || !data.draft);
+
+  return entries.map((entry) => {
+    const { locale, slug } = splitId(entry.id);
+    return {
+      params: { locale: localeParam(locale), slug },
+      props: { entry, locale },
+    };
+  });
+}) satisfies GetStaticPaths;
+
+type Props = {
+  entry: Awaited<ReturnType<typeof getCollection<'blog'>>>[number];
+  locale: Locale;
+};
+
+const { entry, locale } = Astro.props as Props;
+const t = useTranslations(locale);
+const { Content } = await render(entry);
+const { slug } = splitId(entry.id);
+
+const related = (
+  await Promise.all(entry.data.instruments.map((ref) => getEntry(ref)))
+).filter((i) => i !== undefined);
+---
+
+<Base
+  locale={locale}
+  title={entry.data.title}
+  description={entry.data.description}
+  path={`blog/${slug}`}
+>
+  <article class="mx-auto max-w-3xl px-(--spacing-gutter) py-14">
+    <header class="mb-9">
+      <p class="nameplate mb-4 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <time datetime={entry.data.pubDate.toISOString()}>
+          {formatDate(entry.data.pubDate, locale)}
+        </time>
+        <span class="text-primary">
+          {entry.data.kind === 'til' ? 'TIL' : `${readingTime(entry.body)} ${t('notes.readingTime')}`}
+        </span>
+        {entry.data.draft && <span class="text-destructive">{t('notes.draft')}</span>}
+      </p>
+
+      <h1 class="text-4xl">{entry.data.title}</h1>
+      <p class="mt-3 text-lg text-muted-foreground">{entry.data.description}</p>
+    </header>
+
+    <div class="prose-bench">
+      <Content />
+    </div>
+
+    {
+      entry.data.updatedDate && (
+        <p class="mt-10 font-mono text-xs text-muted-foreground">
+          {t('doc.updated')} {formatDate(entry.data.updatedDate, locale)}
+        </p>
+      )
+    }
+
+    {
+      related.length > 0 && (
+        <aside class="mt-12 border-t border-rule pt-6">
+          <h2 class="nameplate mb-3">{t('doc.related')}</h2>
+          <ul class="flex flex-wrap gap-2">
+            {related.map((instrument) => (
+              <li>
+                <a
+                  href={instrument.data.href ?? localePath(locale, 'instruments')}
+                  class="inline-block rounded-xs border border-border px-2.5 py-1 font-mono text-xs transition-colors hover:border-primary hover:text-primary"
+                >
+                  {instrument.data.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )
+    }
+  </article>
+</Base>

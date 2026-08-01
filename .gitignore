@@ -44,3 +44,17 @@ dist
 node_modules
 .tmp
 Gemfile.lock
+
+# ── Astro (v7 rebuild) ────────────────────────────────────────────
+# The Jekyll-era rules above ignore `*.css` wholesale and every dotted
+# folder. Astro's stylesheets live in src/ and must be tracked, so
+# re-include them explicitly. Order matters: negations come last.
+!src/
+!src/**/*.css
+!static/
+!static/**
+
+.astro/
+.vercel/
+.netlify/
+bun.lockb.bak
