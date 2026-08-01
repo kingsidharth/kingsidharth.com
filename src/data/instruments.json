@@ -34,7 +34,7 @@
     "blurb": "How to get useful work out of a coding agent without losing the plot.",
     "status": "beta",
     "version": "0.3",
-    "screen": "typewriter",
+    "screen": "tokens",
     "figure": 4
   }
 ]

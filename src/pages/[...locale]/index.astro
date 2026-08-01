@@ -9,7 +9,8 @@ import NoteRow from '@/components/NoteRow.astro';
 import WorkList from '@/components/WorkList.astro';
 import TemperatureInstrument from '@/components/instruments/TemperatureInstrument';
 import GotchaQuiz from '@/components/instruments/GotchaQuiz';
-import HeroIntro from '@/components/HeroIntro';
+import HeroIntro from '@/components/HeroIntro.astro';
+import TeachingStats from '@/components/TeachingStats.astro';
 import PromptsToSteal from '@/components/PromptsToSteal';
 import { getLocalized } from '@/lib/content';
 import { localePath, localeStaticPaths, useTranslations } from '@/lib/i18n';
@@ -41,7 +42,7 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
          a giveaway on the right rather than an empty gutter. ────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-12 sm:pt-16">
     <div class="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
-      <HeroIntro client:visible />
+      <HeroIntro />
 
       <div class="lg:sticky lg:top-24">
         <PromptsToSteal client:visible />
@@ -79,6 +80,13 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     });
   </script>
 
+  <!-- ── Teaching, as its own band rather than a detail inside the
+         hero. Numbers this size want room around them. ─────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-20">
+    <p class="nameplate mb-6 text-primary">Teaching AI</p>
+    <TeachingStats />
+  </section>
+
   <!-- ── Work, with the challenge alongside it. The quiz gates the
          instrument further down, so it sits where a reader has just
          finished the biography and is ready to be provoked. ─────── -->
@@ -108,12 +116,7 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
       {instruments.map((entry) => <InstrumentCard entry={entry} locale={locale} />)}
     </div>
 
-    <!-- The board the units stand on. Purely scenographic. -->
-    <div
-      class="mt-8 h-3.5 rounded-xs bg-linear-to-b from-chassis-hi via-chassis-lo to-chassis-edge shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_8px_20px_rgb(0_0_0/0.25)]"
-      aria-hidden="true"
-    >
-    </div>
+
   </section>
 
   <!-- ── Watch ────────────────────────────────────────────────── -->

@@ -5,19 +5,9 @@
     "role": "Product & Design",
     "period": "Current",
     "current": true,
-    "summary": "Product and design, and teaching AI to engineers and to people who have never written code.",
+    "summary": "Edtech for modern careers and upskilling. Traditional education cannot keep pace with how fast the industry moves, so the programmes exist to close that gap. I work on product and design, and teach AI to engineers and to people who have never written code.",
     "highlights": [],
     "order": 0
-  },
-  {
-    "id": "growthschool",
-    "org": "GrowthSchool",
-    "role": "Product & Design",
-    "period": "Recent",
-    "current": true,
-    "summary": "Edtech for modern careers and upskilling. Traditional education cannot keep pace with how fast the industry moves; the programmes exist to close that gap for people starting or changing careers.",
-    "highlights": [],
-    "order": 1
   },
   {
     "id": "headout",

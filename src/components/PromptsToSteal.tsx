@@ -5,7 +5,12 @@ interface Category {
   id: string;
   /** The audience this prompt is for — shown as a small nameplate label. */
   audience: string;
-  /** What the prompt does for that audience — shown up front, no click required. */
+  /**
+   * Kept for the copy-confirmation label and the aria-label only. It is
+   * deliberately NOT rendered beside the prompt: showing a catchy title
+   * and the prompt itself says the same thing twice, and the prompt is
+   * the part worth reading.
+   */
   title: string;
   prompt: string;
 }
@@ -108,7 +113,6 @@ function PromptRow({ category }: { category: Category }) {
       <div className="flex items-baseline gap-2.5">
         <span className="nameplate shrink-0 text-muted-foreground">{category.audience}</span>
       </div>
-      <h4 className="font-sans text-lg font-semibold leading-snug text-foreground">{category.title}</h4>
 
       <div className="crt p-4 sm:p-5">
         <p
