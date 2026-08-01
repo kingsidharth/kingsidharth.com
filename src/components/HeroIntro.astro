@@ -3,24 +3,35 @@
  * Static by design. This was briefly a React island with per-item
  * write-ups behind toggles; both the toggles and the write-ups made
  * the hero work harder than an introduction should. Five lines, no JS.
+ *
+ * Balanced on purpose. A pure list of what Sidharth does read like a
+ * resume; pure benefit copy read like a landing page with nobody behind
+ * it. The headline carries the person, the list carries what you get.
  */
-const doing = [
-  'Build products',
-  'Teach AI to engineers and non-coders',
-  'Read research papers',
-  'Build visualisation and teaching tools',
-  'Help startups',
+const benefits = [
+  'See what temperature actually does — take the sampler apart',
+  'Steal prompts that work, sorted by what you do',
+  'Test what you think you know, in one question',
+  'Read papers already annotated, with what held up',
+  'Get help with fine-tuning, agents and cost control',
 ];
 ---
 
 <div class="flex w-full min-w-0 flex-col">
   <p class="nameplate text-primary">Bengaluru</p>
 
-  <h1 class="mt-3 text-4xl sm:text-5xl">I'm Sidharth. I:</h1>
+  <h1 class="mt-3 max-w-[20ch] text-4xl sm:text-5xl">
+    I'm Sidharth. I'll show you how AI actually behaves.
+  </h1>
 
-  <ul class="mt-7 space-y-3 text-xl sm:text-2xl">
+  <p class="mt-4 max-w-[54ch] text-lg text-muted-foreground">
+    Not how it's described — how it behaves when you turn the knobs. I teach this for a living, to
+    engineers and to people who have never written a line of code.
+  </p>
+
+  <ul class="mt-7 space-y-3 text-lg sm:text-xl">
     {
-      doing.map((item) => (
+      benefits.map((item) => (
         <li class="flex gap-3.5">
           <span class="mt-[0.62em] h-px w-4 shrink-0 bg-primary" aria-hidden="true" />
           <span>{item}</span>
@@ -29,9 +40,8 @@ const doing = [
     }
   </ul>
 
-  <p class="mt-8 max-w-[52ch] text-muted-foreground">
-    16+ years working with startups. Currently at Outskill; before that Headout, Instamojo and
-    more. I also run a{' '}
+  <p class="mt-8 max-w-[52ch] text-sm text-muted-foreground">
+    16+ years with startups — Instamojo, Headout, now Outskill. I also run a{' '}
     <a
       href="https://youtube.com/@kingsidharth"
       rel="noopener"

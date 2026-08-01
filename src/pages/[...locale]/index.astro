@@ -3,7 +3,6 @@ import type { GetStaticPaths } from 'astro';
 import { getCollection } from 'astro:content';
 import Base from '@/layouts/Base.astro';
 import SectionHead from '@/components/SectionHead.astro';
-import InstrumentCard from '@/components/InstrumentCard.astro';
 import BroadcastCard from '@/components/BroadcastCard.astro';
 import NoteRow from '@/components/NoteRow.astro';
 import WorkList from '@/components/WorkList.astro';
@@ -11,6 +10,8 @@ import TemperatureInstrument from '@/components/instruments/TemperatureInstrumen
 import GotchaQuiz from '@/components/instruments/GotchaQuiz';
 import HeroIntro from '@/components/HeroIntro.astro';
 import TeachingStats from '@/components/TeachingStats.astro';
+import ToolsBento from '@/components/ToolsBento.astro';
+import SocialLinks from '@/components/SocialLinks.astro';
 import PromptsToSteal from '@/components/PromptsToSteal';
 import { getLocalized } from '@/lib/content';
 import { localePath, localeStaticPaths, useTranslations } from '@/lib/i18n';
@@ -39,13 +40,22 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
   bareTitle
 >
   <!-- ── Hero. Two columns on desktop: the introduction on the left,
-         a giveaway on the right rather than an empty gutter. ────── -->
+         and Teaching + Challenge as one attached instrument on the
+         right — vertically middle-aligned against the intro rather
+         than top-aligned, which is what makes them read as a pair. ── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-12 sm:pt-16">
-    <div class="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
+    <div class="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
       <HeroIntro />
 
-      <div class="lg:sticky lg:top-24">
-        <PromptsToSteal client:visible />
+      <div class="chassis relative w-full">
+        <span aria-hidden="true" class="screw absolute left-2.5 top-2.5"></span>
+        <span aria-hidden="true" class="screw absolute right-2.5 top-2.5"></span>
+        <span aria-hidden="true" class="screw absolute bottom-2.5 left-2.5"></span>
+        <span aria-hidden="true" class="screw absolute bottom-2.5 right-2.5"></span>
+
+        <TeachingStats />
+        <div class="panel-divider-h"></div>
+        <GotchaQuiz embedded client:visible />
       </div>
     </div>
   </section>
@@ -80,16 +90,8 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     });
   </script>
 
-  <!-- ── Teaching, as its own band rather than a detail inside the
-         hero. Numbers this size want room around them. ─────────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-20">
-    <p class="nameplate mb-6 text-primary">Teaching AI</p>
-    <TeachingStats />
-  </section>
-
-  <!-- ── Work, with the challenge alongside it. The quiz gates the
-         instrument further down, so it sits where a reader has just
-         finished the biography and is ready to be provoked. ─────── -->
+  <!-- ── Work, with prompts to steal alongside it. Teaching + the
+         challenge now live in the hero, attached as one unit. ────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
     <div class="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
       <div>
@@ -103,20 +105,17 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
       </div>
 
       <div class="lg:sticky lg:top-24">
-        <GotchaQuiz client:visible />
+        <PromptsToSteal client:visible />
       </div>
     </div>
   </section>
 
-  <!-- ── Tools & Experiments ──────────────────────────────────── -->
+  <!-- ── Tools & Experiments, as an asymmetric bento rather than a
+         uniform grid — Temperature is the flagship. ───────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
     <SectionHead title={t('shelf.title')} />
 
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-      {instruments.map((entry) => <InstrumentCard entry={entry} locale={locale} />)}
-    </div>
-
-
+    <ToolsBento entries={instruments} locale={locale} />
   </section>
 
   <!-- ── Watch ────────────────────────────────────────────────── -->
@@ -125,6 +124,26 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
 
     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
       {broadcasts.map((entry) => <BroadcastCard entry={entry} locale={locale} />)}
+    </div>
+  </section>
+
+  <!-- ── Elsewhere. Sits after the videos because that is where a
+         reader who liked something goes looking for more of it. ─── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pb-4">
+    <div class="chassis relative flex flex-wrap items-center justify-between gap-6 p-6">
+      <span class="screw top-2.5 left-2.5"></span>
+      <span class="screw top-2.5 right-2.5"></span>
+      <span class="screw bottom-2.5 left-2.5"></span>
+      <span class="screw bottom-2.5 right-2.5"></span>
+
+      <div>
+        <p class="nameplate">Elsewhere</p>
+        <p class="mt-1.5 text-sm text-muted-foreground">
+          More of the same, on other people's platforms.
+        </p>
+      </div>
+
+      <SocialLinks variant="tile" class="max-w-[22rem] flex-1" />
     </div>
   </section>
 

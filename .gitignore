@@ -58,3 +58,4 @@ Gemfile.lock
 .vercel/
 .netlify/
 bun.lockb.bak
+static/fonts

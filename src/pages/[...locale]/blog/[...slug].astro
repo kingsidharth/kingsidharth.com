@@ -46,7 +46,7 @@ const related = (
           {formatDate(entry.data.pubDate, locale)}
         </time>
         <span class="text-primary">
-          {entry.data.kind === 'til' ? 'TIL' : `${readingTime(entry.body)} ${t('notes.readingTime')}`}
+          {entry.data.kind === 'til' ? 'Til' : `${readingTime(entry.body)} ${t('notes.readingTime')}`}
         </span>
         {entry.data.draft && <span class="text-destructive">{t('notes.draft')}</span>}
       </p>

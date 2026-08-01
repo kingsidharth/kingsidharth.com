@@ -308,7 +308,7 @@ function ToggleBank({ strategy, onChange }: ToggleBankProps) {
             </span>
             <span
               className={cn(
-                'font-condensed text-[13px] uppercase tracking-[0.1em]',
+                'font-condensed text-[13px]',
                 engaged ? 'font-semibold text-primary' : 'text-muted-foreground',
               )}
             >
@@ -344,7 +344,7 @@ function PromptScreen({
   const prompt = PROMPTS[promptId];
   return (
     <div className="crt flex min-h-[130px] flex-col gap-3 p-4 sm:p-5">
-      <span className="nameplate text-screen-dim text-[11px] tracking-[0.18em]">Prompt</span>
+      <span className="nameplate text-screen-dim text-[11px]">Prompt</span>
       <div role="group" aria-label="Prompt" className="flex flex-wrap gap-x-5 gap-y-1">
         {PROMPT_ORDER.map((id) => {
           const active = id === promptId;
@@ -355,7 +355,7 @@ function PromptScreen({
               aria-pressed={active}
               onClick={() => onChange(id)}
               className={cn(
-                'font-mono text-[13px] tracking-[0.02em] focus-visible:outline-none',
+                'font-mono text-[13px] focus-visible:outline-none',
                 active ? 'text-screen-fg' : 'text-screen-dim',
               )}
             >
@@ -396,7 +396,7 @@ function PromptScreen({
         <button
           type="button"
           onClick={onDraw}
-          className="shrink-0 whitespace-nowrap rounded-sm border border-screen-fg/50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-screen-fg transition-transform hover:border-screen-fg hover:bg-screen-fg/10 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-screen-fg active:translate-y-px"
+          className="shrink-0 whitespace-nowrap rounded-sm border border-screen-fg/50 px-2.5 py-1 font-mono text-[11px] text-screen-fg transition-transform hover:border-screen-fg hover:bg-screen-fg/10 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-screen-fg active:translate-y-px"
         >
           <span className="hidden sm:inline">Draw again</span>
           <span className="sm:hidden">Draw</span>
@@ -723,11 +723,11 @@ export default function TemperatureInstrument() {
 
       {/* Header strip */}
       <div className="panel-divider-h flex flex-wrap items-center justify-between gap-3 px-6 py-3.5 sm:px-8">
-        <span className="plaque flex items-center gap-2.5 px-3 py-1.5 text-[13px] font-semibold uppercase tracking-[0.14em]">
+        <span className="plaque flex items-center gap-2.5 px-3 py-1.5 text-[13px] font-semibold">
           <span aria-hidden="true" className="led led-on" />
           Next-token distribution
         </span>
-        <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        <span className="font-mono text-[11px] text-muted-foreground">
           Model — local · {PROMPTS[promptId].candidates.length} candidates · recomputed live
         </span>
       </div>
@@ -737,7 +737,7 @@ export default function TemperatureInstrument() {
         <div className="flex min-w-0 w-full flex-col gap-9 px-6 py-7 sm:px-8 min-[900px]:w-[370px] min-[900px]:shrink-0">
           {/* Temperature */}
           <div className="flex flex-col gap-4">
-            <span className="nameplate text-[13px] tracking-[0.18em]">Temperature</span>
+            <span className="nameplate text-[13px]">Temperature</span>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <TemperatureKnob temperature={temperature} onChange={setTemperature} />
               <div className="flex min-w-0 flex-col">
@@ -754,7 +754,7 @@ export default function TemperatureInstrument() {
 
             <div className={cn('flex flex-col gap-2 transition-opacity', strategy === 'greedy' && 'opacity-40')}>
               <div className="flex items-center justify-between">
-                <span className="font-condensed text-[13px] uppercase tracking-[0.1em] text-muted-foreground">
+                <span className="font-condensed text-[13px] text-muted-foreground">
                   {strategy === 'greedy' ? 'n/a' : strategy === 'top-p' ? 'p' : 'k'}
                 </span>
                 <span className="font-mono text-lg tabular-nums text-primary">

@@ -6,10 +6,10 @@ interface Category {
   /** The audience this prompt is for — shown as a small nameplate label. */
   audience: string;
   /**
-   * Kept for the copy-confirmation label and the aria-label only. It is
-   * deliberately NOT rendered beside the prompt: showing a catchy title
-   * and the prompt itself says the same thing twice, and the prompt is
-   * the part worth reading.
+   * A benefit, not a restatement. An earlier pass showed a title that
+   * merely described the prompt, which said the same thing twice; these
+   * say what you get, so they sit beside the prompt rather than
+   * duplicating it.
    */
   title: string;
   prompt: string;
@@ -19,34 +19,34 @@ const CATEGORIES: Category[] = [
   {
     id: 'anyone',
     audience: 'Anyone',
-    title: 'Find your blind spot',
+    title: 'Unlock the power of you + AI',
     prompt: 'What superpower am I not using?',
   },
   {
     id: 'founders',
     audience: 'Founders',
-    title: 'Pitch it to a sceptic',
+    title: 'Ship to customers, fast',
     prompt:
       "Act as a sceptical investor. Read my landing page copy and list the three claims you don't believe, and exactly what evidence would change your mind.",
   },
   {
     id: 'designers',
     audience: 'Designers',
-    title: 'Watch a stranger use it',
+    title: 'Use AI for design',
     prompt:
       "Here's my screen. Describe what a first-time user would try to do first, and where they'd hesitate. Don't suggest fixes yet — just tell me what you see.",
   },
   {
     id: 'pms',
     audience: 'PMs',
-    title: 'Turn a request into evals',
+    title: 'Manage AI products',
     prompt:
       'Turn this feature request into three eval cases with pass/fail criteria a junior could apply without asking me anything.',
   },
   {
     id: 'engineers',
     audience: 'Engineers',
-    title: 'Write the handover note',
+    title: 'AI can write better code. Promise.',
     prompt:
       'Explain what this code does to whoever maintains it after I leave. Then list the three things most likely to break it.',
   },
@@ -178,7 +178,7 @@ export default function PromptsToSteal() {
       <Screw className="right-2.5 top-2.5" />
 
       <div className="panel-divider-h flex items-center gap-3 px-6 py-3.5 sm:px-8">
-        <span className="plaque flex items-center gap-2.5 px-3 py-1.5 text-[13px] font-semibold uppercase tracking-[0.14em]">
+        <span className="plaque flex items-center gap-2.5 px-3 py-1.5 text-[13px] font-semibold">
           <span aria-hidden="true" className="led led-on" />
           Prompts
         </span>

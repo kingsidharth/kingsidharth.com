@@ -33,7 +33,13 @@ function optionLetter(index: number): string {
   return String.fromCharCode(65 + index);
 }
 
-export default function GotchaQuiz() {
+interface GotchaQuizProps {
+  /** When true, renders only the inner content — no `.chassis`, screws,
+   * or outer rounding — so a parent panel can supply the enclosure. */
+  embedded?: boolean;
+}
+
+export default function GotchaQuiz({ embedded = false }: GotchaQuizProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const [wrongTried, setWrongTried] = useState<Set<string>>(new Set());
   const [revealed, setRevealed] = useState(false);
@@ -72,22 +78,19 @@ export default function GotchaQuiz() {
   const correctOption = OPTIONS.find((o) => o.correct)!;
   const answeredCorrectly = revealed && selected === correctOption.id;
 
-  return (
-    <div ref={rootRef} className="chassis relative w-full" data-revealed={revealed ? 'true' : undefined}>
-      <Screw className="left-2.5 top-2.5" />
-      <Screw className="right-2.5 top-2.5" />
-
-      {/* Header strip */}
-      <div className="panel-divider-h flex items-center gap-3 px-6 py-3.5 sm:px-8">
-        <span className="plaque flex items-center gap-2.5 px-3 py-1.5 text-[13px] font-semibold uppercase tracking-[0.14em]">
-          <span aria-hidden="true" className={cn('led', revealed && 'led-on')} />
-          Challenge
-        </span>
+  const content = (
+    <>
+      {/* No badge. The panel this sits in already announces itself, and a
+          plaque on top of that is furniture for its own sake. The lamp
+          stays: it is the one thing here carrying state. */}
+      <div className="panel-divider-h flex items-center gap-3 px-6 py-3 sm:px-8">
+        <span aria-hidden="true" className={cn('led', revealed && 'led-on')} />
+        <span className="nameplate text-[11px]">Challenge</span>
       </div>
 
       <div className="flex flex-col gap-6 px-6 py-7 sm:px-8">
         <div className="flex flex-col gap-2">
-          <span className="nameplate text-[11px] tracking-[0.18em] text-muted-foreground">
+          <span className="nameplate text-[11px] text-muted-foreground">
             Do you understand AI?
           </span>
           <h3 className="text-balance font-sans text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
@@ -174,7 +177,7 @@ export default function GotchaQuiz() {
           <div className="crt flex flex-col gap-2 p-4 sm:p-5">
             <span
               className={cn(
-                'nameplate text-[11px] tracking-[0.18em]',
+                'nameplate text-[11px]',
                 answeredCorrectly ? 'text-success-screen' : 'text-screen-dim',
               )}
             >
@@ -196,6 +199,22 @@ export default function GotchaQuiz() {
           </div>
         )}
       </div>
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div ref={rootRef} className="relative w-full" data-revealed={revealed ? 'true' : undefined}>
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <div ref={rootRef} className="chassis relative w-full" data-revealed={revealed ? 'true' : undefined}>
+      <Screw className="left-2.5 top-2.5" />
+      <Screw className="right-2.5 top-2.5" />
+      {content}
     </div>
   );
 }

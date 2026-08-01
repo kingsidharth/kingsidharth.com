@@ -1,8 +1,13 @@
 ---
 /**
- * The teaching numbers, lifted out of the hero into their own band.
- * Static — the star row is five paths with a clip on the fractional
- * one, so a 4.5 reads as four and a half rather than rounding to five.
+ * The teaching numbers, rendered as a readout rather than as page text —
+ * they are measurements, so they belong behind glass like every other
+ * measurement on this site. No plaque: the panel it sits in already
+ * says what it is, and a badge on top of that is furniture for its own
+ * sake.
+ *
+ * The star row clips the fractional star instead of rounding, so 4.5
+ * reads as four and a half.
  */
 const rating = 4.5;
 const stars = [1, 2, 3, 4, 5];
@@ -11,36 +16,42 @@ const STAR_PATH =
   'M12 2.6l2.9 5.9 6.5.95-4.7 4.58 1.11 6.47L12 17.45l-5.81 3.05 1.11-6.47-4.7-4.58 6.5-.95z';
 ---
 
-<div class="flex flex-wrap items-end gap-x-16 gap-y-8">
-  <div>
-    <p class="gauge-value">1M+</p>
-    <p class="gauge-label">learners taught</p>
-  </div>
+<div class="p-5 sm:p-6">
+  <div class="crt px-6 py-7">
+    <p class="readout mb-5 text-screen-dim">teaching · cumulative</p>
 
-  <div>
-    <p class="flex items-center gap-3">
-      <span class="gauge-value">{rating}+/5</span>
+    <div class="flex flex-wrap items-end gap-x-14 gap-y-7">
+      <div>
+        <p class="gauge-value text-screen-fg">1M+</p>
+        <p class="gauge-label text-screen-dim">learners taught</p>
+      </div>
 
-      <span class="flex gap-0.5" role="img" aria-label={`${rating} out of 5`}>
-        {
-          stars.map((i) => {
-            const fill = Math.min(1, Math.max(0, rating - (i - 1)));
-            return (
-              <svg viewBox="0 0 24 24" class="size-4 shrink-0" aria-hidden="true">
-                <path d={STAR_PATH} class="fill-muted-foreground/30" />
-                {fill > 0 && (
-                  <path
-                    d={STAR_PATH}
-                    class="fill-primary"
-                    clip-path={`inset(0 ${(1 - fill) * 100}% 0 0)`}
-                  />
-                )}
-              </svg>
-            );
-          })
-        }
-      </span>
-    </p>
-    <p class="gauge-label">average rating</p>
+      <div>
+        <p class="flex items-center gap-3">
+          <span class="gauge-value text-screen-fg">{rating}+/5</span>
+
+          <span class="flex gap-0.5" role="img" aria-label={`${rating} out of 5`}>
+            {
+              stars.map((i) => {
+                const fill = Math.min(1, Math.max(0, rating - (i - 1)));
+                return (
+                  <svg viewBox="0 0 24 24" class="size-4 shrink-0" aria-hidden="true">
+                    <path d={STAR_PATH} class="fill-screen-dim/40" />
+                    {fill > 0 && (
+                      <path
+                        d={STAR_PATH}
+                        class="fill-screen-fg"
+                        clip-path={`inset(0 ${(1 - fill) * 100}% 0 0)`}
+                      />
+                    )}
+                  </svg>
+                );
+              })
+            }
+          </span>
+        </p>
+        <p class="gauge-label text-screen-dim">average rating</p>
+      </div>
+    </div>
   </div>
 </div>

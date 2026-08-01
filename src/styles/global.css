@@ -156,7 +156,9 @@
   --screen-bg: oklch(0.135 0.01 120);
   --screen-fg: var(--hue-phosphor);
   --screen-dim: oklch(0.53 0.085 72);
-  --screen-glow: 0 0 26px oklch(0.82 0.135 78 / 0.1);
+  /* The aperture does not glow — only the phosphor text does. A
+     bloom on the whole panel reads as a light leak, not a screen. */
+  --screen-glow: 0 0 0 rgb(0 0 0 / 0);
   --screen-scanline: rgb(0 0 0 / 0.3);
   --screen-vignette: rgb(0 0 0 / 0.62);
 
@@ -223,11 +225,11 @@
      large type needs and small type must not get. */
   --text-2xs: 0.6875rem;      /* 11px  — nameplates, dims */
   --text-2xs--line-height: 1.35;
-  --text-2xs--letter-spacing: 0.12em;
+  --text-2xs--letter-spacing: 0;
 
   --text-xs: 0.75rem;         /* 12px  — meta, tape */
   --text-xs--line-height: 1.45;
-  --text-xs--letter-spacing: 0.04em;
+  --text-xs--letter-spacing: 0;
 
   --text-sm: 0.875rem;        /* 14px  — captions, card body */
   --text-sm--line-height: 1.55;
@@ -235,15 +237,15 @@
 
   --text-base: 1.0625rem;     /* 17px  — body. 16 is too small for prose. */
   --text-base--line-height: 1.65;
-  --text-base--letter-spacing: -0.003em;
+  --text-base--letter-spacing: 0;
 
   --text-lg: 1.1875rem;       /* 19px  — lede */
   --text-lg--line-height: 1.6;
-  --text-lg--letter-spacing: -0.006em;
+  --text-lg--letter-spacing: 0;
 
   --text-xl: 1.375rem;        /* 22px  — h3 */
   --text-xl--line-height: 1.4;
-  --text-xl--letter-spacing: -0.012em;
+  --text-xl--letter-spacing: 0;
 
   --text-2xl: 1.75rem;        /* 28px  — h2 */
   --text-2xl--line-height: 1.25;
@@ -573,9 +575,9 @@
      readout a glow just reads as blur. */
   .dark .crt {
     text-shadow:
-      0 0 1px color-mix(in oklch, currentColor 55%, transparent),
-      0 0 7px color-mix(in oklch, currentColor 40%, transparent),
-      0 0 18px color-mix(in oklch, currentColor 18%, transparent);
+      0 0 1px color-mix(in oklch, currentColor 65%, transparent),
+      0 0 8px color-mix(in oklch, currentColor 50%, transparent),
+      0 0 22px color-mix(in oklch, currentColor 24%, transparent);
   }
 
   /* 4 — scanlines */
@@ -648,8 +650,6 @@
     font-weight: 600;
     font-size: 0.8125rem;
     line-height: 1.2;
-    letter-spacing: 0.17em;
-    text-transform: uppercase;
     color: var(--color-muted-foreground);
   }
 
@@ -657,7 +657,6 @@
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.06em;
     color: var(--color-screen-fg);
   }
 
@@ -689,8 +688,6 @@
     font-family: var(--font-condensed);
     font-weight: 500;
     font-size: 0.6875rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
     color: var(--color-muted-foreground);
   }
 
@@ -806,8 +803,6 @@
   .prose-bench th {
     font-family: var(--font-condensed);
     font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
     text-align: left;
     color: var(--color-muted-foreground);
   }
@@ -896,7 +891,7 @@
   --screen-bg: oklch(0.14 0.014 278);
   --rule: oklch(0.27 0.014 275);
   --border: oklch(0.29 0.014 275);
-  --screen-glow: 0 0 26px color-mix(in oklch, var(--hue-phosphor) 22%, transparent);
+  --screen-glow: 0 0 0 rgb(0 0 0 / 0);
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -920,6 +915,146 @@
 :root[data-typeset='compact'] body {
   font-size: var(--text-base);
   line-height: var(--text-base--line-height);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   OPTIONAL TYPEFACES
+
+   Symlinked from ~/Sites/fonts into static/fonts, so the files are not
+   copied into the repo. Only web-ready woff2 is linked — the source
+   tree is mostly TTF, which would bloat every build for no gain.
+
+   Grotesques and humanists only, which is the brief. Each is exposed
+   through `[data-font]`; absent means the default IBM Plex Sans.
+
+   LICENSING: Bricolage, Chivo, Familjen Grotesk and Maven Pro are OFL.
+   Akt is a commercial face and needs a webfont licence before this
+   ships publicly.
+   ══════════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'Akt';
+  src: url('/fonts/Akt-var.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('/fonts/Bricolage-var.woff2') format('woff2-variations');
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Familjen Grotesk';
+  src: url('/fonts/FamiljenGrotesk-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Familjen Grotesk';
+  src: url('/fonts/FamiljenGrotesk-500.woff2') format('woff2');
+  font-weight: 500 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Chivo';
+  src: url('/fonts/Chivo-400.woff2') format('woff2');
+  font-weight: 300 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Chivo';
+  src: url('/fonts/Chivo-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Chivo';
+  src: url('/fonts/Chivo-600.woff2') format('woff2');
+  font-weight: 600 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Maven Pro';
+  src: url('/fonts/MavenPro-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Maven Pro';
+  src: url('/fonts/MavenPro-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Maven Pro';
+  src: url('/fonts/MavenPro-600.woff2') format('woff2');
+  font-weight: 600 800;
+  font-display: swap;
+}
+
+/* Only the sans changes. Mono stays IBM Plex Mono throughout, because
+   the instrument readouts are calibrated to its metrics. */
+:root[data-font='akt'] { --font-sans-active: 'Akt'; }
+:root[data-font='bricolage'] { --font-sans-active: 'Bricolage Grotesque'; }
+:root[data-font='familjen'] { --font-sans-active: 'Familjen Grotesk'; }
+:root[data-font='chivo'] { --font-sans-active: 'Chivo'; }
+:root[data-font='maven'] { --font-sans-active: 'Maven Pro'; }
+
+:root[data-font] body,
+:root[data-font] h1,
+:root[data-font] h2,
+:root[data-font] h3,
+:root[data-font] h4 {
+  font-family:
+    var(--font-sans-active), 'IBM Plex Sans Variable', 'Noto Sans Devanagari Variable',
+    ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Stylistic ligatures */
+:root[data-ligatures='on'] {
+  font-variant-ligatures: common-ligatures discretionary-ligatures contextual;
+  font-feature-settings: 'dlig' 1, 'liga' 1, 'clig' 1, 'calt' 1;
+}
+
+:root[data-ligatures='off'] {
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'clig' 0, 'dlig' 0;
+}
+
+/* Headline weight */
+:root[data-headline='light'] :is(h1, h2, h3, h4) { font-weight: 400; }
+:root[data-headline='regular'] :is(h1, h2, h3, h4) { font-weight: 500; }
+:root[data-headline='bold'] :is(h1, h2, h3, h4) { font-weight: 700; }
+
+/* Type scale. Rescales the whole ramp rather than just body, so the
+   headline-to-body proportion survives the change. */
+:root[data-scale='s'] {
+  --text-base: 1rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.9rem;
+  --text-4xl: 2.5rem;
+  --text-5xl: 3rem;
+}
+
+:root[data-scale='l'] {
+  --text-base: 1.125rem;
+  --text-lg: 1.3125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-3xl: 2.6rem;
+  --text-4xl: 3.4rem;
+  --text-5xl: 4.25rem;
+}
+
+:root:is([data-scale='s'], [data-scale='l']) body {
+  font-size: var(--text-base);
 }
 
 /* Shiki dual-theme: follow the document theme, not the OS. */

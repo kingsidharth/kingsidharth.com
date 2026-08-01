@@ -17,7 +17,7 @@ const { slug } = splitId(entry.id);
 const flag = entry.data.draft
   ? { text: t('notes.draft'), dim: true }
   : entry.data.kind === 'til'
-    ? { text: 'TIL', dim: false }
+    ? { text: 'Til', dim: false }
     : { text: `${readingTime(entry.body)} ${t('notes.readingTime')}`, dim: false };
 ---
 
@@ -46,7 +46,7 @@ const flag = entry.data.draft
 
   <span
     class:list={[
-      'shrink-0 font-mono text-2xs uppercase',
+      'shrink-0 font-mono text-2xs',
       flag.dim ? 'text-muted-foreground' : 'text-primary',
     ]}
   >

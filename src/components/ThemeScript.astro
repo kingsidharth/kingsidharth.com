@@ -22,6 +22,14 @@
       if (accent) root.setAttribute('data-accent', accent);
       var typeset = localStorage.getItem('design:typeset');
       if (typeset) root.setAttribute('data-typeset', typeset);
+      var font = localStorage.getItem('design:font');
+      if (font) root.setAttribute('data-font', font);
+      var scale = localStorage.getItem('design:scale');
+      if (scale) root.setAttribute('data-scale', scale);
+      var headline = localStorage.getItem('design:headline');
+      if (headline) root.setAttribute('data-headline', headline);
+      var ligatures = localStorage.getItem('design:ligatures');
+      if (ligatures) root.setAttribute('data-ligatures', ligatures);
     } catch (e) {
       /* private mode: fall through to the CSS defaults */
     }

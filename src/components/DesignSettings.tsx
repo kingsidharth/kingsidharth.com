@@ -3,11 +3,19 @@ import { cn } from '@/lib/utils';
 
 type Accent = 'amber' | 'purple' | 'pink' | 'teal' | 'cool';
 type Typeset = 'default' | 'comfortable' | 'compact';
+type Font = 'default' | 'akt' | 'bricolage' | 'familjen' | 'chivo' | 'maven';
+type Scale = 'default' | 's' | 'l';
+type Headline = 'auto' | 'light' | 'regular' | 'bold';
+type Ligatures = 'default' | 'on' | 'off';
 type ThemeMode = 'light' | 'dark';
 type Tab = 'typesetting' | 'theme';
 
 const ACCENT_KEY = 'design:accent';
 const TYPESET_KEY = 'design:typeset';
+const FONT_KEY = 'design:font';
+const SCALE_KEY = 'design:scale';
+const HEADLINE_KEY = 'design:headline';
+const LIGATURES_KEY = 'design:ligatures';
 const THEME_KEY = 'theme';
 
 /* The only hardcoded colours in this file — swatch previews for palettes
@@ -40,6 +48,28 @@ const TYPESET_OPTIONS: { value: Typeset; label: string; description: string }[] 
     label: 'Compact',
     description: 'Smaller type, tighter leading, wider measure',
   },
+];
+
+const FONT_OPTIONS: { value: Font; label: string; fontFamily?: string }[] = [
+  { value: 'default', label: 'IBM Plex Sans (default)' },
+  { value: 'akt', label: 'Akt', fontFamily: "'Akt'" },
+  { value: 'bricolage', label: 'Bricolage Grotesque', fontFamily: "'Bricolage Grotesque'" },
+  { value: 'familjen', label: 'Familjen Grotesk', fontFamily: "'Familjen Grotesk'" },
+  { value: 'chivo', label: 'Chivo', fontFamily: "'Chivo'" },
+  { value: 'maven', label: 'Maven Pro', fontFamily: "'Maven Pro'" },
+];
+
+const SCALE_OPTIONS: { value: Scale; label: string }[] = [
+  { value: 's', label: 'Small' },
+  { value: 'default', label: 'Default' },
+  { value: 'l', label: 'Large' },
+];
+
+const HEADLINE_OPTIONS: { value: Headline; label: string }[] = [
+  { value: 'auto', label: 'Auto' },
+  { value: 'light', label: 'Light' },
+  { value: 'regular', label: 'Regular' },
+  { value: 'bold', label: 'Bold' },
 ];
 
 function readAccent(): Accent {
@@ -92,6 +122,122 @@ function applyTypeset(typeset: Typeset) {
       localStorage.removeItem(TYPESET_KEY);
     } else {
       localStorage.setItem(TYPESET_KEY, typeset);
+    }
+  } catch {
+    /* private mode: the choice just will not persist */
+  }
+}
+
+function readFont(): Font {
+  try {
+    const stored = localStorage.getItem(FONT_KEY);
+    if (
+      stored === 'akt' ||
+      stored === 'bricolage' ||
+      stored === 'familjen' ||
+      stored === 'chivo' ||
+      stored === 'maven'
+    ) {
+      return stored;
+    }
+  } catch {
+    /* private mode: fall back to the default */
+  }
+  return 'default';
+}
+
+function readScale(): Scale {
+  try {
+    const stored = localStorage.getItem(SCALE_KEY);
+    if (stored === 's' || stored === 'l') return stored;
+  } catch {
+    /* private mode: fall back to the default */
+  }
+  return 'default';
+}
+
+function readHeadline(): Headline {
+  try {
+    const stored = localStorage.getItem(HEADLINE_KEY);
+    if (stored === 'light' || stored === 'regular' || stored === 'bold') return stored;
+  } catch {
+    /* private mode: fall back to the default */
+  }
+  return 'auto';
+}
+
+function readLigatures(): Ligatures {
+  try {
+    const stored = localStorage.getItem(LIGATURES_KEY);
+    if (stored === 'on' || stored === 'off') return stored;
+  } catch {
+    /* private mode: fall back to the default */
+  }
+  return 'default';
+}
+
+function applyFont(font: Font) {
+  if (font === 'default') {
+    document.documentElement.removeAttribute('data-font');
+  } else {
+    document.documentElement.setAttribute('data-font', font);
+  }
+  try {
+    if (font === 'default') {
+      localStorage.removeItem(FONT_KEY);
+    } else {
+      localStorage.setItem(FONT_KEY, font);
+    }
+  } catch {
+    /* private mode: the choice just will not persist */
+  }
+}
+
+function applyScale(scale: Scale) {
+  if (scale === 'default') {
+    document.documentElement.removeAttribute('data-scale');
+  } else {
+    document.documentElement.setAttribute('data-scale', scale);
+  }
+  try {
+    if (scale === 'default') {
+      localStorage.removeItem(SCALE_KEY);
+    } else {
+      localStorage.setItem(SCALE_KEY, scale);
+    }
+  } catch {
+    /* private mode: the choice just will not persist */
+  }
+}
+
+function applyHeadline(headline: Headline) {
+  if (headline === 'auto') {
+    document.documentElement.removeAttribute('data-headline');
+  } else {
+    document.documentElement.setAttribute('data-headline', headline);
+  }
+  try {
+    if (headline === 'auto') {
+      localStorage.removeItem(HEADLINE_KEY);
+    } else {
+      localStorage.setItem(HEADLINE_KEY, headline);
+    }
+  } catch {
+    /* private mode: the choice just will not persist */
+  }
+}
+
+function applyLigatures(ligatures: Ligatures) {
+  if (ligatures === 'default') {
+    document.documentElement.removeAttribute('data-ligatures');
+  } else {
+    document.documentElement.setAttribute('data-ligatures', ligatures);
+  }
+  try {
+    if (ligatures === 'default') {
+      localStorage.removeItem(LIGATURES_KEY);
+    } else {
+      localStorage.setItem(LIGATURES_KEY, ligatures);
     }
   } catch {
     /* private mode: the choice just will not persist */
@@ -166,6 +312,10 @@ export default function DesignSettings() {
   const [tab, setTab] = useState<Tab>('typesetting');
   const [accent, setAccent] = useState<Accent>('pink');
   const [typeset, setTypeset] = useState<Typeset>('default');
+  const [font, setFont] = useState<Font>('default');
+  const [scale, setScale] = useState<Scale>('default');
+  const [headline, setHeadline] = useState<Headline>('auto');
+  const [ligatures, setLigatures] = useState<Ligatures>('default');
   const [themeMode, setThemeMode] = useState<ThemeMode>('light');
   const [mounted, setMounted] = useState(false);
 
@@ -178,6 +328,10 @@ export default function DesignSettings() {
   useEffect(() => {
     setAccent(readAccent());
     setTypeset(readTypeset());
+    setFont(readFont());
+    setScale(readScale());
+    setHeadline(readHeadline());
+    setLigatures(readLigatures());
     setThemeMode(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
     setMounted(true);
   }, []);
@@ -270,6 +424,26 @@ export default function DesignSettings() {
     applyTypeset(value);
   }, []);
 
+  const handleFontSelect = useCallback((value: Font) => {
+    setFont(value);
+    applyFont(value);
+  }, []);
+
+  const handleScaleSelect = useCallback((value: Scale) => {
+    setScale(value);
+    applyScale(value);
+  }, []);
+
+  const handleHeadlineSelect = useCallback((value: Headline) => {
+    setHeadline(value);
+    applyHeadline(value);
+  }, []);
+
+  const handleLigaturesSelect = useCallback((value: Ligatures) => {
+    setLigatures(value);
+    applyLigatures(value);
+  }, []);
+
   const handleAccentSelect = useCallback((value: Accent) => {
     setAccent(value);
     applyAccent(value);
@@ -317,7 +491,7 @@ export default function DesignSettings() {
 
           {/* Header strip */}
           <div className="panel-divider-h flex items-center justify-between gap-2 px-4 py-3">
-            <span className="plaque text-xs font-semibold tracking-wide">DESIGN</span>
+            <span className="plaque text-xs font-semibold">Design</span>
             <button
               type="button"
               onClick={closePanel}
@@ -362,27 +536,130 @@ export default function DesignSettings() {
             id={`${panelId}-panel-typesetting`}
             aria-labelledby={`${panelId}-tab-typesetting`}
             hidden={tab !== 'typesetting'}
-            className="flex flex-col gap-2 p-4"
+            className="flex flex-col gap-4 p-4"
           >
-            {TYPESET_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => handleTypesetSelect(option.value)}
-                aria-pressed={typeset === option.value}
-                className={cn(
-                  'groove flex flex-col items-start gap-0.5 rounded-md px-3 py-2 text-left transition-colors',
-                  typeset === option.value ? 'ring-2 ring-accent' : '',
-                )}
-              >
-                <span className="text-sm font-medium text-foreground">{option.label}</span>
-                <span className="text-xs text-muted-foreground">{option.description}</span>
-              </button>
-            ))}
+            {/* Typeface */}
+            <div className="flex flex-col gap-2">
+              <span className="nameplate block">Typeface</span>
+              {FONT_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleFontSelect(option.value)}
+                  aria-pressed={font === option.value}
+                  className={cn(
+                    'groove flex items-center rounded-md px-3 py-2 text-left transition-colors',
+                    font === option.value ? 'ring-2 ring-accent' : '',
+                  )}
+                >
+                  <span
+                    className="text-sm font-medium text-foreground"
+                    style={option.fontFamily ? { fontFamily: option.fontFamily } : undefined}
+                  >
+                    {option.label}
+                  </span>
+                </button>
+              ))}
+            </div>
 
+            {/* Density */}
+            <div className="panel-divider-h flex flex-col gap-2 pt-3">
+              <span className="nameplate block">Density</span>
+              {TYPESET_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleTypesetSelect(option.value)}
+                  aria-pressed={typeset === option.value}
+                  className={cn(
+                    'groove flex flex-col items-start gap-0.5 rounded-md px-3 py-2 text-left transition-colors',
+                    typeset === option.value ? 'ring-2 ring-accent' : '',
+                  )}
+                >
+                  <span className="text-sm font-medium text-foreground">{option.label}</span>
+                  <span className="text-xs text-muted-foreground">{option.description}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Scale */}
+            <div className="panel-divider-h flex flex-col gap-2 pt-3">
+              <span className="nameplate block">Scale</span>
+              <div className="groove flex rounded-full p-1">
+                {SCALE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleScaleSelect(option.value)}
+                    aria-pressed={scale === option.value}
+                    className={cn(
+                      'flex-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                      scale === option.value ? 'cap text-foreground' : 'text-muted-foreground',
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Headline weight */}
+            <div className="panel-divider-h flex flex-col gap-2 pt-3">
+              <span className="nameplate block">Headline weight</span>
+              <div className="groove flex rounded-full p-1">
+                {HEADLINE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleHeadlineSelect(option.value)}
+                    aria-pressed={headline === option.value}
+                    className={cn(
+                      'flex-1 rounded-full px-2 py-1.5 text-xs font-medium transition-colors',
+                      headline === option.value ? 'cap text-foreground' : 'text-muted-foreground',
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Stylistic ligatures */}
+            <div className="panel-divider-h flex flex-col gap-2 pt-3">
+              <span className="nameplate block">Stylistic ligatures</span>
+              <div className="groove flex rounded-full p-1">
+                <button
+                  type="button"
+                  onClick={() => handleLigaturesSelect('on')}
+                  aria-pressed={ligatures === 'on'}
+                  className={cn(
+                    'flex-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                    ligatures === 'on' ? 'cap text-foreground' : 'text-muted-foreground',
+                  )}
+                >
+                  On
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLigaturesSelect('off')}
+                  aria-pressed={ligatures === 'off'}
+                  className={cn(
+                    'flex-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                    ligatures === 'off' ? 'cap text-foreground' : 'text-muted-foreground',
+                  )}
+                >
+                  Off
+                </button>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {ligatures === 'default' ? 'Default (browser decides)' : 'Custom'}
+              </span>
+            </div>
+
+            {/* Live preview */}
             <div className="crt mt-2 p-3">
               <p className="text-screen-fg text-sm leading-normal">
-                The quick brown fox jumps over the lazy dog, reading comfortably at any size.
+                Sphinx of black quartz, judge my vow — 0123456789
               </p>
             </div>
           </div>
@@ -418,7 +695,7 @@ export default function DesignSettings() {
             </div>
 
             <div className="panel-divider-h pt-3">
-              <span className="mb-2 block text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              <span className="mb-2 block text-xs font-medium text-muted-foreground">
                 Light / Dark
               </span>
               <div className="groove flex rounded-full p-1">
