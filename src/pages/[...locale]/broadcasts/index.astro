@@ -24,7 +24,7 @@ const broadcasts = (await getCollection('broadcasts')).sort(
   path="broadcasts"
 >
   <div class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-14">
-    <SectionHead title={t('broadcasts.title')} sub={t('broadcasts.sub')} glyph="reel" as="h1" />
+    <SectionHead title={t('broadcasts.title')} as="h1" />
 
     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {broadcasts.map((entry) => <BroadcastCard entry={entry} locale={locale} />)}

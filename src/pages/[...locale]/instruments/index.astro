@@ -24,12 +24,7 @@ const instruments = (await getCollection('instruments')).sort(
   path="instruments"
 >
   <div class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-14">
-    <SectionHead
-      title={t('shelf.title')}
-      sub={`${instruments.length} ${t('shelf.sub')}`}
-      glyph="shelf"
-      as="h1"
-    />
+    <SectionHead title={t('shelf.title')} as="h1" />
 
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
       {instruments.map((entry) => <InstrumentCard entry={entry} locale={locale} />)}

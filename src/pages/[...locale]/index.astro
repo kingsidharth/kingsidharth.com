@@ -111,7 +111,7 @@ const doing = [
 
   <!-- ── Work ─────────────────────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
-    <SectionHead title={t('work.title')} sub={t('work.sub')} glyph="book" />
+    <SectionHead title={t('work.title')} />
     <WorkList entries={work} />
     <p class="mt-6 font-mono text-xs">
       <a href={localePath(locale, 'work')} class="text-primary hover:underline">
@@ -122,7 +122,7 @@ const doing = [
 
   <!-- ── Tools & Experiments ──────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
-    <SectionHead title={t('shelf.title')} sub={t('shelf.sub')} glyph="shelf" />
+    <SectionHead title={t('shelf.title')} />
 
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
       {instruments.map((entry) => <InstrumentCard entry={entry} locale={locale} />)}
@@ -138,7 +138,7 @@ const doing = [
 
   <!-- ── Watch ────────────────────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
-    <SectionHead title={t('broadcasts.title')} sub={t('broadcasts.sub')} glyph="reel" />
+    <SectionHead title={t('broadcasts.title')} />
 
     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
       {broadcasts.map((entry) => <BroadcastCard entry={entry} locale={locale} />)}
@@ -147,7 +147,7 @@ const doing = [
 
   <!-- ── Notes ────────────────────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
-    <SectionHead title={t('notes.title')} sub={t('notes.sub')} glyph="note" />
+    <SectionHead title={t('notes.title')} />
 
     <div class="max-w-3xl">
       {notes.map((entry) => <NoteRow entry={entry} locale={locale} />)}

@@ -2,35 +2,14 @@
 interface Props {
   title: string;
   sub?: string;
-  /** Which engraved glyph sits beside the title. */
-  glyph?: 'shelf' | 'reel' | 'note' | 'book';
   as?: 'h1' | 'h2';
   id?: string;
 }
 
-const { title, sub, glyph = 'note', as: Tag = 'h2', id } = Astro.props;
-
-const paths: Record<NonNullable<Props['glyph']>, string> = {
-  shelf: 'M3 5h18v11H3zM8 19h8M12 16v3',
-  reel: 'M12 3.4a8.6 8.6 0 1 0 0 17.2 8.6 8.6 0 0 0 0-17.2M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4M12 3.4v5M12 15.6v5M3.4 12h5M15.6 12h5',
-  note: 'M5.5 3.5h14v17h-14zM12 8h5M12 11.5h5M12 15h3.2M3 6.2h2.5M3 9.8h2.5M3 13.4h2.5M3 17h2.5',
-  book: 'M4 4.5h7a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 4.5h-7a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h7z',
-};
+const { title, sub, as: Tag = 'h2', id } = Astro.props;
 ---
 
-<div class="mb-8 flex flex-wrap items-center gap-x-4 gap-y-2" id={id}>
-  <svg
-    viewBox="0 0 24 24"
-    class="size-6 shrink-0 fill-none stroke-primary"
-    stroke-width="1.3"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-  >
-    <path d={paths[glyph]}></path>
-  </svg>
-
+<div class="mb-8" id={id}>
   <Tag class="text-2xl">{title}</Tag>
-
-  {sub && <p class="font-mono text-xs text-muted-foreground">{sub}</p>}
+  {sub && <p class="mt-1.5 font-mono text-xs text-muted-foreground">{sub}</p>}
 </div>

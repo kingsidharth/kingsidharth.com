@@ -25,7 +25,7 @@ const work = (await getCollection('work')).sort(
   path="work"
 >
   <div class="mx-auto max-w-4xl px-(--spacing-gutter) py-14">
-    <SectionHead title={t('work.title')} sub={t('work.sub')} glyph="book" as="h1" />
+    <SectionHead title={t('work.title')} as="h1" />
 
     <WorkList entries={work} />
 

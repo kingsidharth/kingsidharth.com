@@ -258,37 +258,82 @@ export function sampleToken(scored: ScoredToken[]): { token: string; probability
  * per mode: accuracy is only interesting when it can fail, and
  * variety is only interesting when there is more than one candidate.
  */
+export interface Verdict {
+  tone: 'good' | 'warn' | 'bad';
+  /** What the current settings do. */
+  text: string;
+  /**
+   * The lesson. Creativity and hallucination are not two behaviours — they
+   * are one mechanism, and the only thing that decides which word you use
+   * is whether the prompt had a right answer. Every branch says so, because
+   * a reader who only ever visits one branch should still leave knowing it.
+   */
+  link: string;
+}
+
 export function verdict(
   promptId: PromptId,
   strategy: Strategy,
   result: DistributionResult
-): { tone: 'good' | 'warn' | 'bad'; text: string } {
+): Verdict {
   const prompt = PROMPTS[promptId];
   const top = result.scored[0]?.token ?? '';
 
   if (strategy === 'greedy') {
     return prompt.kind === 'factual'
-      ? { tone: 'good', text: `Always answers "${top}". Correct at every temperature — T cannot change the argmax.` }
-      : { tone: 'bad', text: `Always writes "${top}". Same output at every temperature: no variety at all.` };
+      ? {
+          tone: 'good',
+          text: `Always answers "${top}". Correct at every temperature — T cannot change the argmax.`,
+          link: 'Nothing invented. Nothing imagined either — the same setting does both.',
+        }
+      : {
+          tone: 'bad',
+          text: `Always writes "${top}". Same output at every temperature: no variety at all.`,
+          link: 'Safe and lifeless. The dial that would make this interesting is the one that breaks arithmetic.',
+        };
   }
 
   if (prompt.kind === 'factual') {
     const wrong = 1 - (result.correctProbability ?? 1);
     if (wrong < 0.02) {
-      return { tone: 'good', text: `Almost always correct — ${(wrong * 100).toFixed(1)}% chance of a wrong answer.` };
+      return {
+        tone: 'good',
+        text: `Almost always correct — ${(wrong * 100).toFixed(1)}% chance of a wrong answer.`,
+        link: 'Turn it up and this same dial starts inventing answers. That is the trade.',
+      };
     }
     if (wrong < 0.15) {
-      return { tone: 'warn', text: `${(wrong * 100).toFixed(0)}% chance of a wrong answer. Fine for prose, not for arithmetic.` };
+      return {
+        tone: 'warn',
+        text: `${(wrong * 100).toFixed(0)}% chance of a wrong answer.`,
+        link: 'This is hallucination starting. Same dial, same mechanism as the creativity on a poem.',
+      };
     }
-    return { tone: 'bad', text: `${(wrong * 100).toFixed(0)}% chance of a wrong answer. The maths is broken here.` };
+    return {
+      tone: 'bad',
+      text: `${(wrong * 100).toFixed(0)}% chance of a wrong answer. The maths is broken here.`,
+      link: 'This is hallucination — the exact setting that makes the poem worth reading.',
+    };
   }
 
   const choices = result.effectiveChoices;
   if (choices < 1.6) {
-    return { tone: 'bad', text: `Effectively ${choices.toFixed(1)} choices — it will nearly always say "${top}".` };
+    return {
+      tone: 'bad',
+      text: `Effectively ${choices.toFixed(1)} choices — it will nearly always say "${top}".`,
+      link: 'Predictable, and never wrong. Those are the same fact, not two.',
+    };
   }
   if (choices < 4) {
-    return { tone: 'warn', text: `Effectively ${choices.toFixed(1)} choices. Safe, and a little predictable.` };
+    return {
+      tone: 'warn',
+      text: `Effectively ${choices.toFixed(1)} choices. Safe, and a little predictable.`,
+      link: 'Push further for better writing and you buy it with accuracy elsewhere.',
+    };
   }
-  return { tone: 'good', text: `Effectively ${choices.toFixed(1)} choices — this is where the interesting writing comes from.` };
+  return {
+    tone: 'good',
+    text: `Effectively ${choices.toFixed(1)} choices — this is where the interesting writing comes from.`,
+    link: 'Creativity and hallucination are the same mechanism here. Only the prompt decides which name it gets.',
+  };
 }

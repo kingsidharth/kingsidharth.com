@@ -3,6 +3,7 @@ import '@/styles/global.css';
 import ThemeScript from '@/components/ThemeScript.astro';
 import Nav from '@/components/Nav.astro';
 import Footer from '@/components/Footer.astro';
+import DesignSettings from '@/components/DesignSettings';
 import { DEFAULT_LOCALE, LOCALE_META, LOCALES, localePath, useTranslations } from '@/lib/i18n';
 import type { Locale } from '@/lib/i18n';
 
@@ -77,5 +78,7 @@ const canonical = new URL(localePath(locale, path), Astro.site);
     </main>
 
     <Footer locale={locale} />
+
+    <DesignSettings client:idle />
   </body>
 </html>

@@ -11,6 +11,7 @@ import {
   type PromptId,
   type Strategy,
   type ScoredToken,
+  type Verdict,
 } from '@/lib/sampling';
 
 const ANGLE_MIN = -135;
@@ -329,9 +330,17 @@ interface PromptScreenProps {
   reducedMotion: boolean;
   completion: { token: string; wrong: boolean } | null;
   onDraw: () => void;
+  verdict: Verdict;
 }
 
-function PromptScreen({ promptId, onChange, reducedMotion, completion, onDraw }: PromptScreenProps) {
+function PromptScreen({
+  promptId,
+  onChange,
+  reducedMotion,
+  completion,
+  onDraw,
+  verdict,
+}: PromptScreenProps) {
   const prompt = PROMPTS[promptId];
   return (
     <div className="crt flex min-h-[130px] flex-col gap-3 p-4 sm:p-5">
@@ -397,6 +406,36 @@ function PromptScreen({ promptId, onChange, reducedMotion, completion, onDraw }:
           ✗ wrong answer — this is what breaks at high temperature
         </p>
       )}
+
+      {/* Verdict, as the last line under the prompt: the reading sits
+          directly beneath the output it describes. The second sentence
+          is the actual lesson — that creativity and hallucination are
+          one mechanism — so it is always present, never conditional. */}
+      <div className="mt-auto flex gap-2 border-t border-primary/20 pt-3">
+        <span
+          aria-hidden="true"
+          className={cn(
+            'mt-[0.45em] h-[6px] w-[6px] shrink-0 rounded-full',
+            verdict.tone === 'bad' && 'bg-destructive',
+            verdict.tone === 'good' && 'bg-success-screen',
+            verdict.tone === 'warn' && 'bg-primary opacity-60',
+          )}
+        />
+        {/* Only the lesson. The numbers it used to restate ("effectively
+            N choices", "X% chance of a wrong answer") are already on the
+            gauges two columns away, so saying them again in prose was
+            noise. */}
+        <p
+          className={cn(
+            'min-w-0 font-mono text-[12px] leading-snug',
+            verdict.tone === 'bad' && 'text-destructive',
+            verdict.tone === 'good' && 'text-success-screen',
+            verdict.tone === 'warn' && 'text-primary opacity-70',
+          )}
+        >
+          {verdict.link}
+        </p>
+      </div>
     </div>
   );
 }
@@ -411,8 +450,6 @@ interface DistributionScreenProps {
   k: number;
   p: number;
   cutoffCumulative: number | null;
-  verdictTone: 'good' | 'warn' | 'bad';
-  verdictText: string;
 }
 
 function DistributionScreen({
@@ -422,8 +459,6 @@ function DistributionScreen({
   k,
   p,
   cutoffCumulative,
-  verdictTone,
-  verdictText,
 }: DistributionScreenProps) {
   const idBase = sanitiseId(useId());
   const stripeId = `stripe-${idBase}`;
@@ -542,29 +577,6 @@ function DistributionScreen({
             </text>
           )}
         </svg>
-      </div>
-
-      {/* Verdict — the conclusion the whole instrument is building to. */}
-      <div className="mt-3 flex items-center gap-2 border-t border-primary/20 pt-3">
-        <span
-          aria-hidden="true"
-          className={cn(
-            'h-[6px] w-[6px] shrink-0 rounded-full',
-            verdictTone === 'bad' && 'bg-destructive',
-            verdictTone === 'good' && 'bg-success-screen',
-            verdictTone === 'warn' && 'bg-primary opacity-60',
-          )}
-        />
-        <p
-          className={cn(
-            'font-mono text-[12px] leading-snug',
-            verdictTone === 'bad' && 'text-destructive',
-            verdictTone === 'good' && 'text-success-screen',
-            verdictTone === 'warn' && 'text-primary opacity-70',
-          )}
-        >
-          {verdictText}
-        </p>
       </div>
     </div>
   );
@@ -799,6 +811,7 @@ export default function TemperatureInstrument() {
             onChange={handlePromptChange}
             reducedMotion={reducedMotion}
             completion={completion}
+            verdict={currentVerdict}
             onDraw={handleDrawButton}
           />
           <DistributionScreen
@@ -808,8 +821,6 @@ export default function TemperatureInstrument() {
             k={k}
             p={p}
             cutoffCumulative={distribution.cutoffCumulative}
-            verdictTone={currentVerdict.tone}
-            verdictText={currentVerdict.text}
           />
         </div>
       </div>

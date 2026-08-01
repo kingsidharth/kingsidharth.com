@@ -44,6 +44,14 @@
   --phosphor: oklch(0.82 0.135 78);
   --rust-500: oklch(0.64 0.165 42);
 
+  /* The accent hue, one level of indirection so a whole palette can be
+     swapped by overriding three variables. Defaults to amber; the
+     [data-accent] blocks further down replace them. */
+  --hue-500: var(--amber-500);
+  --hue-600: var(--amber-600);
+  --hue-700: var(--amber-700);
+  --hue-phosphor: var(--phosphor);
+
   /* Green means correct / live / running. On cream paper a vivid green
      fails contrast, so light mode gets a darker, denser one and dark
      mode gets the vivid phosphor version. Same hue family either way. */
@@ -59,17 +67,17 @@
   --card-foreground: var(--ink-900);
   --popover: var(--paper-50);
   --popover-foreground: var(--ink-900);
-  --primary: var(--amber-700);
+  --primary: var(--hue-700);
   --primary-foreground: var(--paper-50);
   --secondary: var(--paper-200);
   --secondary-foreground: var(--ink-900);
-  --accent: var(--amber-600);
+  --accent: var(--hue-600);
   --accent-foreground: var(--ink-900);
   --destructive: var(--rust-500);
   --destructive-foreground: var(--paper-50);
   --border: oklch(0.86 0.014 82);
   --input: oklch(0.86 0.014 82);
-  --ring: var(--amber-600);
+  --ring: var(--hue-600);
   --radius: 0.25rem;
 
   /* -- instrument hardware -----------------------------------------
@@ -93,7 +101,7 @@
   --well: oklch(0.855 0.016 82);
 
   --screen-bg: oklch(0.965 0.012 88);
-  --screen-fg: var(--amber-700);
+  --screen-fg: var(--hue-700);
   --screen-dim: oklch(0.7 0.085 70);
   --screen-glow: 0 0 0 rgb(0 0 0 / 0);
   --screen-scanline: rgb(90 70 40 / 0.05);
@@ -113,17 +121,17 @@
   --card-foreground: oklch(0.93 0.012 85);
   --popover: var(--bench-900);
   --popover-foreground: oklch(0.93 0.012 85);
-  --primary: var(--amber-500);
+  --primary: var(--hue-500);
   --primary-foreground: var(--bench-950);
   --secondary: var(--bench-850);
   --secondary-foreground: oklch(0.93 0.012 85);
-  --accent: var(--amber-500);
+  --accent: var(--hue-500);
   --accent-foreground: var(--bench-950);
   --destructive: var(--rust-500);
   --destructive-foreground: var(--bench-950);
   --border: oklch(0.28 0.01 62);
   --input: oklch(0.28 0.01 62);
-  --ring: var(--amber-500);
+  --ring: var(--hue-500);
 
   --chassis-hi: oklch(0.295 0.011 68);
   --chassis-lo: oklch(0.185 0.008 62);
@@ -140,7 +148,7 @@
   --well: oklch(0.14 0.006 58);
 
   --screen-bg: oklch(0.135 0.01 120);
-  --screen-fg: var(--phosphor);
+  --screen-fg: var(--hue-phosphor);
   --screen-dim: oklch(0.53 0.085 72);
   --screen-glow: 0 0 26px oklch(0.82 0.135 78 / 0.1);
   --screen-scanline: rgb(0 0 0 / 0.3);
@@ -470,7 +478,7 @@
   }
 
   .led-on {
-    background: radial-gradient(circle at 36% 30%, oklch(0.92 0.09 85), var(--amber-500) 62%, var(--amber-700));
+    background: radial-gradient(circle at 36% 30%, color-mix(in oklch, var(--hue-500) 55%, white), var(--hue-500) 62%, var(--hue-700));
     box-shadow:
       inset 0 -1px 1px rgb(0 0 0 / 0.4),
       0 0 0 1px var(--bevel-dark),
@@ -804,6 +812,99 @@
   .prose-bench td {
     font-variant-numeric: tabular-nums;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ACCENT PALETTES
+
+   Each palette replaces four variables and nothing else — every other
+   token derives from them, so a swap is total and consistent without
+   touching a single component. Set by the design-settings panel via
+   `data-accent` on the root element; absent means amber.
+
+   Light values are darker and denser because the paper background is
+   bright; dark values are the vivid phosphor version. Screens use the
+   phosphor variable so a CRT glows in the chosen hue.
+   ══════════════════════════════════════════════════════════════════ */
+
+:root[data-accent='purple'] {
+  --hue-500: oklch(0.76 0.15 305);
+  --hue-600: oklch(0.64 0.19 302);
+  --hue-700: oklch(0.53 0.19 300);
+  --hue-phosphor: oklch(0.8 0.15 305);
+}
+
+:root[data-accent='pink'] {
+  --hue-500: oklch(0.76 0.16 350);
+  --hue-600: oklch(0.65 0.2 350);
+  --hue-700: oklch(0.55 0.2 352);
+  --hue-phosphor: oklch(0.8 0.16 350);
+}
+
+:root[data-accent='teal'] {
+  --hue-500: oklch(0.78 0.12 192);
+  --hue-600: oklch(0.65 0.12 194);
+  --hue-700: oklch(0.53 0.11 196);
+  --hue-phosphor: oklch(0.83 0.13 190);
+}
+
+:root[data-accent='cool'] {
+  --hue-500: oklch(0.76 0.13 258);
+  --hue-600: oklch(0.63 0.16 260);
+  --hue-700: oklch(0.52 0.16 262);
+  --hue-phosphor: oklch(0.81 0.13 258);
+}
+
+/* The cool palettes want a cooler bench and paper too, or the warm
+   greys underneath fight the accent. */
+:root:is([data-accent='purple'], [data-accent='pink'], [data-accent='teal'], [data-accent='cool']) {
+  --background: oklch(0.98 0.005 265);
+  --muted: oklch(0.94 0.008 265);
+  --card: oklch(0.965 0.006 265);
+  --chassis-hi: oklch(0.95 0.006 265);
+  --chassis-lo: oklch(0.895 0.009 265);
+  --chassis-edge: oklch(0.78 0.012 265);
+  --well: oklch(0.87 0.01 265);
+  --screen-bg: oklch(0.97 0.006 265);
+  --rule: oklch(0.89 0.008 265);
+  --border: oklch(0.87 0.008 265);
+}
+
+.dark:is([data-accent='purple'], [data-accent='pink'], [data-accent='teal'], [data-accent='cool']) {
+  --background: oklch(0.16 0.012 275);
+  --muted: oklch(0.23 0.014 275);
+  --card: oklch(0.19 0.013 275);
+  --chassis-hi: oklch(0.3 0.016 275);
+  --chassis-lo: oklch(0.19 0.012 275);
+  --chassis-edge: oklch(0.11 0.008 275);
+  --well: oklch(0.14 0.01 275);
+  --screen-bg: oklch(0.14 0.014 278);
+  --rule: oklch(0.27 0.014 275);
+  --border: oklch(0.29 0.014 275);
+  --screen-glow: 0 0 26px color-mix(in oklch, var(--hue-phosphor) 22%, transparent);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TYPESETTING PRESETS
+   Body size and leading only — the modular scale keeps its ratios.
+   ══════════════════════════════════════════════════════════════════ */
+
+:root[data-typeset='compact'] {
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  --container-measure: 74ch;
+}
+
+:root[data-typeset='comfortable'] {
+  --text-base: 1.125rem;
+  --text-base--line-height: 1.75;
+  --container-measure: 62ch;
+}
+
+:root[data-typeset='comfortable'] body,
+:root[data-typeset='compact'] body {
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
 }
 
 /* Shiki dual-theme: follow the document theme, not the OS. */

@@ -32,7 +32,7 @@ const years = [...byYear.entries()].sort((a, b) => b[0] - a[0]);
   path="blog"
 >
   <div class="mx-auto max-w-3xl px-(--spacing-gutter) py-14">
-    <SectionHead title={t('notes.title')} sub={t('notes.sub')} glyph="note" as="h1" />
+    <SectionHead title={t('notes.title')} as="h1" />
 
     {
       years.length === 0 && (

@@ -9,12 +9,21 @@
 <script is:inline>
   (function () {
     try {
+      var root = document.documentElement;
       var stored = localStorage.getItem('theme');
       var dark = stored ? stored === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.classList.toggle('dark', dark);
-      document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+      root.classList.toggle('dark', dark);
+      root.style.colorScheme = dark ? 'dark' : 'light';
+
+      // Design-settings choices. Applied here, before paint, for the same
+      // reason as the theme: reading them in the React island would land
+      // after first paint and flash the default palette.
+      var accent = localStorage.getItem('design:accent');
+      if (accent) root.setAttribute('data-accent', accent);
+      var typeset = localStorage.getItem('design:typeset');
+      if (typeset) root.setAttribute('data-typeset', typeset);
     } catch (e) {
-      /* private mode: fall through to the CSS default (light) */
+      /* private mode: fall through to the CSS defaults */
     }
   })();
 </script>
