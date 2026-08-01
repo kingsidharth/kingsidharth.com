@@ -26,9 +26,9 @@
   {
     "id": "independent",
     "org": "Independent",
-    "role": "Product & design consulting",
+    "role": "AI research & consulting",
     "period": "Ongoing",
     "current": true,
-    "summary": "Helping startups get a product out and figure out what to build next."
+    "summary": "Fine-tuning models, custom agents, AI solutions, cost control."
   }
 ]
