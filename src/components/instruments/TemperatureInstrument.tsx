@@ -1,49 +1,18 @@
 import { useCallback, useId, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import {
+  PROMPTS,
+  PROMPT_ORDER,
+  TEMP_MIN,
+  TEMP_MAX,
+  computeDistribution,
+  sampleToken,
+  verdict,
+  type PromptId,
+  type Strategy,
+  type ScoredToken,
+} from '@/lib/sampling';
 
-/* ────────────────────────────────────────────────────────────────────
-   Fixed candidate set — hand-authored logits for "the next word after
-   a sentence about programming verbs". Order is the authoring order;
-   display order is always re-sorted by probability.
-   ──────────────────────────────────────────────────────────────────── */
-interface Candidate {
-  token: string;
-  logit: number;
-}
-
-const CANDIDATES: Candidate[] = [
-  { token: 'build', logit: 3.2 },
-  { token: 'ship', logit: 2.85 },
-  { token: 'use', logit: 2.6 },
-  { token: 'read', logit: 2.3 },
-  { token: 'start', logit: 2.15 },
-  { token: 'practise', logit: 1.95 },
-  { token: 'teach', logit: 1.8 },
-  { token: 'break', logit: 1.62 },
-  { token: 'copy', logit: 1.4 },
-  { token: 'watch', logit: 1.25 },
-  { token: 'write', logit: 1.05 },
-  { token: 'study', logit: 0.92 },
-  { token: 'play', logit: 0.74 },
-  { token: 'ask', logit: 0.6 },
-  { token: 'fail', logit: 0.42 },
-  { token: 'measure', logit: 0.28 },
-  { token: 'fork', logit: 0.1 },
-  { token: 'wait', logit: -0.1 },
-  { token: 'skim', logit: -0.28 },
-  { token: 'talk', logit: -0.52 },
-];
-
-type TruncationMode = 'off' | 'top-k' | 'top-p';
-
-interface ScoredToken {
-  token: string;
-  probability: number;
-  kept: boolean;
-}
-
-const TEMP_MIN = 0.05;
-const TEMP_MAX = 2.0;
 const ANGLE_MIN = -135;
 const ANGLE_MAX = 135;
 const TEMP_DEFAULT = 1.0;
@@ -74,110 +43,14 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-/** Softmax with temperature. Logits are divided by T first (higher T
- * flattens the distribution, lower T sharpens it), then we subtract the
- * running max before exponentiating so exp() never overflows — the
- * classic numerical-stability trick; it leaves the softmax output
- * unchanged since it cancels in the normalisation. */
-function softmax(candidates: Candidate[], temperature: number): number[] {
-  const scaled = candidates.map((c) => c.logit / temperature);
-  const max = Math.max(...scaled);
-  const exps = scaled.map((v) => Math.exp(v - max));
-  const sum = exps.reduce((a, b) => a + b, 0);
-  return exps.map((v) => v / sum);
-}
-
-function shannonEntropyBits(probabilities: number[]): number {
-  let bits = 0;
-  for (const p of probabilities) {
-    if (p < 1e-12) continue;
-    bits += -p * Math.log2(p);
-  }
-  return bits;
-}
-
-interface DistributionResult {
-  scored: ScoredToken[];
-  keptCount: number;
-  topProbability: number;
-  entropyBits: number;
-  discardedMassPct: number;
-  cutoffCumulative: number | null;
-}
-
-function computeDistribution(
-  temperature: number,
-  mode: TruncationMode,
-  k: number,
-  p: number,
-): DistributionResult {
-  const probabilities = softmax(CANDIDATES, temperature);
-  const withProbs = CANDIDATES.map((c, i) => ({ token: c.token, probability: probabilities[i] }));
-  const sorted = [...withProbs].sort((a, b) => b.probability - a.probability);
-
-  let keptTokens: Set<string>;
-  let cutoffCumulative: number | null = null;
-
-  if (mode === 'top-k') {
-    keptTokens = new Set(sorted.slice(0, k).map((t) => t.token));
-  } else if (mode === 'top-p') {
-    // Inclusive boundary: accumulate descending probability and keep the
-    // token that CROSSES the threshold, not just the ones strictly below it.
-    let cumulative = 0;
-    const kept = new Set<string>();
-    for (const t of sorted) {
-      if (cumulative >= p) break;
-      cumulative += t.probability;
-      kept.add(t.token);
-    }
-    cutoffCumulative = cumulative;
-    keptTokens = kept;
-  } else {
-    keptTokens = new Set(sorted.map((t) => t.token));
-  }
-
-  const scored: ScoredToken[] = sorted.map((t) => ({
-    token: t.token,
-    probability: t.probability,
-    kept: keptTokens.has(t.token),
-  }));
-
-  const keptCount = scored.filter((t) => t.kept).length;
-  const discardedMass = scored.filter((t) => !t.kept).reduce((sum, t) => sum + t.probability, 0);
-  const entropyBits = shannonEntropyBits(probabilities);
-
-  return {
-    scored,
-    keptCount,
-    topProbability: sorted[0]?.probability ?? 0,
-    entropyBits,
-    discardedMassPct: discardedMass * 100,
-    cutoffCumulative,
-  };
-}
-
-/** Renormalised sampling over only the kept tokens — probabilities are
- * divided by their own sum so they add back up to 1 before drawing. */
-function sampleToken(scored: ScoredToken[]): { token: string; probability: number } {
-  const kept = scored.filter((t) => t.kept);
-  const keptSum = kept.reduce((sum, t) => sum + t.probability, 0);
-  let roll = Math.random() * keptSum;
-  for (const t of kept) {
-    roll -= t.probability;
-    if (roll <= 0) {
-      return { token: t.token, probability: t.probability / keptSum };
-    }
-  }
-  const last = kept[kept.length - 1];
-  return { token: last.token, probability: last.probability / keptSum };
-}
-
 interface TapeEntry {
   id: number;
   temperature: number;
-  mode: TruncationMode;
+  strategy: Strategy;
   token: string;
   probability: number;
+  correct: boolean;
+  promptId: PromptId;
 }
 
 /** Sanitise a `useId()` value for use inside `url(#…)` — raw ids contain
@@ -397,24 +270,24 @@ function TemperatureKnob({ temperature, onChange }: TemperatureKnobProps) {
 }
 
 /* ────────────────────────────────────────────────────────────────────
-   Truncation toggle bank — vertical bat-handle switches.
+   Sampling-strategy toggle bank — vertical bat-handle switches.
    ──────────────────────────────────────────────────────────────────── */
 interface ToggleBankProps {
-  mode: TruncationMode;
-  onChange: (mode: TruncationMode) => void;
+  strategy: Strategy;
+  onChange: (strategy: Strategy) => void;
 }
 
-const MODE_LABELS: { value: TruncationMode; label: string }[] = [
-  { value: 'off', label: 'Off' },
-  { value: 'top-k', label: 'Top-k' },
-  { value: 'top-p', label: 'Top-p' },
+const STRATEGY_LABELS: { value: Strategy; label: string }[] = [
+  { value: 'greedy', label: 'Greedy' },
+  { value: 'top-k', label: 'Top K' },
+  { value: 'top-p', label: 'Top P' },
 ];
 
-function ToggleBank({ mode, onChange }: ToggleBankProps) {
+function ToggleBank({ strategy, onChange }: ToggleBankProps) {
   return (
-    <div role="group" aria-label="Truncation mode" className="flex justify-between gap-3">
-      {MODE_LABELS.map((item) => {
-        const engaged = mode === item.value;
+    <div role="group" aria-label="Sampling strategy" className="flex justify-between gap-3">
+      {STRATEGY_LABELS.map((item) => {
+        const engaged = strategy === item.value;
         return (
           <button
             key={item.value}
@@ -448,27 +321,88 @@ function ToggleBank({ mode, onChange }: ToggleBankProps) {
 }
 
 /* ────────────────────────────────────────────────────────────────────
-   Bar chart — CRT readout of the sorted distribution.
+   Prompt screen — the top, short CRT: prompt selector + prompt text.
    ──────────────────────────────────────────────────────────────────── */
-interface DistributionChartProps {
+interface PromptScreenProps {
+  promptId: PromptId;
+  onChange: (id: PromptId) => void;
+  reducedMotion: boolean;
+}
+
+function PromptScreen({ promptId, onChange, reducedMotion }: PromptScreenProps) {
+  const prompt = PROMPTS[promptId];
+  return (
+    <div className="crt flex min-h-[130px] flex-col gap-3 p-4 sm:p-5">
+      <span className="nameplate text-screen-dim text-[11px] tracking-[0.18em]">Prompt</span>
+      <div role="group" aria-label="Prompt" className="flex flex-wrap gap-x-5 gap-y-1">
+        {PROMPT_ORDER.map((id) => {
+          const active = id === promptId;
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onChange(id)}
+              className={cn(
+                'font-mono text-[13px] tracking-[0.02em] focus-visible:outline-none',
+                active ? 'text-screen-fg' : 'text-screen-dim',
+              )}
+            >
+              <span aria-hidden="true">{active ? '▸ ' : '  '}</span>
+              {PROMPTS[id].label}
+            </button>
+          );
+        })}
+      </div>
+      <p className="font-mono text-[15px] text-screen-fg">
+        {prompt.text}
+        <span
+          aria-hidden="true"
+          className={cn(
+            'ml-0.5 inline-block h-[1em] w-[0.5em] translate-y-[0.15em] bg-screen-fg align-middle',
+            !reducedMotion && 'motion-safe:animate-pulse',
+          )}
+        />
+      </p>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   Bar chart + verdict — the tall CRT: sorted distribution readout.
+   ──────────────────────────────────────────────────────────────────── */
+interface DistributionScreenProps {
+  promptId: PromptId;
+  strategy: Strategy;
   scored: ScoredToken[];
-  mode: TruncationMode;
   k: number;
   p: number;
   cutoffCumulative: number | null;
+  verdictTone: 'good' | 'warn' | 'bad';
+  verdictText: string;
 }
 
-function DistributionChart({ scored, mode, k, p, cutoffCumulative }: DistributionChartProps) {
+function DistributionScreen({
+  promptId,
+  strategy,
+  scored,
+  k,
+  p,
+  cutoffCumulative,
+  verdictTone,
+  verdictText,
+}: DistributionScreenProps) {
   const idBase = sanitiseId(useId());
   const stripeId = `stripe-${idBase}`;
   const hatchId = `hatch-${idBase}`;
+  const isFactual = PROMPTS[promptId].kind === 'factual';
 
   const visible = scored.slice(0, CHART_ROWS);
   const remaining = scored.length - visible.length;
   const maxProb = scored[0]?.probability ?? 1;
 
   const rowHeight = 24;
-  const labelWidth = 84;
+  const labelWidth = 92;
   const chartWidth = 420;
   const barMaxWidth = chartWidth - labelWidth - 70;
   const height = visible.length * rowHeight + 30;
@@ -476,104 +410,128 @@ function DistributionChart({ scored, mode, k, p, cutoffCumulative }: Distributio
   const lastKeptIndex = visible.reduce((acc, t, i) => (t.kept ? i : acc), -1);
 
   return (
-    <div className="w-full overflow-x-auto">
-      <svg
-        width="100%"
-        viewBox={`0 0 ${chartWidth} ${height}`}
-        role="img"
-        aria-label="Token probability distribution"
-        className="min-w-[320px]"
-      >
-        <defs>
-          {/* Kept bars: fine horizontal hatch over a darker amber base, so
-              the fill reads as a lined instrument-panel block, not a flat
-              rectangle. */}
-          <pattern id={stripeId} width={4} height={3} patternUnits="userSpaceOnUse">
-            <rect width={4} height={3} className="fill-primary" fillOpacity={0.32} />
-            <line x1={0} y1={0.5} x2={4} y2={0.5} strokeWidth={1} className="stroke-primary" />
-          </pattern>
-          {/* Discarded bars: dim diagonal hatch. */}
-          <pattern id={hatchId} width={5} height={5} patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-            <rect width={5} height={5} className="fill-transparent" />
-            <line x1={0} y1={0} x2={0} y2={5} strokeWidth={1} className="stroke-primary/35" />
-          </pattern>
-        </defs>
+    <div className="crt flex min-w-0 flex-1 flex-col p-4 sm:p-5">
+      <div className="w-full overflow-x-auto">
+        <svg
+          width="100%"
+          viewBox={`0 0 ${chartWidth} ${height}`}
+          role="img"
+          aria-label="Token probability distribution"
+          className="min-w-[320px]"
+        >
+          <defs>
+            {/* Kept bars: fine horizontal hatch over a darker amber base, so
+                the fill reads as a lined instrument-panel block, not a flat
+                rectangle. */}
+            <pattern id={stripeId} width={4} height={3} patternUnits="userSpaceOnUse">
+              <rect width={4} height={3} className="fill-primary" fillOpacity={0.32} />
+              <line x1={0} y1={0.5} x2={4} y2={0.5} strokeWidth={1} className="stroke-primary" />
+            </pattern>
+            {/* Discarded bars: dim diagonal hatch. */}
+            <pattern id={hatchId} width={5} height={5} patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+              <rect width={5} height={5} className="fill-transparent" />
+              <line x1={0} y1={0} x2={0} y2={5} strokeWidth={1} className="stroke-primary/35" />
+            </pattern>
+          </defs>
 
-        {/* Axis. Stops at the last row rather than at `height`, which
-            also spans the footer line beneath the chart. */}
-        <line
-          x1={labelWidth}
-          y1={0}
-          x2={labelWidth}
-          y2={visible.length * rowHeight}
-          strokeWidth={1}
-          className="stroke-primary/70"
-        />
+          {/* Axis. Stops at the last row rather than at `height`, which
+              also spans the footer line beneath the chart. */}
+          <line
+            x1={labelWidth}
+            y1={0}
+            x2={labelWidth}
+            y2={visible.length * rowHeight}
+            strokeWidth={1}
+            className="stroke-primary/70"
+          />
 
-        {visible.map((t, i) => {
-          const y = i * rowHeight;
-          const barWidth = maxProb > 0 ? (t.probability / maxProb) * barMaxWidth : 0;
-          return (
-            <g key={t.token} transform={`translate(0, ${y})`}>
-              <text
-                x={labelWidth - 8}
-                y={rowHeight / 2 + 4}
-                textAnchor="end"
-                className={cn(
-                  'font-mono text-[13px] tabular-nums',
-                  t.kept ? 'fill-primary' : 'fill-primary/40',
+          {visible.map((t, i) => {
+            const y = i * rowHeight;
+            const barWidth = maxProb > 0 ? (t.probability / maxProb) * barMaxWidth : 0;
+            return (
+              <g key={t.token} transform={`translate(0, ${y})`}>
+                <text
+                  x={labelWidth - 8}
+                  y={rowHeight / 2 + 4}
+                  textAnchor="end"
+                  className={cn(
+                    'font-mono text-[13px] tabular-nums',
+                    t.kept ? 'fill-primary' : 'fill-primary/40',
+                  )}
+                >
+                  {t.token}
+                  {isFactual && t.correct ? ' ✓' : ''}
+                </text>
+                <rect
+                  x={labelWidth}
+                  y={4}
+                  width={Math.max(barWidth, 0)}
+                  height={rowHeight - 10}
+                  fill={t.kept ? `url(#${stripeId})` : `url(#${hatchId})`}
+                  className="transition-[width] duration-300 ease-out motion-reduce:transition-none"
+                />
+                <text
+                  x={labelWidth + barWidth + 6}
+                  y={rowHeight / 2 + 4}
+                  className="fill-primary/60 font-mono text-[11px] tabular-nums"
+                >
+                  {t.probability.toFixed(3)}
+                </text>
+                {i === lastKeptIndex && strategy !== 'greedy' && (
+                  <g>
+                    <text
+                      x={chartWidth}
+                      y={-4}
+                      textAnchor="end"
+                      className="fill-primary font-mono text-[11px] tabular-nums"
+                    >
+                      {strategy === 'top-k'
+                        ? `K = ${k}`
+                        : `P = ${p.toFixed(2)} · Σ ${(cutoffCumulative ?? 0).toFixed(3)}`}
+                    </text>
+                    <line
+                      x1={0}
+                      y1={rowHeight}
+                      x2={chartWidth}
+                      y2={rowHeight}
+                      strokeWidth={1}
+                      strokeDasharray="4 3"
+                      className="stroke-primary"
+                    />
+                  </g>
                 )}
-              >
-                {t.token}
-              </text>
-              <rect
-                x={labelWidth}
-                y={4}
-                width={Math.max(barWidth, 0)}
-                height={rowHeight - 10}
-                fill={t.kept ? `url(#${stripeId})` : `url(#${hatchId})`}
-                className="transition-[width] duration-300 ease-out motion-reduce:transition-none"
-              />
-              <text
-                x={labelWidth + barWidth + 6}
-                y={rowHeight / 2 + 4}
-                className="fill-primary/60 font-mono text-[11px] tabular-nums"
-              >
-                {t.probability.toFixed(3)}
-              </text>
-              {i === lastKeptIndex && mode !== 'off' && (
-                <g>
-                  <text
-                    x={chartWidth}
-                    y={-4}
-                    textAnchor="end"
-                    className="fill-primary font-mono text-[11px] tabular-nums"
-                  >
-                    {mode === 'top-k'
-                      ? `K = ${k}`
-                      : `P = ${p.toFixed(2)} · Σ ${(cutoffCumulative ?? 0).toFixed(3)}`}
-                  </text>
-                  <line
-                    x1={0}
-                    y1={rowHeight}
-                    x2={chartWidth}
-                    y2={rowHeight}
-                    strokeWidth={1}
-                    strokeDasharray="4 3"
-                    className="stroke-primary"
-                  />
-                </g>
-              )}
-            </g>
-          );
-        })}
+              </g>
+            );
+          })}
 
-        {remaining > 0 && (
-          <text x={0} y={height - 6} className="fill-primary/45 font-mono text-[11px] tabular-nums">
-            + {remaining} more below threshold
-          </text>
-        )}
-      </svg>
+          {remaining > 0 && (
+            <text x={0} y={height - 6} className="fill-primary/45 font-mono text-[11px] tabular-nums">
+              + {remaining} more below threshold
+            </text>
+          )}
+        </svg>
+      </div>
+
+      {/* Verdict — the conclusion the whole instrument is building to. */}
+      <div className="mt-3 flex items-center gap-2 border-t border-primary/20 pt-3">
+        <span
+          aria-hidden="true"
+          className={cn(
+            'h-[6px] w-[6px] shrink-0 rounded-full',
+            verdictTone === 'bad' ? 'bg-destructive' : 'bg-primary',
+            verdictTone === 'warn' && 'opacity-60',
+          )}
+        />
+        <p
+          className={cn(
+            'font-mono text-[12px] leading-snug',
+            verdictTone === 'bad' ? 'text-destructive' : 'text-primary',
+            verdictTone === 'warn' && 'opacity-70',
+          )}
+        >
+          {verdictText}
+        </p>
+      </div>
     </div>
   );
 }
@@ -631,16 +589,32 @@ function Fader({ value, min, max, step, disabled, ariaLabel, onChange }: FaderPr
    ──────────────────────────────────────────────────────────────────── */
 export default function TemperatureInstrument() {
   const [temperature, setTemperature] = useState(TEMP_DEFAULT);
-  const [mode, setMode] = useState<TruncationMode>('top-k');
+  const [promptId, setPromptId] = useState<PromptId>('language');
+  const [strategy, setStrategy] = useState<Strategy>('top-p');
   const [k, setK] = useState(K_DEFAULT);
   const [p, setP] = useState(P_DEFAULT);
   const [tape, setTape] = useState<TapeEntry[]>([]);
   const tapeIdRef = useRef(0);
 
+  const reducedMotion = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
+
   const distribution = useMemo(
-    () => computeDistribution(temperature, mode, k, p),
-    [temperature, mode, k, p],
+    () => computeDistribution(promptId, temperature, strategy, k, p),
+    [promptId, temperature, strategy, k, p],
   );
+
+  const currentVerdict = useMemo(
+    () => verdict(promptId, strategy, distribution),
+    [promptId, strategy, distribution],
+  );
+
+  const handlePromptChange = useCallback((id: PromptId) => {
+    setPromptId(id);
+    setTape([]);
+  }, []);
 
   const handleDraw = useCallback(() => {
     const drawn = sampleToken(distribution.scored);
@@ -650,16 +624,19 @@ export default function TemperatureInstrument() {
         {
           id: tapeIdRef.current,
           temperature,
-          mode,
+          strategy,
           token: drawn.token,
           probability: drawn.probability,
+          correct: drawn.correct,
+          promptId,
         },
         ...prev,
       ].slice(0, 12),
     );
-  }, [distribution, temperature, mode]);
+  }, [distribution, temperature, strategy, promptId]);
 
   const latest = tape[0];
+  const isFactual = PROMPTS[promptId].kind === 'factual';
 
   return (
     <div className="chassis relative w-full">
@@ -675,7 +652,7 @@ export default function TemperatureInstrument() {
           Next-token distribution
         </span>
         <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-          Model — local · {CANDIDATES.length} candidates · recomputed live
+          Model — local · {PROMPTS[promptId].candidates.length} candidates · recomputed live
         </span>
       </div>
 
@@ -694,27 +671,27 @@ export default function TemperatureInstrument() {
             </div>
           </div>
 
-          {/* Truncation */}
+          {/* Sampling strategy */}
           <div className="flex flex-col gap-5">
-            <span className="nameplate">Truncation</span>
-            <ToggleBank mode={mode} onChange={setMode} />
+            <span className="nameplate">Sampling strategy</span>
+            <ToggleBank strategy={strategy} onChange={setStrategy} />
 
-            <div className={cn('flex flex-col gap-2 transition-opacity', mode === 'off' && 'opacity-40')}>
+            <div className={cn('flex flex-col gap-2 transition-opacity', strategy === 'greedy' && 'opacity-40')}>
               <div className="flex items-center justify-between">
                 <span className="font-condensed text-[13px] uppercase tracking-[0.1em] text-muted-foreground">
-                  {mode === 'top-p' ? 'p' : 'k'}
+                  {strategy === 'greedy' ? 'n/a' : strategy === 'top-p' ? 'p' : 'k'}
                 </span>
                 <span className="font-mono text-lg tabular-nums text-primary">
-                  {mode === 'top-p' ? p.toFixed(2) : k}
+                  {strategy === 'greedy' ? '—' : strategy === 'top-p' ? p.toFixed(2) : k}
                 </span>
               </div>
-              {mode === 'top-p' ? (
+              {strategy === 'top-p' ? (
                 <Fader
                   value={p}
                   min={0.05}
                   max={1}
                   step={0.01}
-                  disabled={mode !== 'top-p'}
+                  disabled={strategy !== 'top-p'}
                   ariaLabel="Top-p threshold"
                   onChange={setP}
                 />
@@ -722,9 +699,9 @@ export default function TemperatureInstrument() {
                 <Fader
                   value={k}
                   min={1}
-                  max={20}
+                  max={15}
                   step={1}
-                  disabled={mode !== 'top-k'}
+                  disabled={strategy !== 'top-k'}
                   ariaLabel="Top-k count"
                   onChange={setK}
                 />
@@ -735,9 +712,16 @@ export default function TemperatureInstrument() {
           {/* Gauges */}
           <div className="panel-divider-h pt-6">
             <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-              <GaugeCell value={`${distribution.entropyBits.toFixed(2)}`} label="entropy bits" />
+              <GaugeCell value={distribution.entropyBits.toFixed(2)} label="entropy bits" />
               <GaugeCell value={`${distribution.keptCount}`} label="kept" />
-              <GaugeCell value={distribution.topProbability.toFixed(3)} label="p top" />
+              {isFactual ? (
+                <GaugeCell
+                  value={`${((distribution.correctProbability ?? 1) * 100).toFixed(0)}%`}
+                  label="answer correct"
+                />
+              ) : (
+                <GaugeCell value={distribution.effectiveChoices.toFixed(1)} label="effective choices" />
+              )}
               <GaugeCell value={`${distribution.discardedMassPct.toFixed(1)}%`} label="discarded" />
             </div>
           </div>
@@ -745,22 +729,18 @@ export default function TemperatureInstrument() {
 
         <div className="panel-divider-v hidden min-[900px]:block" />
 
-        {/* Right screen */}
-        <div className="crt min-w-0 flex-1 p-5 sm:p-6">
-          <p className="mb-4 font-mono text-[13px]">
-            <span className="text-screen-dim">prompt → </span>
-            <span className="text-screen-fg">the best way to learn ai is to</span>
-            <span
-              aria-hidden="true"
-              className="ml-0.5 inline-block h-[1em] w-[0.5em] translate-y-[0.15em] bg-screen-fg align-middle motion-safe:animate-pulse"
-            />
-          </p>
-          <DistributionChart
+        {/* Right column — two stacked screens */}
+        <div className="flex min-w-0 flex-1 flex-col gap-4 p-5 sm:p-6">
+          <PromptScreen promptId={promptId} onChange={handlePromptChange} reducedMotion={reducedMotion} />
+          <DistributionScreen
+            promptId={promptId}
+            strategy={strategy}
             scored={distribution.scored}
-            mode={mode}
             k={k}
             p={p}
             cutoffCumulative={distribution.cutoffCumulative}
+            verdictTone={currentVerdict.tone}
+            verdictText={currentVerdict.text}
           />
         </div>
       </div>
@@ -772,6 +752,12 @@ export default function TemperatureInstrument() {
           {latest ? (
             <span className="text-primary">
               {latest.token} · p={latest.probability.toFixed(3)}
+              {PROMPTS[latest.promptId].kind === 'factual' && (
+                <span className={latest.correct ? 'text-primary' : 'text-destructive'}>
+                  {' '}
+                  {latest.correct ? '✓' : '✗'}
+                </span>
+              )}
             </span>
           ) : (
             <span className="text-muted-foreground">no draws yet</span>
