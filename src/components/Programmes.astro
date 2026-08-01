@@ -10,14 +10,27 @@
  */
 const programmes = [
   {
+    // Peeking from behind the wall — the "secret" is the joke.
     name: 'Steal the Secret Prompts',
     href: '#',
-    frames: { idle: ['(๏ᆺ๏υ)', '( ఠൠఠ )'], hover: '( ఠൠఠ )', click: '(๏ᆺ๏ )ノ' },
+    frames: {
+      idle: ['┬┴┬┴┤ω・)', '┬┴┬┴┤・ω・)'],
+      hover: '┬┴┬┴┤◕ω◕)ﾉ',
+      click: '(๏ᆺ๏ )ノ',
+    },
   },
   {
+    // Clicks escalate rather than repeat: mild flip, angry flip, furious
+    // flip, then it puts the table back and calms down. Anyone who
+    // clicks twice gets rewarded for it.
     name: 'Vibe Coding 101',
     href: '#',
-    frames: { idle: ['(◑‿◐)'], hover: '(◑‿◐)♪', click: '(◕‿◕)b' },
+    frames: {
+      idle: ['(◑‿◐)'],
+      hover: '(◑‿◐)♪',
+      escalate: ['(ノ￣□￣)ノ ~┻━┻', '(ノಠ益ಠ)ノ彡┻━┻', '(┛◉Д◉)┛彡┻━┻'],
+      recover: '┬─┬ノ( º _ ºノ)',
+    },
   },
   {
     name: 'Deep AI',
@@ -27,7 +40,11 @@ const programmes = [
   {
     name: 'Fun AI',
     href: '#',
-    frames: { idle: ['(づ ◕‿◕ )づ', '(づ ◕‿◕)づ'], hover: '(づ ✿◡✿)づ', click: '＼(^▽^)／' },
+    frames: {
+      idle: ['(ﾐⓛᆽⓛﾐ)✧', '(=^ ◡ ^=)', '(=◉ᆽ◉=)'],
+      hover: '/ᐠ｡ꞈ｡ᐟ',
+      click: '(=^･ω･^=)',
+    },
   },
 ];
 ---
@@ -60,6 +77,9 @@ const programmes = [
     idle?: string[];
     hover?: string;
     click?: string;
+    /** Successive clicks walk this list before recovering. */
+    escalate?: string[];
+    recover?: string;
   }
 
   // One driver for every card. Idle cycling is skipped under reduced
@@ -105,14 +125,45 @@ const programmes = [
 
     // No preventDefault — the link must still navigate once these have
     // real destinations.
+    const escalate = frames.escalate ?? [];
+    const recover = frames.recover;
+    let rage = 0;
+
     card.addEventListener('click', () => {
       reacting = true;
-      face.textContent = click;
       if (reactTimer) clearTimeout(reactTimer);
-      reactTimer = setTimeout(() => {
-        reacting = false;
-        render();
-      }, 900);
+
+      if (escalate.length === 0) {
+        face.textContent = click;
+        reactTimer = setTimeout(() => {
+          reacting = false;
+          render();
+        }, 900);
+        return;
+      }
+
+      if (rage < escalate.length) {
+        face.textContent = escalate[rage];
+        rage += 1;
+        // Hold the last rung longer, then set the table back up.
+        const last = rage >= escalate.length;
+        reactTimer = setTimeout(
+          () => {
+            if (last && recover) {
+              face.textContent = recover;
+              reactTimer = setTimeout(() => {
+                rage = 0;
+                reacting = false;
+                render();
+              }, 1100);
+            } else {
+              reacting = false;
+              render();
+            }
+          },
+          last ? 900 : 1400,
+        );
+      }
     });
   }
 </script>
