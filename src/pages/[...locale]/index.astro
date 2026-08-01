@@ -10,6 +10,7 @@ import TemperatureInstrument from '@/components/instruments/TemperatureInstrumen
 import GotchaQuiz from '@/components/instruments/GotchaQuiz';
 import HeroIntro from '@/components/HeroIntro.astro';
 import TeachingStats from '@/components/TeachingStats.astro';
+import Programmes from '@/components/Programmes.astro';
 import ToolsBento from '@/components/ToolsBento.astro';
 import SocialLinks from '@/components/SocialLinks.astro';
 import PromptsToSteal from '@/components/PromptsToSteal';
@@ -54,8 +55,6 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
         <span aria-hidden="true" class="screw absolute bottom-2.5 right-2.5"></span>
 
         <TeachingStats />
-        <div class="panel-divider-h"></div>
-        <GotchaQuiz embedded client:visible />
       </div>
     </div>
   </section>
@@ -90,8 +89,12 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     });
   </script>
 
-  <!-- ── Work, with prompts to steal alongside it. Teaching + the
-         challenge now live in the hero, attached as one unit. ────── -->
+  <!-- ── Programmes, as a sign rather than a card grid. ───────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-16">
+    <Programmes />
+  </section>
+
+  <!-- ── Work, with prompts to steal alongside it. ────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
     <div class="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
       <div>
@@ -161,4 +164,12 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
       </p>
     </div>
   </section>
+  <!-- ── The catcher. Last thing before the footer: someone who read
+         this far is the person most likely to want a go. ────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-8 pb-4">
+    <div class="mx-auto max-w-2xl">
+      <GotchaQuiz client:visible />
+    </div>
+  </section>
+
 </Base>

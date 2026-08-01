@@ -2,33 +2,32 @@
 /**
  * The teaching numbers, rendered as a readout rather than as page text —
  * they are measurements, so they belong behind glass like every other
- * measurement on this site. No plaque: the panel it sits in already
- * says what it is, and a badge on top of that is furniture for its own
- * sake.
+ * measurement on this site.
  *
  * The star row clips the fractional star instead of rounding, so 4.5
- * reads as four and a half.
+ * reads as four and a half rather than five.
  */
 const rating = 4.5;
 const stars = [1, 2, 3, 4, 5];
 
 const STAR_PATH =
   'M12 2.6l2.9 5.9 6.5.95-4.7 4.58 1.11 6.47L12 17.45l-5.81 3.05 1.11-6.47-4.7-4.58 6.5-.95z';
+
 ---
 
 <div class="p-5 sm:p-6">
   <div class="crt px-6 py-7">
-    <p class="readout mb-5 text-screen-dim">teaching · cumulative</p>
+    <p class="readout mb-5 text-screen-dim">Teaching AI to engineers &amp; mortals</p>
 
     <div class="flex flex-wrap items-end gap-x-14 gap-y-7">
       <div>
         <p class="gauge-value text-screen-fg">1M+</p>
-        <p class="gauge-label text-screen-dim">learners taught</p>
+        <p class="gauge-label text-screen-dim">taught</p>
       </div>
 
       <div>
         <p class="flex items-center gap-3">
-          <span class="gauge-value text-screen-fg">{rating}+/5</span>
+          <span class="gauge-value text-screen-fg">{rating}+</span>
 
           <span class="flex gap-0.5" role="img" aria-label={`${rating} out of 5`}>
             {
@@ -50,8 +49,9 @@ const STAR_PATH =
             }
           </span>
         </p>
-        <p class="gauge-label text-screen-dim">average rating</p>
+        <p class="gauge-label text-screen-dim">avg. rating</p>
       </div>
     </div>
   </div>
+
 </div>

@@ -1,0 +1,45 @@
+---
+/**
+ * The programmes, as a banner rather than a card grid — they are a
+ * marquee of things on offer, and a sign is the honest form for that.
+ *
+ * The track holds two identical copies of the list and translates by
+ * exactly -50%, so the seam lands where the second copy begins and the
+ * loop is invisible. Under reduced motion the clone is hidden and the
+ * track becomes a plain wrapping list.
+ */
+const programmes = [
+  'Steal the Secret Prompts',
+  'Vibe Coding 101',
+  'Deep AI',
+  'Fun AI',
+];
+---
+
+<div class="chassis relative overflow-hidden py-6">
+  <span class="screw top-3 left-3"></span>
+  <span class="screw top-3 right-3"></span>
+  <span class="screw bottom-3 left-3"></span>
+  <span class="screw bottom-3 right-3"></span>
+
+  <div class="ticker">
+    <div class="ticker-track gap-x-10 px-6">
+      {
+        [false, true].map((isClone) => (
+          <ul
+            class="flex shrink-0 items-center gap-x-10"
+            data-ticker-clone={isClone ? '' : undefined}
+            aria-hidden={isClone ? 'true' : undefined}
+          >
+            {programmes.map((name) => (
+              <li class="flex shrink-0 items-center gap-4 text-xl sm:text-2xl">
+                <span class="size-1.5 shrink-0 rounded-full bg-contrast" aria-hidden="true" />
+                {name}
+              </li>
+            ))}
+          </ul>
+        ))
+      }
+    </div>
+  </div>
+</div>

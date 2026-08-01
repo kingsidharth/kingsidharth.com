@@ -20,13 +20,20 @@ const benefits = [
 <div class="flex w-full min-w-0 flex-col">
   <p class="nameplate text-primary">Bengaluru</p>
 
-  <h1 class="mt-3 max-w-[20ch] text-4xl sm:text-5xl">
-    I'm Sidharth. I'll show you how AI actually behaves.
+  <h1 class="mt-3 max-w-[22ch] text-4xl sm:text-5xl">
+    Can I show you some cool{' '}
+    <!-- The cycling word is decorative: screen readers get one stable
+         sentence from the visually-hidden copy instead of a word that
+         changes under them mid-read. -->
+    <span class="sr-only">AI stuff?</span>
+    <span aria-hidden="true">
+      <span data-cycle-word class="text-primary">AI</span> stuff?
+    </span>
   </h1>
 
   <p class="mt-4 max-w-[54ch] text-lg text-muted-foreground">
-    Not how it's described — how it behaves when you turn the knobs. I teach this for a living, to
-    engineers and to people who have never written a line of code.
+    I teach this for a living, to engineers and to people who have never written a line of code.
+    Everything below is something you can take apart.
   </p>
 
   <ul class="mt-7 space-y-3 text-lg sm:text-xl">
@@ -49,3 +56,24 @@ const benefits = [
     >.
   </p>
 </div>
+
+<script>
+  // Cycles the headline word. Pure decoration, so it bails out entirely
+  // under reduced motion rather than swapping without the fade.
+  const el = document.querySelector<HTMLElement>('[data-cycle-word]');
+  const words = ['AI', 'design', 'ML', 'tech', 'startup'];
+
+  if (el && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    let i = 0;
+    el.style.transition = 'opacity 220ms ease';
+
+    setInterval(() => {
+      el.style.opacity = '0';
+      setTimeout(() => {
+        i = (i + 1) % words.length;
+        el.textContent = words[i];
+        el.style.opacity = '1';
+      }, 220);
+    }, 2200);
+  }
+</script>
