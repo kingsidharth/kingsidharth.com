@@ -13,6 +13,9 @@ const programmes = [
     // Peeking from behind the wall — the "secret" is the joke.
     name: 'Steal the Secret Prompts',
     href: '#',
+    bg: 'oklch(0.28 0.11 275)',
+    ink: 'oklch(0.88 0.16 195)',
+    shadow: 'oklch(0.18 0.09 275)',
     frames: {
       idle: ['┬┴┬┴┤ω・)', '┬┴┬┴┤・ω・)'],
       hover: '┬┴┬┴┤◕ω◕)ﾉ',
@@ -25,6 +28,9 @@ const programmes = [
     // clicks twice gets rewarded for it.
     name: 'Vibe Coding 101',
     href: '#',
+    bg: 'oklch(0.3 0.13 340)',
+    ink: 'oklch(0.9 0.16 95)',
+    shadow: 'oklch(0.19 0.1 340)',
     frames: {
       idle: ['(◑‿◐)'],
       hover: '(◑‿◐)♪',
@@ -35,11 +41,17 @@ const programmes = [
   {
     name: 'Deep AI',
     href: '#',
+    bg: 'oklch(0.27 0.09 195)',
+    ink: 'oklch(0.88 0.19 145)',
+    shadow: 'oklch(0.17 0.07 195)',
     frames: { idle: ['(´⊙ω⊙`)！'], hover: 'ಥ‿ಥ', click: '(⊙_⊙;)' },
   },
   {
     name: 'Fun AI',
     href: '#',
+    bg: 'oklch(0.32 0.12 45)',
+    ink: 'oklch(0.92 0.15 85)',
+    shadow: 'oklch(0.2 0.09 45)',
     frames: {
       idle: ['(ﾐⓛᆽⓛﾐ)✧', '(=^ ◡ ^=)', '(=◉ᆽ◉=)'],
       hover: '/ᐠ｡ꞈ｡ᐟ',
@@ -55,18 +67,25 @@ const programmes = [
       <a
         href={p.href}
         data-face-card
-        class="crt group flex flex-col items-center justify-center gap-3 px-3 py-5"
+        class="screen-raised group flex flex-col items-center justify-center gap-3 px-3 py-5"
+        style={`background:${p.bg}; --sprite-shadow:${p.shadow};`}
       >
         <span
           data-face
           data-frames={JSON.stringify(p.frames)}
-          class="chromatic block text-center text-lg text-screen-fg/85 transition-colors group-hover:text-screen-fg"
+          class="sprite-text block text-center text-xl"
+          style={`color:${p.ink};`}
           aria-hidden="true"
         >
           {p.frames.idle[0]}
         </span>
 
-        <span class="chromatic text-center font-mono text-xs text-screen-fg">{p.name}</span>
+        <span
+          class="sprite-text text-center font-mono text-[11px]"
+          style={`color:${p.ink};`}
+        >
+          {p.name}
+        </span>
       </a>
     ))
   }
