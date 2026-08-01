@@ -59,23 +59,23 @@ const en = {
   'theme.dark': 'Dark',
   'lang.switch': 'Change language',
 
-  'shelf.title': 'The shelf',
-  'shelf.sub': 'instruments · each running, none finished',
+  'shelf.title': 'Work',
+  'shelf.sub': 'interactive tools for understanding AI',
   'shelf.figure': 'Fig.',
 
-  'broadcasts.title': 'Broadcasts',
-  'broadcasts.sub': 'demonstrations · one long-form every friday',
+  'broadcasts.title': 'Videos',
+  'broadcasts.sub': 'long-form, most Fridays',
   'broadcasts.views': 'views',
 
-  'notes.title': 'Field notes',
-  'notes.sub': 'findings, not claims',
+  'notes.title': 'Writing',
+  'notes.sub': 'essays on AI, product, and building',
   'notes.readingTime': 'min',
   'notes.draft': 'Draft',
-  'notes.all': 'Open the notebook',
+  'notes.all': 'Read all',
   'notes.empty': 'Nothing filed here yet.',
 
   'guides.title': 'Guides',
-  'guides.sub': 'the long explanations · read in order',
+  'guides.sub': 'read in order',
   'guides.parts': 'parts',
   'guides.part': 'Part',
   'guides.next': 'Next',
@@ -84,16 +84,16 @@ const en = {
 
   'doc.published': 'Published',
   'doc.updated': 'Updated',
-  'doc.related': 'Instruments in this piece',
+  'doc.related': 'Related tools',
 
   'status.live': 'live',
   'status.beta': 'beta',
   'status.rough': 'rough',
   'status.archived': 'archived',
 
-  'error.404.title': 'No such instrument',
-  'error.404.body': 'That page is not on the bench. It may never have been.',
-  'error.404.home': 'Back to the bench',
+  'error.404.title': 'Not found',
+  'error.404.body': 'This page does not exist.',
+  'error.404.home': 'Go home',
 } as const;
 
 export type UIKey = keyof typeof en;

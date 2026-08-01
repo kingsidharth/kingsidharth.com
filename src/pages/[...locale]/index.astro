@@ -27,25 +27,37 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
 
 <Base
   locale={locale}
-  title="Sidharth — The Instrument Maker"
-  description="I build instruments to understand AI. Interactive tools, field notes, and long-form demonstrations from Bengaluru."
+  title="Sidharth — Product builder"
+  description="Building tools to understand AI. Essays, interactive demos, and videos from Bengaluru."
   bareTitle
 >
-  <!-- ── Hero + Instrument 01 ─────────────────────────────────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-12 sm:pt-16">
-    <p class="nameplate mb-5 text-primary">Instrument 01 · decoding</p>
+  <!-- ── Who this is ──────────────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-14 sm:pt-20">
+    <p class="nameplate mb-5 text-primary">Bengaluru · product &amp; design</p>
 
-    <h1 class="max-w-[19ch] text-4xl sm:text-5xl">
-      I build instruments to understand AI.{' '}
-      <span class="text-muted-foreground">Here's one, wired open.</span>
+    <h1 class="max-w-[24ch] text-4xl sm:text-5xl">
+      I'm Sidharth. I build products, and tools that show how AI actually behaves.
     </h1>
 
-    <p class="mt-5 max-w-[52ch] text-lg text-muted-foreground">
+    <p class="mt-6 max-w-[54ch] text-lg text-muted-foreground">
+      Sixteen years in product and design — founding team at Instamojo, then Headout, now
+      Outskill. I write about AI and build small tools you can take apart.
+    </p>
+  </section>
+
+  <!-- ── Featured demo. One of the tools, not the premise of the
+         site — hence its own section below the introduction. ───── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-14 sm:pt-16">
+    <p class="nameplate mb-3 text-primary">Featured · sampling</p>
+
+    <h2 class="max-w-[20ch] text-2xl sm:text-3xl">What temperature actually does</h2>
+
+    <p class="mt-4 max-w-[54ch] text-muted-foreground">
       Temperature means nothing without the sampling strategy. Turn the knob and watch top-k and
       top-p disagree about the same distribution.
     </p>
 
-    <div class="mt-10">
+    <div class="mt-9">
       <TemperatureInstrument client:visible />
     </div>
   </section>
@@ -96,11 +108,10 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
 
   <!-- ── About ────────────────────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
-    <p class="max-w-[32ch] text-3xl">Product builder. Sixteen years, mostly in public.</p>
+    <p class="max-w-[32ch] text-3xl">Product builder, Bengaluru.</p>
     <p class="mt-4 max-w-[50ch] text-muted-foreground">
-      I make instruments so the rest of us can see how AI actually works. Making AI useful for
-      50,000 engineers — and the rest of us. Instamojo (founding team), Headout, now product &amp;
-      design at Outskill.
+      About 16 years working on products. Founding team at Instamojo, then Headout, now at
+      Outskill. These tools and essays are for anyone trying to understand how AI actually works.
     </p>
   </section>
 </Base>
