@@ -21,10 +21,18 @@ const flag = entry.data.draft
     : { text: `${readingTime(entry.body)} ${t('notes.readingTime')}`, dim: false };
 ---
 
+<!-- Hover must not change the box. The old version animated padding,
+     which nudged every row sideways and reflowed the list under the
+     cursor. A left rule that fades in occupies space whether or not it
+     is visible, so nothing moves. -->
 <a
   href={localePath(locale, `blog/${slug}`)}
-  class="group flex items-baseline gap-4 border-b border-rule py-3 transition-[padding,background-color] hover:bg-primary/5 hover:ps-2"
+  class="group relative flex items-baseline gap-4 border-b border-rule py-3.5 ps-4 transition-colors hover:bg-primary/5"
 >
+  <span
+    class="absolute inset-y-1 start-0 w-px bg-primary opacity-0 transition-opacity group-hover:opacity-100"
+    aria-hidden="true"></span>
+
   <time
     datetime={entry.data.pubDate.toISOString()}
     class="w-16 shrink-0 font-mono text-xs text-muted-foreground"

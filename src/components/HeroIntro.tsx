@@ -1,5 +1,4 @@
-import { useId, useState, type ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import type { ReactNode } from 'react';
 
 /** A single five-point star, drawn as two stacked copies: a muted base
  * star and a primary-coloured copy clipped to `fraction` of its width.
@@ -48,10 +47,7 @@ const ROWS: IntroRow[] = [
     id: 'build-products',
     label: 'Build products',
     content: (
-      <p>
-        Payment Links at Instamojo — over half the company&apos;s GMV. Booking flows at Headout used by millions of
-        travellers.
-      </p>
+      <p>Payment Links at Instamojo — over half the company&apos;s GMV. Booking flows at Headout, used by millions.</p>
     ),
   },
   {
@@ -76,12 +72,7 @@ const ROWS: IntroRow[] = [
   {
     id: 'build-tools',
     label: 'Build visualisation and teaching tools',
-    content: (
-      <p>
-        Interactive instruments that show what a model is actually doing. There&apos;s one further down this page —
-        take it apart.
-      </p>
-    ),
+    content: <p>Interactive instruments that show what a model is actually doing — one&apos;s further down this page.</p>,
   },
   {
     id: 'help-startups',
@@ -91,29 +82,11 @@ const ROWS: IntroRow[] = [
   {
     id: 'read-papers',
     label: 'Read research papers',
-    content: (
-      <p>I annotate them as I go and write up what actually held. The notes are more useful than the summaries.</p>
-    ),
+    content: <p>Annotated as I go, with notes on what actually held up — more useful than the summaries.</p>,
   },
 ];
 
-/** The first row starts open so the interaction pattern (rows reveal
- * detail) is discoverable without a wall of unexplained clickable text. */
-const INITIAL_OPEN: ReadonlySet<string> = new Set([ROWS[0]!.id]);
-
 export default function HeroIntro() {
-  const [openIds, setOpenIds] = useState<ReadonlySet<string>>(INITIAL_OPEN);
-  const baseId = useId();
-
-  const toggle = (id: string) => {
-    setOpenIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
   return (
     <div className="flex w-full min-w-0 flex-col">
       <span className="nameplate text-primary">Bengaluru</span>
@@ -121,50 +94,15 @@ export default function HeroIntro() {
       <h1 className="mt-3 text-4xl font-semibold text-foreground sm:text-5xl">I&apos;m Sidharth. I:</h1>
 
       <div className="mt-6 flex flex-col">
-        {ROWS.map((row) => {
-          const isOpen = openIds.has(row.id);
-          const panelId = `${baseId}-${row.id}-panel`;
-          const labelId = `${baseId}-${row.id}-label`;
-          return (
-            <div key={row.id} className="border-b border-border first:border-t">
-              <button
-                type="button"
-                id={labelId}
-                aria-expanded={isOpen}
-                aria-controls={panelId}
-                onClick={() => toggle(row.id)}
-                className="group flex w-full items-start gap-3 py-4 text-left focus-visible:outline-none"
-              >
-                <span aria-hidden="true" className="mt-[0.75em] h-px w-4 shrink-0 bg-primary" />
-                <span className="min-w-0 flex-1 text-xl font-medium text-foreground sm:text-2xl">{row.label}</span>
-                <span
-                  aria-hidden="true"
-                  className="mt-1 w-4 shrink-0 text-center font-mono text-lg leading-none text-contrast"
-                >
-                  {isOpen ? '−' : '+'}
-                </span>
-              </button>
-
-              {/* Grid-rows 0fr/1fr trick: animates height without ever
-                  measuring it in JS. The global reduced-motion media query
-                  in global.css already collapses all transition durations
-                  to ~0, so this snaps under reduced motion for free. */}
-              <div
-                id={panelId}
-                role="region"
-                aria-labelledby={labelId}
-                className={cn(
-                  'grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none',
-                  isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
-                )}
-              >
-                <div className="overflow-hidden">
-                  <div className="pb-5 pl-7 text-base text-muted-foreground">{row.content}</div>
-                </div>
-              </div>
+        {ROWS.map((row) => (
+          <div key={row.id} className="flex items-start gap-3 border-b border-border py-4 first:border-t">
+            <span aria-hidden="true" className="mt-[0.75em] h-px w-4 shrink-0 bg-primary" />
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <span className="text-xl font-medium text-foreground sm:text-2xl">{row.label}</span>
+              <div className="text-base text-muted-foreground">{row.content}</div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
       <p className="mt-6 text-base text-muted-foreground">

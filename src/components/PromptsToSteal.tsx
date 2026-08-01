@@ -1,39 +1,47 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface Category {
   id: string;
-  label: string;
+  /** The audience this prompt is for — shown as a small nameplate label. */
+  audience: string;
+  /** What the prompt does for that audience — shown up front, no click required. */
+  title: string;
   prompt: string;
 }
 
 const CATEGORIES: Category[] = [
   {
     id: 'anyone',
-    label: 'Anyone',
+    audience: 'Anyone',
+    title: 'Find your blind spot',
     prompt: 'What superpower am I not using?',
   },
   {
     id: 'founders',
-    label: 'Founders',
+    audience: 'Founders',
+    title: 'Pitch it to a sceptic',
     prompt:
       "Act as a sceptical investor. Read my landing page copy and list the three claims you don't believe, and exactly what evidence would change your mind.",
   },
   {
     id: 'designers',
-    label: 'Designers',
+    audience: 'Designers',
+    title: 'Watch a stranger use it',
     prompt:
       "Here's my screen. Describe what a first-time user would try to do first, and where they'd hesitate. Don't suggest fixes yet — just tell me what you see.",
   },
   {
     id: 'pms',
-    label: 'PMs',
+    audience: 'PMs',
+    title: 'Turn a request into evals',
     prompt:
       'Turn this feature request into three eval cases with pass/fail criteria a junior could apply without asking me anything.',
   },
   {
     id: 'engineers',
-    label: 'Engineers',
+    audience: 'Engineers',
+    title: 'Write the handover note',
     prompt:
       'Explain what this code does to whoever maintains it after I leave. Then list the three things most likely to break it.',
   },
@@ -46,20 +54,10 @@ function Screw({ className }: { className?: string }) {
 
 type CopyState = 'idle' | 'copied' | 'manual';
 
-/** A single prompt panel: the CRT readout plus its copy control. Owns the
- * transient copy-feedback state so switching tabs never leaks a stale
- * "Copied" label onto the next prompt. */
-function PromptPanel({
-  category,
-  tabId,
-  panelId,
-  hidden,
-}: {
-  category: Category;
-  tabId: string;
-  panelId: string;
-  hidden: boolean;
-}) {
+/** A single prompt row: audience label, title, and the CRT readout with its
+ * copy control. Owns its own transient copy-feedback state so copying one
+ * prompt never leaks a stale "Copied" label onto another row. */
+function PromptRow({ category }: { category: Category }) {
   const [copyState, setCopyState] = useState<CopyState>('idle');
   const textRef = useRef<HTMLParagraphElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -106,13 +104,12 @@ function PromptPanel({
   }, [category.prompt, selectPromptText]);
 
   return (
-    <div
-      role="tabpanel"
-      id={panelId}
-      aria-labelledby={tabId}
-      hidden={hidden}
-      className="flex flex-col gap-3"
-    >
+    <div className="flex flex-col gap-2.5">
+      <div className="flex items-baseline gap-2.5">
+        <span className="nameplate shrink-0 text-muted-foreground">{category.audience}</span>
+      </div>
+      <h4 className="font-sans text-lg font-semibold leading-snug text-foreground">{category.title}</h4>
+
       <div className="crt p-4 sm:p-5">
         <p
           ref={textRef}
@@ -171,43 +168,6 @@ function CopyIcon() {
 }
 
 export default function PromptsToSteal() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const idBase = useId();
-  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
-
-  const focusTab = useCallback((index: number) => {
-    const count = CATEGORIES.length;
-    const next = (index + count) % count;
-    setActiveIndex(next);
-    tabRefs.current[next]?.focus();
-  }, []);
-
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-      switch (event.key) {
-        case 'ArrowRight':
-          event.preventDefault();
-          focusTab(index + 1);
-          break;
-        case 'ArrowLeft':
-          event.preventDefault();
-          focusTab(index - 1);
-          break;
-        case 'Home':
-          event.preventDefault();
-          focusTab(0);
-          break;
-        case 'End':
-          event.preventDefault();
-          focusTab(CATEGORIES.length - 1);
-          break;
-        default:
-          break;
-      }
-    },
-    [focusTab],
-  );
-
   return (
     <div className="chassis relative w-full">
       <Screw className="left-2.5 top-2.5" />
@@ -228,48 +188,13 @@ export default function PromptsToSteal() {
           <p className="font-sans text-sm text-muted-foreground">Copy them. They work.</p>
         </div>
 
-        <div role="tablist" aria-label="Prompt categories" className="flex flex-wrap gap-2">
-          {CATEGORIES.map((category, index) => {
-            const selected = index === activeIndex;
-            const tabId = `${idBase}-tab-${category.id}`;
-            const panelId = `${idBase}-panel-${category.id}`;
-            return (
-              <button
-                key={category.id}
-                ref={(node) => {
-                  tabRefs.current[index] = node;
-                }}
-                type="button"
-                role="tab"
-                id={tabId}
-                aria-selected={selected}
-                aria-controls={panelId}
-                tabIndex={selected ? 0 : -1}
-                onClick={() => setActiveIndex(index)}
-                onKeyDown={(event) => handleKeyDown(event, index)}
-                className={cn(
-                  'rounded-full border px-3.5 py-1.5 font-sans text-sm font-medium transition-colors',
-                  'focus-visible:outline-none',
-                  selected
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-transparent text-muted-foreground hover:border-chassis-edge hover:text-foreground',
-                )}
-              >
-                {category.label}
-              </button>
-            );
-          })}
+        <div className="flex flex-col divide-y divide-border">
+          {CATEGORIES.map((category) => (
+            <div key={category.id} className="py-6 first:pt-0 last:pb-0">
+              <PromptRow category={category} />
+            </div>
+          ))}
         </div>
-
-        {CATEGORIES.map((category, index) => (
-          <PromptPanel
-            key={category.id}
-            category={category}
-            tabId={`${idBase}-tab-${category.id}`}
-            panelId={`${idBase}-panel-${category.id}`}
-            hidden={index !== activeIndex}
-          />
-        ))}
       </div>
     </div>
   );

@@ -49,14 +49,6 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     </div>
   </section>
 
-  <!-- ── Challenge. Its own section now: it gates the instrument, so
-         it needs the full width and its own beat. ───────────────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-20">
-    <div class="max-w-2xl">
-      <GotchaQuiz client:visible />
-    </div>
-  </section>
-
   <!-- Revealed by the quiz. Hidden rather than un-rendered so the
        reveal is instant and it stays out of the a11y tree until then.
        Note `client:idle`, NOT `client:visible`: a `hidden` element has
@@ -87,15 +79,25 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     });
   </script>
 
-  <!-- ── Work ─────────────────────────────────────────────────── -->
+  <!-- ── Work, with the challenge alongside it. The quiz gates the
+         instrument further down, so it sits where a reader has just
+         finished the biography and is ready to be provoked. ─────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
-    <SectionHead title={t('work.title')} />
-    <WorkList entries={work} />
-    <p class="mt-6 font-mono text-xs">
-      <a href={localePath(locale, 'work')} class="text-primary hover:underline">
-        More about the work →
-      </a>
-    </p>
+    <div class="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16">
+      <div>
+        <SectionHead title={t('work.title')} />
+        <WorkList entries={work} />
+        <p class="mt-6 font-mono text-xs">
+          <a href={localePath(locale, 'work')} class="text-primary hover:underline">
+            More about the work →
+          </a>
+        </p>
+      </div>
+
+      <div class="lg:sticky lg:top-24">
+        <GotchaQuiz client:visible />
+      </div>
+    </div>
   </section>
 
   <!-- ── Tools & Experiments ──────────────────────────────────── -->

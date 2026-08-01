@@ -15,17 +15,7 @@ const { entries, detailed = false } = Astro.props;
     entries.map((entry) => (
       <li class="border-b border-rule py-6">
         <div class="flex flex-col gap-1 sm:flex-row sm:gap-6">
-          <div class="flex items-center gap-2.5 sm:w-48 sm:shrink-0 sm:items-start sm:pt-0.5">
-            {/* Contrast pip for a current engagement, dim for a past one. */}
-            <span
-              class:list={[
-                'size-1.5 shrink-0 rounded-full sm:mt-[0.5em]',
-                entry.data.current
-                  ? 'bg-contrast shadow-[0_0_8px_var(--color-contrast)]'
-                  : 'bg-muted-foreground/40',
-              ]}
-              aria-hidden="true"
-            />
+          <div class="sm:w-48 sm:shrink-0">
             <span class="font-semibold">{entry.data.org}</span>
           </div>
 
