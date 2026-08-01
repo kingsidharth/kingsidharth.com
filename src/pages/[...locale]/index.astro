@@ -50,11 +50,14 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-14 sm:pt-16">
     <p class="nameplate mb-3 text-primary">Featured · sampling</p>
 
-    <h2 class="max-w-[20ch] text-2xl sm:text-3xl">What temperature actually does</h2>
+    <h2 class="max-w-[24ch] text-2xl sm:text-3xl">
+      Why one temperature can't be right for everything
+    </h2>
 
-    <p class="mt-4 max-w-[54ch] text-muted-foreground">
-      Temperature means nothing without the sampling strategy. Turn the knob and watch top-k and
-      top-p disagree about the same distribution.
+    <p class="mt-4 max-w-[58ch] text-muted-foreground">
+      Same knob, three prompts. Turn it up and the poem gets more interesting while the arithmetic
+      starts getting the answer wrong. Switch to greedy and the maths is safe at any temperature —
+      but the poem says "star" every single time.
     </p>
 
     <div class="mt-9">

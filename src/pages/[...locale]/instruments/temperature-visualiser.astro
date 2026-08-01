@@ -14,7 +14,7 @@ const t = useTranslations(locale);
 <Base
   locale={locale}
   title="Temperature visualiser"
-  description="Turn the knob and watch top-k and top-p disagree about the same distribution."
+  description="Three prompts, one temperature knob. Watch arithmetic break as poetry gets interesting."
   path="instruments/temperature-visualiser"
 >
   <div class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-14">
@@ -25,9 +25,9 @@ const t = useTranslations(locale);
     </p>
 
     <h1 class="max-w-[22ch] text-4xl">Temperature visualiser</h1>
-    <p class="mt-4 max-w-[54ch] text-lg text-muted-foreground">
-      Temperature reshapes the distribution before truncation ever looks at it. That is why a
-      top-p value quoted on its own tells you nothing.
+    <p class="mt-4 max-w-[56ch] text-lg text-muted-foreground">
+      Pick a prompt, then turn the knob. The same setting that makes a poem worth reading makes
+      arithmetic unreliable — and the strategy that protects the arithmetic flattens the poem.
     </p>
 
     <div class="mt-10">
@@ -36,8 +36,9 @@ const t = useTranslations(locale);
 
     <p class="mt-8 max-w-[60ch] text-sm text-muted-foreground">
       The logits here are hand-authored rather than sampled from a live model, so the shape is
-      stable enough to reason about. The maths — softmax, top-k, nucleus, entropy — is the same
-      code path a real sampler runs. See{' '}
+      stable enough to reason about. The maths — softmax, greedy, top-k, nucleus, entropy — is the
+      same code path a real sampler runs. "Effective choices" is 2 raised to the entropy of the
+      kept tokens: roughly how many words are genuinely in play. See{' '}
       <a
         href={localePath(locale, 'guides/sampling/truncation')}
         class="text-primary hover:underline"

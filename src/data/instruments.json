@@ -2,7 +2,7 @@
   {
     "id": "temperature-visualiser",
     "name": "Temperature visualiser",
-    "blurb": "Turn the knob and watch top-k and top-p disagree about the same distribution.",
+    "blurb": "Three prompts, one knob. Arithmetic breaks as poetry gets interesting.",
     "status": "live",
     "version": "0.9",
     "screen": "distribution",
