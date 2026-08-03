@@ -94,10 +94,24 @@ const maskStyle = [
     class="w-full [.hero-live_&]:invisible dark:hidden"
   />
 
-  <!-- Sized off the image beside it rather than given its own box, so
-       the swap when it goes live cannot shift anything. -->
-  <canvas data-hero-canvas style={maskStyle} class="absolute inset-0 size-full opacity-0"></canvas>
+  <!-- Two canvases, not one: the far plate (statue, ranges, mist) and
+       the near plate (the foreground ledge and its path). Splitting them
+       is what allows a parallax offset on scroll, and doing it as two
+       elements means the offset is a compositor transform rather than a
+       full 25,600-cell repaint every frame.
+
+       Sized off the image beside them rather than given their own box,
+       so the swap when they go live cannot shift anything. -->
+  <canvas
+    data-hero-canvas="far"
+    style={maskStyle}
+    class="absolute inset-0 size-full opacity-0 will-change-transform"></canvas>
+  <canvas
+    data-hero-canvas="near"
+    style={maskStyle}
+    class="absolute inset-0 size-full opacity-0 will-change-transform"></canvas>
 </div>
+
 
 <script>
   import {
@@ -113,6 +127,21 @@ const maskStyle = [
   const DECAY = 0.955;
   const HOT_INK: readonly [number, number, number] = [244, 122, 183];
 
+  /** Row fraction where the foreground ledge begins in the source. */
+  const NEAR_FROM = 0.72;
+
+  /* Visibility cutoff, and how far a cell may wander either side of it.
+     The export bakes almost no floor, so the edge between picture and
+     nothing is decided here — jittered per cell, because a single
+     threshold applied evenly draws a clean contour line, and a clean
+     contour is the one thing a hand-inked image never has. */
+  const CUT = 0.1;
+  const JITTER = 0.06;
+
+  /** How far the two plates separate over a screen of scrolling. */
+  const FAR_DRIFT = 34;
+  const NEAR_DRIFT = -16;
+
   interface Grid {
     cols: number;
     rows: number;
@@ -123,14 +152,23 @@ const maskStyle = [
     return dark ? [242, 227, 196] : [58, 47, 34];
   }
 
-  const canvas = document.querySelector<HTMLCanvasElement>('canvas[data-hero-canvas]');
-  const host = canvas?.parentElement?.parentElement;
-  const ctx = canvas?.getContext('2d');
+  /** Deterministic 0-1 per cell. Stable across repaints, so the ragged
+      edge and the disco glitter stay put instead of crawling. */
+  function hash01(x: number, y: number): number {
+    return ((((x * 374761393) ^ (y * 668265263)) >>> 0) % 1024) / 1024;
+  }
 
-  if (canvas && host && ctx) {
+  const far = document.querySelector<HTMLCanvasElement>('canvas[data-hero-canvas="far"]');
+  const near = document.querySelector<HTMLCanvasElement>('canvas[data-hero-canvas="near"]');
+  const host = far?.parentElement?.parentElement;
+
+  if (far && near && host) {
     const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+
     let cols = 0;
     let rows = 0;
+    /** First row belonging to the near plate. */
+    let split = 0;
     let lum = new Uint8Array(0);
     let heat = new Float32Array(0);
     let cw = 0;
@@ -141,8 +179,10 @@ const maskStyle = [
     let fringe = readFringeOffset(document.documentElement);
     let raf = 0;
 
-    /** Bounding box of cells with heat, so a frame redraws a patch and
-        not the whole 260x65 grid. */
+    const ctxOf = (canvas: HTMLCanvasElement) => canvas.getContext('2d');
+
+    /** Bounding box of cells holding heat, so a frame redraws a patch
+        and not the whole 320x80 grid. */
     let box = { x0: 0, y0: 0, x1: -1, y1: -1 };
 
     const widen = (x: number, y: number) => {
@@ -156,17 +196,43 @@ const maskStyle = [
       box.y1 = Math.max(box.y1, y);
     };
 
-    function paint(x0: number, y0: number, x1: number, y1: number): void {
-      if (x1 < x0 || y1 < y0) return;
-      ctx.clearRect(x0 * cw, y0 * chh, (x1 - x0 + 1) * cw, (y1 - y0 + 1) * chh);
+    /**
+     * Paint one plate over a cell rectangle.
+     *
+     * Both canvases cover the whole element and share one coordinate
+     * system; each simply declines the rows that are not its own. That
+     * keeps the split a rendering detail rather than a layout one, so
+     * the two can be transformed independently without anything having
+     * to line back up.
+     */
+    function paint(
+      canvas: HTMLCanvasElement,
+      from: number,
+      to: number,
+      x0: number,
+      y0: number,
+      x1: number,
+      y1: number,
+    ): void {
+      const ctx = ctxOf(canvas);
+      if (!ctx) return;
 
-      for (let y = y0; y <= y1; y += 1) {
+      const ry0 = Math.max(y0, from);
+      const ry1 = Math.min(y1, to - 1);
+      if (x1 < x0 || ry1 < ry0) return;
+
+      ctx.clearRect(x0 * cw, ry0 * chh, (x1 - x0 + 1) * cw, (ry1 - ry0 + 1) * chh);
+
+      for (let y = ry0; y <= ry1; y += 1) {
         for (let x = x0; x <= x1; x += 1) {
           const i = y * cols + x;
           const base = (lum[i] ?? 0) / 255;
-          if (base === 0) continue;
-
           const h = heat[i] ?? 0;
+
+          // The jittered cutoff. Heat lifts a cell over it, so the ragged
+          // edge also softens wherever the pointer passes.
+          if (base + h * 0.5 < CUT + (hash01(x, y) - 0.5) * 2 * JITTER) continue;
+
           const t = Math.min(1, h * 2);
           const lit = Math.min(1, base + h * 0.4);
 
@@ -181,18 +247,15 @@ const maskStyle = [
           const g = Math.round(ink[1] + (HOT_INK[1] - ink[1]) * t);
           const b = Math.round(ink[2] + (HOT_INK[2] - ink[2]) * t);
 
-          // Disco: a fixed hash picks roughly one cell in nine to catch
-          // the light — full block, pushed most of the way to white.
-          // Hashed rather than random so a repaint does not reshuffle the
-          // glitter; the ball would boil instead of turn. `>>> 0` because
-          // the XOR of two large products is signed, and a negative
-          // modulo never equals zero, so the sparkle never fired.
+          // Disco: a fixed hash lights roughly one cell in nine as a full
+          // block pushed most of the way to white. Hashed, not random, or
+          // a repaint reshuffles the glitter and the ball boils.
           let alpha = Math.min(1, 0.4 + lit * 0.7);
           let glyphOut = glyph;
           let rr = r;
           let gg = g;
           let bb = b;
-          if (treatment === 'disco' && (((x * 73856093) ^ (y * 19349663)) >>> 0) % 9 === 0) {
+          if (treatment === 'disco' && hash01(x + 7, y + 13) < 0.11) {
             glyphOut = '█';
             alpha = 1;
             rr = Math.round(r + (255 - r) * 0.75);
@@ -211,9 +274,9 @@ const maskStyle = [
 
           // Three single-channel copies summed with `lighter`, which is
           // what an additive display does: where they overlap they
-          // reconstruct the ink, and only the edges fringe. Compositing
-          // them normally would just stack three coloured glyphs and the
-          // last one would win.
+          // reconstruct the ink and only the edges fringe. Compositing
+          // normally would stack three coloured glyphs and the last would
+          // win.
           const d = fringe * cw;
           ctx.globalCompositeOperation = 'lighter';
           ctx.fillStyle = `rgba(${rr},0,0,${alpha})`;
@@ -227,29 +290,40 @@ const maskStyle = [
       }
     }
 
+    function paintBoth(x0: number, y0: number, x1: number, y1: number): void {
+      paint(far, 0, split, x0, y0, x1, y1);
+      paint(near, split, rows, x0, y0, x1, y1);
+    }
+
     function measure(): boolean {
-      const rect = canvas.getBoundingClientRect();
+      const rect = far.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0 || cols === 0) return false;
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.round(rect.width * dpr);
-      canvas.height = Math.round(rect.height * dpr);
-      // setTransform, not scale: scale multiplies into whatever is
-      // already there, so every resize would compound the last one.
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
       cw = rect.width / cols;
       chh = rect.height / rows;
-      ctx.font = `${(chh * 0.98).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+
+      for (const canvas of [far, near]) {
+        canvas.width = Math.round(rect.width * dpr);
+        canvas.height = Math.round(rect.height * dpr);
+        const ctx = ctxOf(canvas);
+        if (!ctx) continue;
+        // setTransform, not scale: scale multiplies into whatever is
+        // already there, so every resize would compound the last one.
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.font = `${(chh * 0.98).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+      }
       return true;
     }
 
     function repaintAll(): void {
       if (!measure()) return;
-      ctx.clearRect(0, 0, cols * cw, rows * chh);
-      paint(0, 0, cols - 1, rows - 1);
+      for (const canvas of [far, near]) {
+        ctxOf(canvas)?.clearRect(0, 0, cols * cw, rows * chh);
+      }
+      paintBoth(0, 0, cols - 1, rows - 1);
     }
 
     function tick(): void {
@@ -270,13 +344,13 @@ const maskStyle = [
       }
 
       // Repaint the union of where heat was and where it still is, or
-      // the cooled cells keep the colour they had when the loop stopped.
-      paint(prev.x0, prev.y0, prev.x1, prev.y1);
+      // cooled cells keep the colour they had when the loop stopped.
+      paintBoth(prev.x0, prev.y0, prev.x1, prev.y1);
       raf = alive ? requestAnimationFrame(tick) : 0;
     }
 
     function stamp(clientX: number, clientY: number): void {
-      const rect = canvas.getBoundingClientRect();
+      const rect = far.getBoundingClientRect();
       const cx = Math.floor((clientX - rect.left) / cw);
       const cy = Math.floor((clientY - rect.top) / chh);
 
@@ -294,9 +368,9 @@ const maskStyle = [
       }
 
       if (reduce.matches) {
-        // No tail: the cells under the pointer transform, and release
-        // the moment it moves on.
-        paint(0, 0, cols - 1, rows - 1);
+        // No tail: cells under the pointer transform and release the
+        // moment it moves on.
+        paintBoth(0, 0, cols - 1, rows - 1);
         heat.fill(0);
         return;
       }
@@ -308,19 +382,18 @@ const maskStyle = [
       .then((grid) => {
         cols = grid.cols;
         rows = grid.rows;
+        split = Math.round(rows * NEAR_FROM);
         lum = Uint8Array.from(atob(grid.lum), (c) => c.charCodeAt(0));
         heat = new Float32Array(cols * rows);
 
         repaintAll();
         // Only now hide the static copy, so a slow grid never leaves the
         // hero empty.
-        canvas.classList.remove('opacity-0');
+        for (const canvas of [far, near]) canvas.classList.remove('opacity-0');
         document.documentElement.classList.add('hero-live');
 
-        new ResizeObserver(repaintAll).observe(canvas);
+        new ResizeObserver(repaintAll).observe(far);
 
-        // The ink changes with the theme and the canvas cannot inherit
-        // it, so the toggle has to be watched rather than listened to.
         // Theme ink, treatment and fringing all arrive as attributes on
         // <html>, and a canvas can inherit none of them.
         new MutationObserver(() => {
@@ -328,11 +401,7 @@ const maskStyle = [
           const nextInk = inkFor(root.classList.contains('dark'));
           const nextTreatment = readTreatment(root);
           const nextFringe = readFringeOffset(root);
-          if (
-            nextInk[0] === ink[0] &&
-            nextTreatment === treatment &&
-            nextFringe === fringe
-          ) {
+          if (nextInk[0] === ink[0] && nextTreatment === treatment && nextFringe === fringe) {
             return;
           }
           ink = nextInk;
@@ -345,10 +414,29 @@ const maskStyle = [
           attributeFilter: ['class', 'data-treatment', 'data-fringe'],
         });
 
-        if (!matchMedia('(hover: hover)').matches) return;
-        host.addEventListener('pointermove', (event: PointerEvent) => {
-          stamp(event.clientX, event.clientY);
-        });
+        if (matchMedia('(hover: hover)').matches) {
+          host.addEventListener('pointermove', (event: PointerEvent) => {
+            stamp(event.clientX, event.clientY);
+          });
+        }
+
+        /* Parallax. The two plates slide apart as the hero leaves, which
+           is the only moment the separation is visible — a still hero has
+           no parallax to show. Transform only, so this stays on the
+           compositor and never triggers the 25,600-cell repaint above. */
+        if (reduce.matches) return;
+        let scrollRaf = 0;
+        const onScroll = () => {
+          if (scrollRaf) return;
+          scrollRaf = requestAnimationFrame(() => {
+            scrollRaf = 0;
+            const progress = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
+            far.style.transform = `translate3d(0,${(progress * FAR_DRIFT).toFixed(1)}px,0)`;
+            near.style.transform = `translate3d(0,${(progress * NEAR_DRIFT).toFixed(1)}px,0)`;
+          });
+        };
+        addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
       })
       .catch(() => {
         /* The SVG is still there; nothing to recover. */

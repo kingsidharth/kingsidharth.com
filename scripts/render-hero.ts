@@ -89,8 +89,14 @@ for (const { suffix, ink } of INKS) {
    paint; this is what the canvas re-renders from, because a cell cannot
    climb the ramp under a cursor if the only thing shipped is the
    character it already landed on. */
+/* Floor 0.02, not 0.07.
+   A floor applied here is baked: every cell under it becomes a zero and
+   the boundary between picture and nothing arrives as a clean contour
+   line, which is exactly what a hand-inked image never has. Exporting
+   almost everything and letting the renderer cut it with a per-cell
+   jitter gives that edge a ragged, uneven falloff instead. */
 await Bun
-  .$`bun scripts/asciify.ts ${PREPPED} -o static/art/hero-grid.json --cols ${GRID_COLS} --cell ${WIDTH / GRID_COLS} --bg transparent --ramp shade --no-shape --floor 0.07 --gamma 0.68`.quiet();
+  .$`bun scripts/asciify.ts ${PREPPED} -o static/art/hero-grid.json --cols ${GRID_COLS} --cell ${WIDTH / GRID_COLS} --bg transparent --ramp shade --no-shape --floor 0.02 --gamma 0.68`.quiet();
 
 const grid = (await Bun.file('static/art/hero-grid.json').json()) as {
   cols: number;

@@ -13,14 +13,24 @@
  */
 export type Treatment = 'blocks' | 'diagonal' | 'lines' | 'diamond' | 'disco';
 
+/*
+ * Every ramp now opens on a faint mark rather than a shade block.
+ *
+ * The darkest visible rung covers most of the frame — sky, shadowed
+ * rock, the far edges of everything — and when that rung was `░` the
+ * background read as a solid grey field with the picture sitting on it.
+ * A middle dot puts almost no ink down, so the empty parts of the
+ * composition stay empty and the layers have something to separate
+ * against.
+ */
 export const TREATMENT_RAMPS: Record<Treatment, string> = {
-  blocks: ' ░▒▓█',
-  diagonal: ' ╱╳▓█',
-  lines: ' ╎│┃█',
+  blocks: ' ·░▒▓█',
+  diagonal: ' ·╱╳▓█',
+  lines: ' ·╎│┃█',
   diamond: ' ·◇◈◆',
   // Same coverage steps as blocks; what makes it a mirror ball is the
   // specular hit applied per cell in the renderer, not the characters.
-  disco: ' ░▒▓█',
+  disco: ' ·░▒▓█',
 };
 
 /**
