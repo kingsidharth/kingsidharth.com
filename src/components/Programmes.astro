@@ -13,6 +13,8 @@ const programmes = [
     // Peeking from behind a wall, then leaning further out with each
     // nudge until it makes off with the goods.
     name: 'Steal the Secret Prompts',
+    kind: 'Tool',
+    verb: 'Open',
     href: '#prompts',
     bg: 'oklch(0.28 0.11 275)',
     ink: 'oklch(0.88 0.16 195)',
@@ -30,6 +32,8 @@ const programmes = [
   },
   {
     name: 'Vibe Coding 101',
+    kind: 'Guide',
+    verb: 'Read',
     href: '/guides/vibe-coding/101',
     bg: 'oklch(0.3 0.13 340)',
     ink: 'oklch(0.98 0 0)',
@@ -46,6 +50,8 @@ const programmes = [
   {
     // Sinking deeper with each interaction.
     name: 'Deep AI',
+    kind: 'Guide',
+    verb: 'Read',
     href: '/guides',
     bg: 'oklch(0.27 0.09 195)',
     ink: 'oklch(0.88 0.19 145)',
@@ -61,6 +67,8 @@ const programmes = [
   },
   {
     name: 'Fun AI',
+    kind: 'Tool',
+    verb: 'Play',
     href: '/tinkering',
     bg: 'oklch(0.32 0.12 45)',
     ink: 'oklch(0.92 0.15 85)',
@@ -99,8 +107,10 @@ const { variant = 'panel' } = Astro.props;
         href={p.href}
         data-face-card
         class:list={[
-          'screen-raised group relative flex flex-col items-center justify-center gap-3 saturate-[0.55] transition-[filter] duration-300 hover:saturate-100 focus-visible:saturate-100 active:saturate-150',
-          variant === 'panel' ? 'h-full px-3 py-5' : 'aspect-[3/4] px-4 py-6',
+          'screen-raised group relative flex flex-col gap-3 saturate-[0.55] transition-[filter] duration-300 hover:saturate-100 focus-visible:saturate-100 active:saturate-150',
+          variant === 'panel'
+            ? 'h-full items-center justify-center px-3 py-5'
+            : 'aspect-[3/4] items-start justify-between px-4 py-4 text-left',
         ]}
         style={`background:${p.bg}; --sprite-shadow:${p.shadow};`}
       >
@@ -116,10 +126,24 @@ const { variant = 'panel' } = Astro.props;
           )
         }
 
+        {
+          variant === 'lineup' && (
+            <span
+              class="absolute top-3 left-3 rounded-xs bg-black/45 px-1.5 py-0.5 font-mono text-2xs"
+              style={`color:${p.ink};`}
+            >
+              {p.kind}
+            </span>
+          )
+        }
+
         <span
           data-face
           data-frames={JSON.stringify(p.frames)}
-          class="sprite-text block whitespace-nowrap text-center text-xl"
+          class:list={[
+            'sprite-text block whitespace-nowrap text-center',
+            variant === 'lineup' ? 'my-auto text-xl' : 'text-xl',
+          ]}
           style={`color:${p.ink};`}
           aria-hidden="true"
         >
@@ -127,10 +151,28 @@ const { variant = 'panel' } = Astro.props;
         </span>
 
         {
-          p.title === 'marquee' ? (
-            /* A printed plate rather than bare text: brighter ground,
-               darker ink, so the scrolling title reads as a label stuck
-               on the cartridge. */
+          variant === 'lineup' ? (
+            <span class="mt-auto w-full">
+              <span
+                class="sprite-text block font-mono text-[13px] font-bold"
+                style={`color:${p.ink};`}
+              >
+                {p.name}
+              </span>
+              <span
+                class="mt-1.5 flex items-center gap-1.5 font-mono text-2xs opacity-70 transition-opacity group-hover:opacity-100"
+                style={`color:${p.ink};`}
+              >
+                {p.verb}
+                <span
+                  class="transition-transform duration-200 group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                >
+                  →
+                </span>
+              </span>
+            </span>
+          ) : p.title === 'marquee' ? (
             <span
               class="label-marquee w-full rounded-sm py-1"
               style={`background:${p.labelBg}; color:${p.labelInk};`}

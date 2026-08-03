@@ -6,7 +6,7 @@ interface Props {
 }
 
 const { entry } = Astro.props;
-const { title, detail, url, seed, from, via, to, motif, parts, kicker } = entry.data;
+const { title, url, seed, from, via, to, motif, parts, kind } = entry.data;
 
 /* Portrait, because that is the shape a series cover actually is.
  *
@@ -111,7 +111,7 @@ const by = 25 + (seed % 3) * 18;
     <!-- Top rail: what kind of thing this is, and how much of it -->
     <div class="relative z-10 flex items-start justify-between gap-2 p-3">
       <span class="rounded-xs bg-black/55 px-1.5 py-0.5 font-mono text-2xs text-white/90">
-        {kicker}
+        {kind}
       </span>
       <span class="rounded-xs bg-black/55 px-1.5 py-0.5 font-mono text-2xs text-white/90">
         {parts} parts
@@ -122,9 +122,9 @@ const by = 25 + (seed % 3) * 18;
       <h3 class="text-lg leading-tight font-bold text-white">{title}</h3>
 
       <p
-        class="mt-3 flex items-center gap-1.5 font-mono text-2xs text-white/60 transition-colors group-hover:text-white"
+        class="mt-2 flex items-center gap-1.5 font-mono text-2xs text-white/60 transition-colors group-hover:text-white"
       >
-        {detail}
+        Watch
         <span
           class="transition-transform duration-200 group-hover:translate-x-0.5"
           aria-hidden="true">→</span

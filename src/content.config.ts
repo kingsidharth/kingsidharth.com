@@ -119,7 +119,6 @@ const collections_ = defineCollection({
     id: z.string(),
     title: z.string(),
     /** e.g. "8-part series" — what kind of thing this is. */
-    detail: z.string(),
     seed: z.number().int(),
     url: z.string(),
     /** Poster gradient stops. Colour, so it can be desaturated. */
@@ -129,7 +128,9 @@ const collections_ = defineCollection({
     /** Which drawing sits on the poster. */
     motif: z.enum(['roadmap', 'artboard']),
     parts: z.number().int(),
-    kicker: z.string(),
+    /** What sort of thing this is — shared vocabulary with the tools
+        and guides it sits beside in the lineup. */
+    kind: z.string(),
   }),
 });
 
