@@ -15,7 +15,7 @@ const programmes = [
     name: 'Steal the Secret Prompts',
     kind: 'Tool',
     verb: 'Open',
-    href: '#prompts',
+    href: '/prompts',
     bg: 'oklch(0.28 0.11 275)',
     ink: 'oklch(0.88 0.16 195)',
     shadow: 'oklch(0.16 0.09 275)',
@@ -63,6 +63,24 @@ const programmes = [
       l2: '≋ ( ⊙_⊙;) ≋',
       l3: '≋≋ ( ×_×) ≋≋',
       recover: '≋ ( ˘ω˘ ) ≋',
+    },
+  },
+  {
+    name: 'Freshcast',
+    kind: 'Tool',
+    verb: 'Listen',
+    sub: 'AI updates in 5 minutes',
+    href: 'https://freshcast.app',
+    bg: 'oklch(0.29 0.1 155)',
+    ink: 'oklch(0.9 0.17 140)',
+    shadow: 'oklch(0.17 0.07 155)',
+    title: 'sprite',
+    frames: {
+      idle: ['( ⌐■_■)🎧', '( ⌐■_■)♫'],
+      l1: '(♪ ᐛ )♪',
+      l2: '(☞ ᐛ )☞♬',
+      l3: '\\(^ᗜ^)/♬♬',
+      recover: '( ˘▽˘)っ♨',
     },
   },
   {
@@ -169,6 +187,14 @@ const { variant = 'panel' } = Astro.props;
                   style={`color:${p.ink};`}
                 >
                   {p.name}
+                </span>
+              )}
+              {p.sub && (
+                <span
+                  class="mt-1 block font-mono text-[10px] opacity-65"
+                  style={`color:${p.ink};`}
+                >
+                  {p.sub}
                 </span>
               )}
               <span

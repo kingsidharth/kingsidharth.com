@@ -11,9 +11,7 @@ import TemperatureInstrument from '@/components/instruments/TemperatureInstrumen
 import GotchaQuiz from '@/components/instruments/GotchaQuiz';
 import HeroIntro from '@/components/HeroIntro.astro';
 import TeachingStats from '@/components/TeachingStats.astro';
-import ToolsBento from '@/components/ToolsBento.astro';
 import SocialLinks from '@/components/SocialLinks.astro';
-import PromptsToSteal from '@/components/PromptsToSteal';
 import { getLocalized } from '@/lib/content';
 import { localePath, localeStaticPaths, useTranslations } from '@/lib/i18n';
 import type { Locale } from '@/lib/i18n';
@@ -23,9 +21,6 @@ export const getStaticPaths = (() => localeStaticPaths()) satisfies GetStaticPat
 const { locale } = Astro.props as { locale: Locale };
 const t = useTranslations(locale);
 
-const instruments = (await getCollection('instruments')).sort(
-  (a, b) => a.data.figure - b.data.figure
-);
 const broadcasts = (await getCollection('broadcasts'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
   .slice(0, 4);
@@ -106,15 +101,6 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     </div>
   </section>
 
-  <!-- ── Prompts to steal. Its own section rather than a sidebar:
-         it is a giveaway, and a giveaway should not be a margin note. -->
-  <section
-    id="prompts"
-    class="mx-auto max-w-(--container-wide) scroll-mt-24 px-(--spacing-gutter) py-16 sm:py-20"
-  >
-    <PromptsToSteal client:visible />
-  </section>
-
   <!-- ── Work ─────────────────────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pb-16 sm:pb-20">
     <SectionHead title={t('work.title')} />
@@ -126,13 +112,20 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     </p>
   </section>
 
-  <!-- ── Tools & Experiments ──────────────────────────────────── -->
+  <!-- ── Notes ────────────────────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
-    <SectionHead title={t('shelf.title')} />
+    <SectionHead title={t('notes.title')} />
 
-    <ToolsBento entries={instruments} locale={locale} />
+    <div class="max-w-3xl">
+      {notes.map((entry) => <NoteRow entry={entry} locale={locale} />)}
+
+      <p class="mt-5 font-mono text-xs text-muted-foreground">
+        <a href={localePath(locale, 'blog')} class="text-primary hover:underline">
+          {t('notes.all')} →
+        </a>
+      </p>
+    </div>
   </section>
-
   <!-- ── Elsewhere ────────────────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pb-4">
     <div class="chassis relative flex flex-wrap items-center justify-between gap-6 p-6">
@@ -152,20 +145,6 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     </div>
   </section>
 
-  <!-- ── Notes ────────────────────────────────────────────────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
-    <SectionHead title={t('notes.title')} />
-
-    <div class="max-w-3xl">
-      {notes.map((entry) => <NoteRow entry={entry} locale={locale} />)}
-
-      <p class="mt-5 font-mono text-xs text-muted-foreground">
-        <a href={localePath(locale, 'blog')} class="text-primary hover:underline">
-          {t('notes.all')} →
-        </a>
-      </p>
-    </div>
-  </section>
   <!-- ── The catcher. Last thing before the footer: someone who read
          this far is the person most likely to want a go. ────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-8 pb-4">

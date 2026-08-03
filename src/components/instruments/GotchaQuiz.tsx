@@ -90,7 +90,7 @@ export default function GotchaQuiz({ embedded = false }: GotchaQuizProps) {
 
       <div className="flex flex-col gap-6 px-6 py-7 sm:px-8">
         <div className="flex flex-col gap-2">
-          <span className="nameplate text-[11px] text-muted-foreground">
+          <span className="nameplate text-[11px] text-foreground/80">
             Do you actually understand AI?
           </span>
           <h3 className="text-balance font-sans text-2xl font-semibold leading-tight text-foreground sm:text-3xl">

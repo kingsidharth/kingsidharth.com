@@ -1,0 +1,22 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '@/layouts/Base.astro';
+import PromptsToSteal from '@/components/PromptsToSteal';
+import { localeStaticPaths } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+export const getStaticPaths = (() => localeStaticPaths()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props as { locale: Locale };
+---
+
+<Base
+  locale={locale}
+  title="Prompts to steal"
+  description="Prompts that work, sorted by what you do. Copy them."
+  path="prompts"
+>
+  <div class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-14">
+    <PromptsToSteal client:load />
+  </div>
+</Base>
