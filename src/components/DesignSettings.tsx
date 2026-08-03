@@ -4,7 +4,18 @@ import { TREATMENT_RAMPS, type Treatment } from '@/lib/treatments';
 
 type Accent = 'amber' | 'purple' | 'pink' | 'teal' | 'cool';
 type Typeset = 'default' | 'comfortable' | 'compact';
-type Font = 'default' | 'bricolage' | 'familjen' | 'chivo' | 'spline' | 'rethink' | 'strichpunkt';
+type Font =
+  | 'default'
+  | 'bricolage'
+  | 'familjen'
+  | 'spline'
+  | 'strichpunkt'
+  | 'anek'
+  | 'funnel'
+  | 'gabarito'
+  | 'matangi'
+  | 'mona'
+  | 'zalando';
 type Scale = 'default' | 's' | 'l';
 type Headline = 'auto' | 'light' | 'regular' | 'bold';
 type Ligatures = 'default' | 'on' | 'off';
@@ -57,13 +68,16 @@ const TYPESET_OPTIONS: { value: Typeset; label: string; description: string }[] 
 
 const FONT_OPTIONS: { value: Font; label: string; fontFamily: string | undefined }[] = [
   { value: 'default', label: 'IBM Plex Sans (default)', fontFamily: undefined },
+  { value: 'anek', label: 'Anek Latin', fontFamily: "'Anek Latin'" },
   { value: 'bricolage', label: 'Bricolage Grotesque', fontFamily: "'Bricolage Grotesque'" },
   { value: 'familjen', label: 'Familjen Grotesk', fontFamily: "'Familjen Grotesk'" },
-  { value: 'chivo', label: 'Chivo', fontFamily: "'Chivo'" },
+  { value: 'funnel', label: 'Funnel Display', fontFamily: "'Funnel Display'" },
+  { value: 'gabarito', label: 'Gabarito', fontFamily: "'Gabarito'" },
+  { value: 'matangi', label: 'Matangi', fontFamily: "'Matangi'" },
+  { value: 'mona', label: 'Mona Sans', fontFamily: "'Mona Sans'" },
   { value: 'spline', label: 'Spline Sans (+ matching mono)', fontFamily: "'Spline Sans'" },
-  { value: 'rethink', label: 'Rethink Sans', fontFamily: "'Rethink Sans'" },
-
   { value: 'strichpunkt', label: 'Strichpunkt Sans', fontFamily: "'Strichpunkt Sans'" },
+  { value: 'zalando', label: 'Zalando Sans', fontFamily: "'Zalando Sans'" },
 ];
 
 const SCALE_OPTIONS: { value: Scale; label: string }[] = [
@@ -152,16 +166,8 @@ function applyTypeset(typeset: Typeset) {
 function readFont(): Font {
   try {
     const stored = localStorage.getItem(FONT_KEY);
-    if (
-      stored === 'bricolage' ||
-      stored === 'familjen' ||
-      stored === 'chivo' ||
-      stored === 'spline' ||
-      stored === 'rethink' ||
-
-      stored === 'strichpunkt'
-    ) {
-      return stored;
+    if (FONT_OPTIONS.some((o) => o.value === stored && o.value !== 'default')) {
+      return stored as Font;
     }
   } catch {
     /* private mode: fall back to the default */

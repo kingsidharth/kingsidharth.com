@@ -1272,21 +1272,44 @@
 }
 
 @font-face {
-  font-family: 'Chivo';
-  src: url('/fonts/Chivo-400.woff2') format('woff2');
-  font-weight: 300 400;
+  font-family: 'Anek Latin';
+  src: url('/fonts/generated/AnekLatin-var.woff2') format('woff2-variations');
+  font-weight: 100 800;
   font-display: swap;
 }
+
 @font-face {
-  font-family: 'Chivo';
-  src: url('/fonts/Chivo-500.woff2') format('woff2');
-  font-weight: 500;
+  font-family: 'Funnel Display';
+  src: url('/fonts/generated/FunnelDisplay-var.woff2') format('woff2-variations');
+  font-weight: 300 800;
   font-display: swap;
 }
+
 @font-face {
-  font-family: 'Chivo';
-  src: url('/fonts/Chivo-600.woff2') format('woff2');
-  font-weight: 600 800;
+  font-family: 'Gabarito';
+  src: url('/fonts/generated/Gabarito-var.woff2') format('woff2-variations');
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Matangi';
+  src: url('/fonts/generated/Matangi-var.woff2') format('woff2-variations');
+  font-weight: 300 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Mona Sans';
+  src: url('/fonts/generated/MonaSans-var.woff2') format('woff2-variations');
+  font-weight: 200 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Zalando Sans';
+  src: url('/fonts/generated/ZalandoSans-var.woff2') format('woff2-variations');
+  font-weight: 200 900;
   font-display: swap;
 }
 
@@ -1294,13 +1317,6 @@
   font-family: 'Spline Sans';
   src: url('/fonts/generated/SplineSans-var.woff2') format('woff2-variations');
   font-weight: 300 700;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Rethink Sans';
-  src: url('/fonts/generated/RethinkSans-var.woff2') format('woff2-variations');
-  font-weight: 400 800;
   font-display: swap;
 }
 
@@ -1324,13 +1340,17 @@
    grotesque with an unrelated mono looks worse than not pairing it. */
 :root[data-font='bricolage'] { --font-sans-active: 'Bricolage Grotesque'; }
 :root[data-font='familjen'] { --font-sans-active: 'Familjen Grotesk'; }
-:root[data-font='chivo'] { --font-sans-active: 'Chivo'; }
 :root[data-font='spline'] {
   --font-sans-active: 'Spline Sans';
   --font-mono-active: 'Spline Sans Mono';
 }
-:root[data-font='rethink'] { --font-sans-active: 'Rethink Sans'; }
 :root[data-font='strichpunkt'] { --font-sans-active: 'Strichpunkt Sans'; }
+:root[data-font='anek'] { --font-sans-active: 'Anek Latin'; }
+:root[data-font='funnel'] { --font-sans-active: 'Funnel Display'; }
+:root[data-font='gabarito'] { --font-sans-active: 'Gabarito'; }
+:root[data-font='matangi'] { --font-sans-active: 'Matangi'; }
+:root[data-font='mona'] { --font-sans-active: 'Mona Sans'; }
+:root[data-font='zalando'] { --font-sans-active: 'Zalando Sans'; }
 
 :root[data-font] body,
 :root[data-font] h1,
