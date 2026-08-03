@@ -61,6 +61,16 @@ const guides = defineCollection({
      * cover is the thing you arrive at, not a header on every page.
      */
     art: z.string().optional(),
+    /** One line under the title on the cover. Longer than a tagline. */
+    subtitle: z.string().optional(),
+    /**
+     * What a reader can do afterwards that they could not before.
+     *
+     * Deliberately not a contents list — the chapter rail already says
+     * what is covered. This says what it is for, which is the only part
+     * of a cover anyone reads twice.
+     */
+    benefits: z.array(z.string()).default([]),
     instruments: z.array(reference('instruments')).default([]),
   }),
 });

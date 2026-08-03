@@ -12,12 +12,11 @@
  * pipeline as every other image on this site. An ornate raster on top of
  * an ascii site is a visitor; this is made of the same material.
  *
- * It ships twice. The SVGs are the immediate paint and the no-JS
- * fallback. The canvas re-renders the same grid from tone rather than
- * from baked characters, which is the only way a cell can climb the ramp
- * and change glyph under the cursor — that is the interaction: the
- * statue's own glyphs transform, rather than something else moving over
- * the top of it.
+ * It ships twice: an SVG in `noscript`, and canvases everywhere else.
+ * The canvas renders from tone rather than from baked characters, which
+ * is the only way a cell can climb the ramp and change glyph under the
+ * cursor — that is the interaction: the statue's own glyphs transform,
+ * rather than something else moving over the top of it.
  */
 interface Props {
   class?: string;
@@ -84,26 +83,31 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
   ]}
   aria-hidden="true"
 >
-  <img
-    src="/art/hero-thangka.svg"
-    alt=""
-    width="1320"
-    height="660"
-    decoding="async"
-    fetchpriority="low"
-    style={maskStyle}
-    class="hidden w-full [.hero-live_&]:invisible dark:block"
-  />
-  <img
-    src="/art/hero-thangka-light.svg"
-    alt=""
-    width="1320"
-    height="660"
-    decoding="async"
-    fetchpriority="low"
-    style={maskStyle}
-    class="w-full [.hero-live_&]:invisible dark:hidden"
-  />
+  <!-- In `noscript` on purpose.
+       Rendered normally these paint first, then get hidden the moment
+       the canvas is ready, then the canvas fades up — which reads as a
+       flash, a blank, and a fade rather than as one arrival. They exist
+       only for the no-JS case, so that is the only case that should see
+       them. When JS is on the entry animation IS the reveal, and it
+       should not be competing with a still frame of itself. -->
+  <noscript>
+    <img
+      src="/art/hero-thangka.svg"
+      alt=""
+      width="1320"
+      height="660"
+      style={maskStyle}
+      class="hidden w-full dark:block"
+    />
+    <img
+      src="/art/hero-thangka-light.svg"
+      alt=""
+      width="1320"
+      height="660"
+      style={maskStyle}
+      class="w-full dark:hidden"
+    />
+  </noscript>
 
   <!-- Two canvases, not one: the far plate (statue, ranges, mist) and
        the near plate (the foreground ledge and its path). Splitting them
@@ -600,10 +604,7 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
         ).then(() => drawClouds(performance.now() / 1000));
 
         repaintAll();
-        // Only now hide the static copy, so a slow grid never leaves the
-        // hero empty.
         enter([cloudBack, far, near, cloudFront]);
-        document.documentElement.classList.add('hero-live');
 
         new ResizeObserver(repaintAll).observe(far);
 

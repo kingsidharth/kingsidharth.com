@@ -14,43 +14,136 @@
  * and reaching for it feels like joining in rather than switching modes.
  */
 
+interface Chapter {
+  href: string;
+  part: number;
+  label: string;
+}
+
 interface Props {
   /** Basename of the grid in `static/art`, without `-grid.json`. */
   art: string;
   title: string;
-  description?: string;
+  subtitle?: string;
+  /** What a reader can do afterwards. Not a contents list. */
+  benefits?: string[];
   /** Rendered above the title — "6 parts", a date, whatever the page has. */
   eyebrow?: string;
+  /** Where "start reading" goes, if there is a first chapter. */
+  startHref?: string;
+  chapters?: Chapter[];
 }
 
-const { art, title, description, eyebrow } = Astro.props;
+const {
+  art,
+  title,
+  subtitle,
+  benefits = [],
+  eyebrow,
+  startHref,
+  chapters = [],
+} = Astro.props;
 ---
 
-<header class="relative isolate mb-10 overflow-hidden rounded-lg border border-chassis-edge">
-  <div class="relative aspect-[4/3] w-full sm:aspect-[16/9] lg:aspect-[2/1]">
-    <canvas
-      data-guide-cover
-      data-art={art}
-      aria-hidden="true"
-      class="absolute inset-0 size-full opacity-0 transition-opacity duration-700"></canvas>
+<!-- Sized in viewport units rather than by aspect ratio. A cover is
+     "the first screen", and a fixed ratio makes that a different amount
+     of screen on every device — a 21:9 plate is a band on a phone and a
+     wall on a monitor. `min-h` rather than `h`, so a long benefit list
+     pushes the cover taller instead of overflowing it.
 
-    <!-- The plate is a picture with type on it, so the type needs its own
-         ground. A gradient rather than a flat panel: the artwork should
-         still be visible behind the words, only quieter. -->
-    <div
-      class="absolute inset-0 bg-linear-to-t from-background via-background/70 via-40% to-transparent"
-      aria-hidden="true"
-    >
-    </div>
+     The artwork gets its own portrait panel rather than sitting behind
+     the type. Cropped to a wide band it was a strip of a drawing nobody
+     could identify; at its own 3:4 it is the drawing, which is the whole
+     reason it was commissioned. -->
+<header
+  class="relative isolate mx-auto flex min-h-[max(32rem,84svh)] w-full max-w-6xl flex-col justify-center gap-10 px-(--spacing-gutter) pt-24 pb-14 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:items-center lg:gap-16"
+>
+  <div class="order-2 lg:order-1">
+    {eyebrow && <p class="nameplate mb-3 text-primary">{eyebrow}</p>}
 
-    <div class="absolute inset-x-0 bottom-0 p-5 sm:p-7">
-      {eyebrow && <p class="nameplate mb-2 text-primary">{eyebrow}</p>}
-      <h1 class="max-w-[20ch] text-2xl sm:text-3xl">{title}</h1>
+    <h1 class="max-w-[16ch] text-3xl sm:text-4xl lg:text-5xl">{title}</h1>
+
+    {
+      subtitle && (
+        <p class="mt-4 max-w-[52ch] text-base text-muted-foreground sm:text-lg">{subtitle}</p>
+      )
+    }
+
+    {
+      benefits.length > 0 && (
+        <ul class="mt-7 grid max-w-[60ch] gap-2.5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+          {benefits.map((benefit) => (
+            <li class="flex gap-2.5 text-sm leading-snug">
+              {/* The one contrast accent, rationed: a lit pip per line,
+                  the same vocabulary as the indicator lamps. */}
+              <span
+                aria-hidden="true"
+                class="mt-1.5 size-1.5 shrink-0 rounded-full bg-[var(--contrast)]"
+              />
+              <span>{benefit}</span>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    <div class="mt-8 flex flex-wrap items-center gap-4">
       {
-        description && (
-          <p class="mt-3 max-w-[56ch] text-sm text-muted-foreground sm:text-base">{description}</p>
+        startHref && (
+          <a
+            href={startHref}
+            class="cap inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors hover:text-primary"
+          >
+            Start reading <span aria-hidden="true">→</span>
+          </a>
         )
       }
+      {
+        chapters.length > 0 && (
+          <p class="font-mono text-xs text-muted-foreground">
+            {chapters.length + 1} parts · read in order
+          </p>
+        )
+      }
+    </div>
+
+    {
+      chapters.length > 0 && (
+        <ol class="mt-7 grid gap-px border-t border-rule pt-4 font-mono text-xs">
+          {chapters.map((chapter) => (
+            <li>
+              <a
+                href={chapter.href}
+                class="flex gap-3 rounded-xs px-2 py-1.5 text-muted-foreground transition-colors hover:bg-primary/5 hover:text-foreground"
+              >
+                <span class="text-primary">{String(chapter.part).padStart(2, '0')}</span>
+                <span class="min-w-0">{chapter.label}</span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      )
+    }
+  </div>
+
+  <!-- The plate, mounted. A chassis with screws and a recessed screen
+       rather than a bare canvas, so it reads as an instrument on the
+       bench like everything else here — and so the artwork has an edge
+       to be framed by instead of dissolving into the page. -->
+  <div class="order-1 lg:order-2">
+    <div class="chassis group relative mx-auto w-full max-w-[22rem] p-3 lg:max-w-none">
+      <span aria-hidden="true" class="screw absolute top-2 left-2"></span>
+      <span aria-hidden="true" class="screw absolute top-2 right-2"></span>
+      <span aria-hidden="true" class="screw absolute bottom-2 left-2"></span>
+      <span aria-hidden="true" class="screw absolute bottom-2 right-2"></span>
+
+      <div class="crt relative aspect-[3/4] w-full overflow-hidden">
+        <canvas
+          data-guide-cover
+          data-art={art}
+          aria-hidden="true"
+          class="absolute inset-0 size-full opacity-0 transition-opacity duration-700"></canvas>
+      </div>
     </div>
   </div>
 </header>
@@ -67,6 +160,9 @@ const { art, title, description, eyebrow } = Astro.props;
   const SWEEP = 9;
   /** Half-width of the shimmer band, in fractions of the diagonal. */
   const BAND = 0.13;
+  /** Radius of the pointer's stamp, in cells, and how fast it cools. */
+  const REACH = 10;
+  const DECAY = 0.94;
 
   function inkFor(dark: boolean): [number, number, number] {
     return dark ? [226, 236, 255] : [46, 52, 68];
@@ -101,6 +197,10 @@ const { art, title, description, eyebrow } = Astro.props;
     let ramp = TREATMENT_RAMPS[readTreatment(document.documentElement)];
     let raf = 0;
     let phase = 0;
+    /** Pointer heat, in addition to the shimmer. One buffer, because a
+        finger and a passing band are the same thing to a cell. */
+    let touch = new Float32Array(0);
+    let touched = false;
 
     function measure(): boolean {
       const rect = canvas.getBoundingClientRect();
@@ -146,7 +246,8 @@ const { art, title, description, eyebrow } = Astro.props;
              so the sweep crosses the plate rather than wiping down it. */
           const along = (x / cols) * 0.72 + (y / rows) * 0.28;
           const d = Math.abs(along - phase);
-          const heat = d > BAND ? 0 : (1 - d / BAND) ** 2 * 0.55;
+          const sweep = d > BAND ? 0 : (1 - d / BAND) ** 2 * 0.55;
+          const heat = Math.min(1, sweep + (touch[y * cols + x] ?? 0));
 
           if (base + heat * 0.5 < CUT + (hash01(x, y) - 0.5) * 2 * JITTER) continue;
 
@@ -173,6 +274,17 @@ const { art, title, description, eyebrow } = Astro.props;
       if (now - last > 41) {
         last = now;
         phase = ((now / 1000 / SWEEP) % 1.4) - 0.2;
+
+        if (touched) {
+          let alive = false;
+          for (let i = 0; i < touch.length; i += 1) {
+            const h = (touch[i] ?? 0) * DECAY;
+            touch[i] = h > 0.004 ? h : 0;
+            if (touch[i] > 0) alive = true;
+          }
+          touched = alive;
+        }
+
         draw();
       }
       raf = requestAnimationFrame(tick);
@@ -184,6 +296,7 @@ const { art, title, description, eyebrow } = Astro.props;
         cols = grid.cols;
         rows = grid.rows;
         lum = Uint8Array.from(atob(grid.lum), (c) => c.charCodeAt(0));
+        touch = new Float32Array(cols * rows);
 
         if (!measure()) return;
         draw();
@@ -201,6 +314,33 @@ const { art, title, description, eyebrow } = Astro.props;
           attributes: true,
           attributeFilter: ['class', 'data-treatment'],
         });
+
+        /* Hover and tap both reach it. `pointermove` covers a mouse; a
+           touch drag fires the same event, so the two need no separate
+           path — and `touch-action` is left alone so a scroll gesture
+           over the plate still scrolls. */
+        const stamp = (event: PointerEvent) => {
+          const rect = canvas.getBoundingClientRect();
+          const cx = Math.floor((event.clientX - rect.left - ox) / cw);
+          const cy = Math.floor((event.clientY - rect.top - oy) / chh);
+
+          for (let dy = -REACH; dy <= REACH; dy += 1) {
+            for (let dx = -REACH; dx <= REACH; dx += 1) {
+              const x = cx + dx;
+              const y = cy + dy;
+              if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
+              const dist = Math.hypot(dx, dy);
+              if (dist > REACH) continue;
+              const i = y * cols + x;
+              touch[i] = Math.min(1, (touch[i] ?? 0) + (1 - dist / REACH) * 0.4);
+            }
+          }
+          touched = true;
+          // A still plate has no loop running to pick this up.
+          if (reduce.matches) draw();
+        };
+
+        canvas.parentElement?.addEventListener('pointermove', stamp);
 
         if (reduce.matches) return;
 

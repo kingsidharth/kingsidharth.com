@@ -3,7 +3,6 @@ title: Transformer, Attention, & Engine
 description: A large language model is one machine with one moving part, repeated. Take it apart, look inside, put it back together.
 pubDate: 2026-08-03
 part: 0
-art: transformer
 navLabel: Overview
 tags: [ai, transformers, attention, llm]
 ---
@@ -15,24 +14,249 @@ machine. Text goes in the bottom as numbers, something comes out the top as a
 distribution over what comes next. Everything in between is one block, copied
 and stacked.
 
-This is the machine, exploded:
+This is the machine, exploded. It stays on screen; scroll, and it takes itself
+apart for you.
 
-<div className="my-10 lg:-ml-[17.5rem] lg:w-[calc(100%+17.5rem)]">
-  <TransformerEngine client:load />
+<div className="relative left-1/2 w-screen -translate-x-1/2 px-(--spacing-gutter)" data-engine-story>
+  <div className="lg:grid lg:grid-cols-[1.15fr_1fr] lg:gap-12">
+
+    <div className="sticky top-14 z-10 -mx-2 h-[48svh] bg-background/85 backdrop-blur-sm lg:top-0 lg:mx-0 lg:h-svh lg:bg-transparent lg:backdrop-blur-none">
+      <TransformerEngine client:load story initialLevel="overview" />
+    </div>
+
+    <div>
+      <section id="overview" data-engine-level="overview" className="flex min-h-[80svh] flex-col justify-center py-16">
+        <h2>The machine, whole</h2>
+        <p>
+          Bottom to top: raw text becomes token ids, ids become vectors, vectors
+          ride a conveyor belt through a stack of identical blocks, and at the
+          top the last vector is read against every word the model knows. One
+          distribution over what comes next. That's the whole trick.
+        </p>
+        <p>
+          The phosphor dots climbing the middle are the data flow — the engine
+          idling. Drag to orbit, scroll to travel downward into the parts, tap
+          anything with a pulsing outline to dive inside it.
+        </p>
+      </section>
+
+      <section id="tokens" data-engine-level="tokens" className="flex min-h-[90svh] flex-col justify-center py-16">
+        <h2>Tokenisation</h2>
+        <p>
+          A neural network cannot read. Before anything else happens, raw text
+          is cut into pieces and each piece is replaced by an integer from a
+          fixed vocabulary.
+        </p>
+        <pre><code>"the cat sat on"  →  [262, 9388, 3339, 319]</code></pre>
+        <p>
+          Those four integers are the entire input. Everything the model knows
+          about your sentence, it reconstructs from them.
+        </p>
+        <h3>Tokens are not words</h3>
+        <p>
+          Modern tokenizers learn the vocabulary from data, so common strings
+          become single tokens and rare ones shatter. <code>the</code> is one
+          token; so is <code> the</code> with the leading space — a different
+          id. <code>unbelievable</code> might be three. A rare emoji can cost
+          one token per byte.
+        </p>
+        <p>
+          This is why models fumble character-level tasks — counting the
+          letters in "strawberry". They never see the letters. They see chunk
+          ids, and the chunks don't align with the characters you see.
+        </p>
+        <p>
+          Two consequences: context length is counted in tokens, not words —
+          and token boundaries are invisible to you but load-bearing for the
+          model.
+        </p>
+      </section>
+
+      <section id="embeddings" data-engine-level="embeddings" className="flex min-h-[90svh] flex-col justify-center py-16">
+        <h2>Embeddings</h2>
+        <p>
+          The embedding layer is a lookup table with one row per vocabulary
+          entry and one column per dimension of the model's internal width —
+          <code>d_model</code>, from 768 in small models to 16k+ in large ones.
+          Token id 9388 goes in, row 9388 comes out. The entire operation is
+          indexing — and yet this table is learned, end to end, like
+          everything else.
+        </p>
+        <p>
+          After training, the geometry is not arbitrary: tokens used similarly
+          land near each other. The table is where "cat" first becomes
+          something the machine can compute with. Not a definition of the
+          word — a starting position the blocks above will rewrite beyond
+          recognition.
+        </p>
+        <h3>Position is added, not inherent</h3>
+        <p>
+          A row of the table knows nothing about where its token sits. So a
+          position signal is added to each vector — sinusoidal or learned
+          embeddings in older models, rotary encodings (RoPE) applied inside
+          attention in most modern ones. Each column of numbers now carries
+          <em>what</em> the token is and <em>where</em> it sits.
+        </p>
+        <h3>The residual stream begins</h3>
+        <p>
+          These position-tagged vectors are the first state of a conveyor
+          belt: one vector per position, flowing upward through every block.
+          Each block reads the belt, computes something, and <em>adds</em> its
+          contribution back — it never overwrites. That one choice is why a
+          96-layer model can be trained at all: the blocks don't replace the
+          signal, they annotate it.
+        </p>
+      </section>
+
+      <section id="block" data-engine-level="block" className="flex min-h-[90svh] flex-col justify-center py-16">
+        <h2>One block</h2>
+        <p>
+          A transformer is a stack of identical blocks — 12 in the original
+          small ones, 96 in GPT-3, more since. Understand one block and you
+          understand the architecture. One block does exactly two things, in
+          order:
+        </p>
+        <pre><code>x = x + Attention(LayerNorm(x))     # positions talk to each other
+x = x + MLP(LayerNorm(x))           # each position thinks alone</code></pre>
+        <p>
+          That <code>x +</code> in front of everything is the residual stream.
+          Each sub-layer reads a normalised copy of the stream, computes, and
+          adds its result back. "Add &amp; norm" in the diagram is exactly
+          this: the add is the residual connection, the norm is LayerNorm
+          keeping the numbers at a scale the next stage can digest.
+        </p>
+        <h3>The division of labour</h3>
+        <p>
+          <strong>Attention is the only place tokens mix.</strong> Everywhere
+          else, each position's vector is processed independently. Attention
+          is the one communication channel, moving information between
+          positions weighted by relevance.
+        </p>
+        <p>
+          <strong>The MLP is where positions process.</strong> After attention
+          delivers context to a position, the MLP transforms that position's
+          vector — same MLP, every position separately, no cross-talk.
+          Attention gathers, the MLP digests. Once per block, dozens of times.
+        </p>
+        <p>
+          Modern transformers are "pre-norm": LayerNorm acts on a copy inside
+          each sub-layer while the stream flows through untouched except for
+          the additions — a clean gradient highway from output back to
+          embedding. And roughly two-thirds of a block's parameters live in
+          the MLP, one-third in attention.
+        </p>
+      </section>
+
+      <section id="attention" data-engine-level="attention" className="flex min-h-[90svh] flex-col justify-center py-16">
+        <h2>Attention, opened</h2>
+        <p>
+          Attention is the mechanism that lets one token position read from
+          the others. Every position's vector is projected three ways, by
+          three learned matrices:
+        </p>
+        <ul>
+          <li><strong>Query (Q)</strong> — what this position is looking for.</li>
+          <li><strong>Key (K)</strong> — what this position advertises.</li>
+          <li><strong>Value (V)</strong> — what it hands over if selected.</li>
+        </ul>
+        <p>
+          Same input, three interpretations. A query asking "what is the
+          subject of this sentence?" scores highly against keys whose tokens
+          can be subjects.
+        </p>
+        <h3>The score grid</h3>
+        <pre><code>scores = Q · Kᵀ / √d</code></pre>
+        <p>
+          One number per (reader, source) pair. Then the <strong>causal
+          mask</strong>: no position may look at the future, which turns the
+          grid into a triangle — the half-lit plates in the drawing. Softmax
+          turns each surviving row into weights that sum to 1.
+        </p>
+        <pre><code>out = softmax(Q · Kᵀ / √d) · V</code></pre>
+        <p>
+          Each position's new state is a weighted average of every past
+          position's value vector. Attention, stripped of mystique, is a
+          content-addressed blur: "mix into me a little of everyone who
+          matches what I'm looking for."
+        </p>
+        <h3>Why "multi-head"</h3>
+        <p>
+          The model runs several attention operations in parallel — the heads
+          — each with its own smaller Q, K, V, each free to specialise: one
+          tracks the current subject, another resolves pronouns, another
+          matches brackets. Their outputs are concatenated and passed through
+          one more matrix, <code>Wₒ</code>, back down to <code>d_model</code>.
+          Probe a trained model and the heads are not random: previous-token
+          heads, delimiter heads, "induction heads" that power in-context
+          learning. None of it is programmed.
+        </p>
+      </section>
+
+      <section id="mlp" data-engine-level="mlp" className="flex min-h-[90svh] flex-col justify-center py-16">
+        <h2>The MLP</h2>
+        <p>
+          The MLP gets a single box in most diagrams and most of the
+          parameters in the model. Inside, it is almost disappointingly
+          simple:
+        </p>
+        <pre><code>h = GELU(x · W↑)       # widen: d_model → 4 × d_model
+y = h · W↓             # narrow back: 4 × d_model → d_model</code></pre>
+        <p>
+          Two matrix multiplications with a nonlinearity between them. No
+          cross-token communication — the same MLP is mapped over every
+          position independently.
+        </p>
+        <p>
+          The hidden layer is four times wider than the stream. In that
+          expanded space the vector can be picked apart into many more
+          features; GELU — a rounded ReLU — soft-gates the ones that don't
+          fire, and the down-projection writes the surviving conclusions back
+          onto the stream.
+        </p>
+        <h3>Where knowledge lives</h3>
+        <p>
+          Attention moves information already in the context. The MLP is where
+          information from <em>training</em> gets applied. Interpretability
+          work finds hidden neurons that fire on strikingly specific patterns
+          — text in French, legal citations, numbers being compared. One crude
+          but durable mental model: <strong>attention retrieves from the
+          context, the MLP retrieves from the weights.</strong>
+        </p>
+      </section>
+
+      <section id="output" data-engine-level="output" className="flex min-h-[90svh] flex-col justify-center py-16">
+        <h2>The full stack</h2>
+        <p>
+          After the last block, three steps turn the stream into an output. A
+          final LayerNorm steadies the scale. Then the <strong>unembedding</strong>:
+          the last vector is dotted with every row of the vocabulary — usually
+          the very same embedding table, used in reverse — producing one logit
+          per entry. That's where the logits in the <a href="/guides/sampling/logits-and-softmax">sampling
+          guide</a> come from; softmax makes them a distribution, and the
+          sampler picks one token. <code>mat</code>, say.
+        </p>
+        <h3>One token per revolution</h3>
+        <p>
+          That token is appended to the input and the <strong>entire machine
+          runs again</strong>: embed, all the blocks, norm, unembed, sample.
+          Generation is a loop, not a pass — a 500-token answer is 500 full
+          revolutions of the engine.
+        </p>
+        <pre><code>prompt → [engine] → token₁
+prompt + token₁ → [engine] → token₂
+prompt + token₁ + token₂ → [engine] → token₃</code></pre>
+        <p>
+          The only mercy is the KV cache: keys and values for old positions
+          don't change, so they're stored instead of recomputed — why the
+          first token is slow and the rest stream out fast.
+        </p>
+        <p>
+          Strip it down and a transformer is: a lookup table, one repeated
+          block with a communication channel and a per-position function, the
+          table read backwards, and a sampler. The engine is simple. What it
+          learns to be is not.
+        </p>
+      </section>
+    </div>
+  </div>
 </div>
-
-Drag to orbit it. Scroll to zoom. Tap a part — the first block, the attention
-slab, the MLP — and the camera takes you inside, where the block opens up into
-its real contents: attention built out of three matrices called Q, K and V,
-and an MLP that is just two matrices with a kink between them.
-
-The rest of this guide reads the machine part by part, bottom to top:
-
-1. **Tokenisation** — text becomes integers.
-2. **Embeddings** — integers become vectors, and the residual stream begins.
-3. **One block** — attention, add & norm, MLP, add & norm. The whole trick.
-4. **Attention, opened** — Q, K, V, and what the heads are doing.
-5. **The MLP** — the two-thirds of the model nobody diagrams.
-6. **The full stack** — unembedding, sampling, and why it loops.
-
-Read it in order. Each part assumes the previous one.
