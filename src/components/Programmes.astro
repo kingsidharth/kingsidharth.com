@@ -129,9 +129,10 @@ const { variant = 'panel' } = Astro.props;
         {
           variant === 'lineup' && (
             <span
-              class="absolute top-3 left-3 rounded-xs bg-black/45 px-1.5 py-0.5 font-mono text-2xs"
+              class="tab-notch absolute top-2.5 left-2.5 flex items-center gap-1.5 bg-black/55 px-1.5 py-1 font-mono text-[10px] ring-1 ring-white/12 ring-inset"
               style={`color:${p.ink};`}
             >
+              <span class="size-[3px] bg-current" aria-hidden="true" />
               {p.kind}
             </span>
           )
@@ -153,12 +154,23 @@ const { variant = 'panel' } = Astro.props;
         {
           variant === 'lineup' ? (
             <span class="mt-auto w-full">
-              <span
-                class="sprite-text block font-mono text-[13px] font-bold"
-                style={`color:${p.ink};`}
-              >
-                {p.name}
-              </span>
+              {p.labelBg ? (
+                <span
+                  class="label-marquee block w-full rounded-xs py-1"
+                  style={`background:${p.labelBg}; color:${p.labelInk};`}
+                >
+                  <span class="font-mono text-[11px] font-semibold">
+                    {`${p.name}\u00a0\u00a0·\u00a0\u00a0`.repeat(4)}
+                  </span>
+                </span>
+              ) : (
+                <span
+                  class="sprite-text block font-mono text-[13px] font-bold"
+                  style={`color:${p.ink};`}
+                >
+                  {p.name}
+                </span>
+              )}
               <span
                 class="mt-1.5 flex items-center gap-1.5 font-mono text-2xs opacity-70 transition-opacity group-hover:opacity-100"
                 style={`color:${p.ink};`}

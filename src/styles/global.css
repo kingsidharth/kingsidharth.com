@@ -885,6 +885,35 @@
     }
   }
 
+/* A machined tab rather than a rounded pill: the trailing corner is
+     cut off, so it reads as a plate riveted to the card. */
+  .tab-notch {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%);
+  }
+
+  /* Its mirror, for the right-hand side. */
+  .tab-notch-l {
+    clip-path: polygon(5px 0, 100% 0, 100% 100%, 0 100%, 0 5px);
+  }
+
+  /* Phosphor type: brighter than the card it sits on, with the same
+     red/cyan misconvergence and bloom the instrument screens use, so a
+     title reads as drawn by the display rather than printed on it. */
+  .phosphor-type {
+    text-shadow:
+      -0.6px 0 0 oklch(0.62 0.22 25 / 0.5),
+      0.6px 0 0 oklch(0.78 0.15 200 / 0.5),
+      0 0 6px color-mix(in oklch, currentColor 55%, transparent),
+      0 0 16px color-mix(in oklch, currentColor 30%, transparent);
+  }
+
+  /* Hollow display lettering — the ground reads through the glyph. */
+  .type-hollow {
+    color: transparent;
+    -webkit-text-stroke: 1px var(--hollow-ink, currentColor);
+    paint-order: stroke fill;
+  }
+
   .rule {
     border: 0;
     border-top: 1px solid var(--color-rule);

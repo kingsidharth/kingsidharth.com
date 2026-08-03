@@ -8,6 +8,22 @@ interface Props {
 const { entry } = Astro.props;
 const { title, url, seed, from, via, to, motif, parts, kind } = entry.data;
 
+/* Each title is set differently — same ingredients, different recipe —
+   so the row does not read as one template filled in twice. Letter
+   spacing is deliberately absent: every line here is under 24px. */
+const layouts: Record<string, { text: string; cls: string }[]> = {
+  'pm-course-hinglish': [
+    { text: 'PM Course', cls: 'block text-[22px] font-bold leading-none' },
+    { text: 'in Hinglish', cls: 'mt-1 block text-[15px] font-light italic leading-none opacity-90' },
+  ],
+  'for-designers': [
+    { text: 'For', cls: 'block text-[13px] font-light leading-none opacity-75' },
+    { text: 'UI/UX', cls: 'mt-0.5 block text-[26px] font-extrabold leading-none' },
+    { text: 'Designers', cls: 'mt-0.5 block text-[15px] font-medium leading-none opacity-90' },
+  ],
+};
+const lines = layouts[entry.data.id] ?? [{ text: title, cls: 'block text-lg font-bold leading-tight' }];
+
 /* Portrait, because that is the shape a series cover actually is.
  *
  * The ground is a layered gradient rather than the 1-bit dither used
@@ -108,18 +124,35 @@ const by = 25 + (seed % 3) * 18;
     >
     </div>
 
-    <!-- Top rail: what kind of thing this is, and how much of it -->
-    <div class="relative z-10 flex items-start justify-between gap-2 p-3">
-      <span class="rounded-xs bg-black/55 px-1.5 py-0.5 font-mono text-2xs text-white/90">
+    <!-- Top rail. Two small plates riveted on: what this is, and how
+         much of it. The segment strip counts the parts so the number is
+         not the only thing carrying it. -->
+    <div class="relative z-10 flex items-start justify-between gap-2 p-2.5">
+      <span
+        class="tab-notch flex items-center gap-1.5 bg-black/60 px-1.5 py-1 font-mono text-[10px] text-white/90 ring-1 ring-white/15 ring-inset"
+      >
+        <span class="size-[3px] bg-[oklch(0.88_0.16_190)]" aria-hidden="true"></span>
         {kind}
       </span>
-      <span class="rounded-xs bg-black/55 px-1.5 py-0.5 font-mono text-2xs text-white/90">
-        {parts} parts
+
+      <span
+        class="tab-notch-l flex items-center gap-1.5 bg-black/60 px-1.5 py-1 font-mono text-[10px] text-white/90 ring-1 ring-white/15 ring-inset"
+      >
+        <span class="flex gap-[2px]" aria-hidden="true">
+          {
+            Array.from({ length: Math.min(parts, 10) }).map(() => (
+              <span class="h-[7px] w-[2px] bg-white/55" />
+            ))
+          }
+        </span>
+        {parts}
       </span>
     </div>
 
     <div class="relative z-10 mt-auto p-3.5">
-      <h3 class="text-lg leading-tight font-bold text-white">{title}</h3>
+      <h3 class="phosphor-type text-[oklch(0.97_0.03_190)]">
+        {lines.map((l) => <span class={l.cls}>{l.text}</span>)}
+      </h3>
 
       <p
         class="mt-2 flex items-center gap-1.5 font-mono text-2xs text-white/60 transition-colors group-hover:text-white"
