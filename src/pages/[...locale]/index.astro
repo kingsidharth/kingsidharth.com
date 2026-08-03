@@ -8,6 +8,7 @@ import Lineup from '@/components/Lineup.astro';
 import NoteRow from '@/components/NoteRow.astro';
 import WorkList from '@/components/WorkList.astro';
 import TemperatureInstrument from '@/components/instruments/TemperatureInstrument';
+import { LAST_STAGE } from '@/lib/sampling-stages';
 import GotchaQuiz from '@/components/instruments/GotchaQuiz';
 import HeroIntro from '@/components/HeroIntro.astro';
 import TeachingStats from '@/components/TeachingStats.astro';
@@ -42,26 +43,24 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
          and Teaching + Challenge as one attached instrument on the
          right — vertically middle-aligned against the intro rather
          than top-aligned, which is what makes them read as a pair. ── -->
-  <!-- The min-height is the backdrop's own aspect ratio (3:2, capped at
-       the 82rem the image itself is capped to). Without it the hero box
-       is only as tall as its text, the artwork gets clipped by
-       overflow-hidden, and what gets cut off is the bottom edge — where
-       the tiny human stands. That figure is the entire reason the
-       painting works, so the box is sized to it rather than the reverse. -->
-  <div class="relative isolate overflow-hidden dark:min-h-[min(66.7vw,54.7rem)]">
+  <!-- The min-height is the backdrop's own aspect ratio (2:1, capped at
+       the 82rem the image itself is capped to). Sized to its text
+       instead, the box clips the artwork with overflow-hidden — and what
+       gets cut is the bottom edge, where the tiny human stands. That
+       figure is the entire reason the image works, so the box is sized
+       to it rather than the reverse. -->
+  <div class="relative isolate min-h-[min(50vw,41rem)] overflow-hidden">
     <HeroBackdrop class="-z-20" />
-    <AsciiField class="-z-10 opacity-30" />
+    <AsciiField class="-z-10 opacity-20" />
 
     <!-- The top padding is the point of the backdrop: it is what leaves
          the deity's head, crown and held attributes clear of the
          headline. Fluid rather than stepped, because the artwork scales
          with the viewport and a breakpoint would crop its face at one
          width and strand it at the next.
-         Dark-only, like the backdrop itself — in light mode there is no
-         painting to clear, and this much headroom would just be a very
-         confident block of nothing. -->
+-->
     <section
-      class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-12 sm:pt-16 dark:pt-[clamp(7rem,26vw,22rem)]"
+      class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-[clamp(6rem,19vw,16rem)]"
     >
       <div class="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
         <HeroIntro />
@@ -95,7 +94,10 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
       failing. Switch to greedy and the maths is safe at any temperature — but the poem says
       "star" every time.
     </p>
-    <TemperatureInstrument client:idle />
+    {/* Fully opened. The paragraph above already promises greedy and the
+        three prompts, and the staged version belongs on the guide page
+        where the reader came to be walked through it. */}
+    <TemperatureInstrument startStage={LAST_STAGE} client:idle />
   </section>
 
   <script>

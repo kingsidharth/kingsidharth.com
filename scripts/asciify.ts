@@ -54,6 +54,16 @@ const BLOCK_SIGNATURES: Record<string, Quad> = {
 
 const RAMPS = {
   blocks: ' ░▒▓█▀▄▌▐▖▗▘▝',
+  /**
+   * Shade blocks only, no half-blocks.
+   *
+   * `blocks` carries ▀▄▌▐ so that shape matching can put ink on the same
+   * side of a cell as the edge running through it. That is right for a
+   * portrait and wrong for a flat symbolic mass: with nothing to match,
+   * every midtone lands on ▀ or ▄ and the fill comes out in horizontal
+   * dashes. These five step cleanly through coverage instead.
+   */
+  shade: ' ░▒▓█',
   ascii: ' .:-=+*#%@',
   dense: " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$",
   dots: ' ⠁⠃⠇⠏⠟⠿⡿⣿',
@@ -339,9 +349,16 @@ function renderSvg(grid: Cell[][], o: Options): string {
       const [cr, cg, cb] = r.colour;
       const fill = o.ink ? o.ink : `rgb(${cr},${cg},${cb})`;
       const op = o.ink ? ` opacity="${r.alpha}"` : '';
+      // `text-anchor: middle` centres the WHOLE run on x, so x has to be
+      // the centre of the run, not the centre of its first cell. With
+      // the first cell's centre a run of n glyphs sat (n-1)/2 cells too
+      // far left. Shape-matched art hid this — its runs are usually one
+      // glyph long, where the two agree — but a flat field produces runs
+      // dozens of cells wide, and those tore the image in half.
+      const span = r.text.length * cw;
       parts.push(
-        `<text x="${(r.start * cw + cw / 2).toFixed(1)}" y="${(ry * ch + ch / 2).toFixed(1)}" ` +
-          `fill="${fill}"${op} textLength="${r.text.length * cw}" ` +
+        `<text x="${(r.start * cw + span / 2).toFixed(1)}" y="${(ry * ch + ch / 2).toFixed(1)}" ` +
+          `fill="${fill}"${op} textLength="${span}" ` +
           `lengthAdjust="spacingAndGlyphs">${escapeXml(r.text)}</text>`,
       );
     }

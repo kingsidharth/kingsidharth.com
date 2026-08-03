@@ -2,78 +2,94 @@
 /**
  * The thangka behind the hero.
  *
- * A black-ground Tibetan thangka whose bodhisattva holds technology
- * instead of the usual attributes — a circuit lotus, a prayer wheel
- * built from hard-disk platters, a mala of glowing nodes. At the bottom
- * of the frame there is one present-day human, about 3% of the image
- * height, and the whole composition exists for that ratio.
+ * A colossal seated Buddha holding one plain slab on an open palm, and
+ * standing on the ground line beneath it, a single present-day human
+ * about a tenth of the frame high. The whole composition exists for that
+ * ratio; the figure is cropped by the top edge because being cut off by
+ * the frame is what tells you how big something is.
  *
- * Dark theme only, and not out of caution: this is a painting on a
- * black ground. On the cream paper of light mode it would be a black
- * rectangle stapled to the top of the page, which is not the same
- * artwork shown differently — it is a different, worse artwork.
+ * Symbolic rather than painted — flat solid shapes, no ornament — and
+ * then run through the same block-glyph pipeline as every other image on
+ * this site. An ornate raster sitting on top of an ascii site is a
+ * visitor; this is made of the same material as the cards.
  *
- * The scrim is not decoration either. Everything below the deity's
- * knees has to carry body copy, and gold on near-black is exactly the
- * contrast range that eats small text.
+ * Braille rather than shade blocks: eight steps of dot density read as a
+ * printed halftone screen, where five steps of block coverage read as a
+ * sticker. See `scripts/render-hero.ts` for the grading that gives the
+ * ramp something to climb.
+ *
+ * Both themes, because an ascii layer is transparent — the colour is one
+ * ink and there are two renders of it. The black-ground painting this
+ * replaced could only ever be dark-mode.
  */
 interface Props {
   class?: string;
 }
 
 const { class: extra = '' } = Astro.props;
+
+/* Legibility comes from masking the artwork, not from laying a scrim
+   over it. A scrim has to be a colour, and the one colour that works on
+   near-black is wrong on cream; a mask removes ink and is correct in
+   both themes.
+ *
+ * Two layers, intersected. A horizontal band alone had to be cut almost
+ * to nothing to clear the copy, because the copy sits over the brightest
+ * part of the statue — which meant erasing the same band right across
+ * the frame, including the parts no text ever touches. The second layer
+ * is a soft ellipse over the copy block itself, so the band can stay
+ * gentle and the loss stays local to where it buys something.
+ */
+/* Real spaces, not underscores. The underscore-for-space escape is a
+   Tailwind arbitrary-value convention and means nothing in a plain
+   `style` attribute — `rgb(0_0_0/0.5)` is simply invalid CSS, and one
+   invalid colour stop throws away the whole declaration. An earlier
+   version of this mask was silently doing nothing at all. */
+const maskLayers = [
+  'linear-gradient(to bottom,#000 0%,#000 26%,rgb(0 0 0 / 0.5) 42%,rgb(0 0 0 / 0.5) 72%,#000 86%,#000 96%,transparent 100%)',
+  'radial-gradient(52% 38% at 30% 56%,rgb(0 0 0 / 0.1) 0%,rgb(0 0 0 / 0.45) 55%,#000 100%)',
+].join(',');
+
+/* `intersect` so the two layers multiply. The default is `add`, which
+   would union them — every masked region filled back in by the other,
+   and no visible effect at all. */
+const maskStyle = [
+  `-webkit-mask-image:${maskLayers}`,
+  `mask-image:${maskLayers}`,
+  '-webkit-mask-composite:source-in',
+  'mask-composite:intersect',
+].join(';');
 ---
 
-<!-- Capped at 82rem and centred, so the deity stops growing on a wide
-     monitor. That leaves page background either side, and the thangka's
-     ground is pure black where the page is only near-black — close
-     enough to look like a printing error rather than a choice. The
-     horizontal mask dissolves both edges instead. -->
 <div
   class:list={[
-    'pointer-events-none absolute inset-x-0 top-0 mx-auto hidden max-w-[82rem] dark:block',
+    'pointer-events-none absolute inset-x-0 top-0 mx-auto max-w-[82rem]',
+    /* Centred and capped so the deity stops growing on a wide monitor.
+       The edges are dissolved rather than cut: a hard vertical boundary
+       between artwork and page reads as a mistake. */
     '[mask-image:linear-gradient(90deg,transparent_0%,#000_9%,#000_91%,transparent_100%)]',
     extra,
   ]}
   aria-hidden="true"
 >
-  <picture>
-    <source
-      type="image/avif"
-      srcset="/art/hero-thangka-900.avif 900w, /art/hero-thangka-1536.avif 1536w"
-      sizes="100vw"
-    />
-    <source
-      type="image/webp"
-      srcset="/art/hero-thangka-900.webp 900w, /art/hero-thangka-1536.webp 1536w"
-      sizes="100vw"
-    />
-    <img
-      src="/art/hero-thangka-1536.webp"
-      alt=""
-      width="1536"
-      height="1024"
-      /* Above the fold, so lazy would guarantee a flash of empty hero.
-         Decoding async keeps it off the main thread all the same. */
-      decoding="async"
-      fetchpriority="low"
-      class="w-full object-cover object-top"
-    />
-  </picture>
-
-  <!-- A band, not a wash.
-       The first version faded the whole lower half to the page colour,
-       which read fine until you noticed it had erased the one thing the
-       painting is built around: the human at the bottom edge. So the
-       scrim now darkens only the horizontal band the copy actually
-       occupies and eases off above and below it, leaving the deity's
-       head clear at the top and the figure clear at the foot. -->
-  <div
-    class="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_24%,rgb(0_0_0/0.78)_40%,rgb(0_0_0/0.78)_64%,transparent_80%)]"
-  >
-  </div>
-
-  <!-- Only the last few percent, purely to kill the cut edge where the
-       image ends and the page begins. -->
-  <div class="absolute inset-0 bg-linear-to-b from-transparent from-90% to-background"></div>
+  <img
+    src="/art/hero-thangka.svg"
+    alt=""
+    width="1320"
+    height="660"
+    decoding="async"
+    fetchpriority="low"
+    style={maskStyle}
+    class="hidden w-full dark:block"
+  />
+  <img
+    src="/art/hero-thangka-light.svg"
+    alt=""
+    width="1320"
+    height="660"
+    decoding="async"
+    fetchpriority="low"
+    style={maskStyle}
+    class="w-full dark:hidden"
+  />
 </div>

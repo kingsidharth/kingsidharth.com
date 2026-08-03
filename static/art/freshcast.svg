@@ -22,7 +22,7 @@
 <text x="409.5" y="49.0" fill="#d8ffe4" opacity="0.8" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
 <text x="416.5" y="49.0" fill="#d8ffe4" opacity="0.9" textLength="7" lengthAdjust="spacingAndGlyphs">▓</text>
 <text x="423.5" y="49.0" fill="#d8ffe4" opacity="0.9" textLength="7" lengthAdjust="spacingAndGlyphs">▓</text>
-<text x="430.5" y="49.0" fill="#d8ffe4" opacity="0.9" textLength="14" lengthAdjust="spacingAndGlyphs">▓▓</text>
+<text x="434.0" y="49.0" fill="#d8ffe4" opacity="0.9" textLength="14" lengthAdjust="spacingAndGlyphs">▓▓</text>
 <text x="444.5" y="49.0" fill="#d8ffe4" opacity="0.8" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
 <text x="451.5" y="49.0" fill="#d8ffe4" opacity="0.7" textLength="7" lengthAdjust="spacingAndGlyphs">▄</text>
 <text x="458.5" y="49.0" fill="#d8ffe4" opacity="0.6" textLength="7" lengthAdjust="spacingAndGlyphs">▖</text>
@@ -50,7 +50,7 @@
 <text x="444.5" y="63.0" fill="#d8ffe4" opacity="0.7" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
 <text x="451.5" y="63.0" fill="#d8ffe4" opacity="0.7" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
 <text x="458.5" y="63.0" fill="#d8ffe4" opacity="0.8" textLength="7" lengthAdjust="spacingAndGlyphs">▀</text>
-<text x="465.5" y="63.0" fill="#d8ffe4" opacity="0.9" textLength="14" lengthAdjust="spacingAndGlyphs">▓▓</text>
+<text x="469.0" y="63.0" fill="#d8ffe4" opacity="0.9" textLength="14" lengthAdjust="spacingAndGlyphs">▓▓</text>
 <text x="479.5" y="63.0" fill="#d8ffe4" opacity="0.7" textLength="7" lengthAdjust="spacingAndGlyphs">▄</text>
 <text x="486.5" y="63.0" fill="#d8ffe4" opacity="0.5" textLength="7" lengthAdjust="spacingAndGlyphs">░</text>
 <text x="276.5" y="77.0" fill="#d8ffe4" opacity="0.6" textLength="7" lengthAdjust="spacingAndGlyphs">▗</text>
@@ -652,7 +652,7 @@
 <text x="374.5" y="441.0" fill="#d8ffe4" opacity="0.7" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
 <text x="381.5" y="441.0" fill="#d8ffe4" opacity="0.7" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
 <text x="388.5" y="441.0" fill="#d8ffe4" opacity="1" textLength="7" lengthAdjust="spacingAndGlyphs">▓</text>
-<text x="395.5" y="441.0" fill="#d8ffe4" opacity="1" textLength="28" lengthAdjust="spacingAndGlyphs">████</text>
+<text x="406.0" y="441.0" fill="#d8ffe4" opacity="1" textLength="28" lengthAdjust="spacingAndGlyphs">████</text>
 <text x="423.5" y="441.0" fill="#d8ffe4" opacity="1" textLength="7" lengthAdjust="spacingAndGlyphs">█</text>
 <text x="430.5" y="441.0" fill="#d8ffe4" opacity="1" textLength="7" lengthAdjust="spacingAndGlyphs">▓</text>
 <text x="437.5" y="441.0" fill="#d8ffe4" opacity="0.6" textLength="7" lengthAdjust="spacingAndGlyphs">▘</text>
@@ -696,14 +696,14 @@
 <text x="360.5" y="455.0" fill="#d8ffe4" opacity="0.5" textLength="7" lengthAdjust="spacingAndGlyphs">░</text>
 <text x="367.5" y="455.0" fill="#d8ffe4" opacity="0.5" textLength="7" lengthAdjust="spacingAndGlyphs">░</text>
 <text x="374.5" y="455.0" fill="#d8ffe4" opacity="0.9" textLength="7" lengthAdjust="spacingAndGlyphs">▄</text>
-<text x="381.5" y="455.0" fill="#d8ffe4" opacity="1" textLength="14" lengthAdjust="spacingAndGlyphs">██</text>
-<text x="395.5" y="455.0" fill="#d8ffe4" opacity="1" textLength="14" lengthAdjust="spacingAndGlyphs">██</text>
+<text x="385.0" y="455.0" fill="#d8ffe4" opacity="1" textLength="14" lengthAdjust="spacingAndGlyphs">██</text>
+<text x="399.0" y="455.0" fill="#d8ffe4" opacity="1" textLength="14" lengthAdjust="spacingAndGlyphs">██</text>
 <text x="409.5" y="455.0" fill="#d8ffe4" opacity="1" textLength="7" lengthAdjust="spacingAndGlyphs">█</text>
 <text x="416.5" y="455.0" fill="#d8ffe4" opacity="1" textLength="7" lengthAdjust="spacingAndGlyphs">█</text>
 <text x="423.5" y="455.0" fill="#d8ffe4" opacity="0.7" textLength="7" lengthAdjust="spacingAndGlyphs">▀</text>
 <text x="437.5" y="455.0" fill="#d8ffe4" opacity="0.5" textLength="7" lengthAdjust="spacingAndGlyphs">░</text>
 <text x="444.5" y="455.0" fill="#d8ffe4" opacity="0.6" textLength="7" lengthAdjust="spacingAndGlyphs">░</text>
-<text x="451.5" y="455.0" fill="#d8ffe4" opacity="0.6" textLength="14" lengthAdjust="spacingAndGlyphs">░░</text>
+<text x="455.0" y="455.0" fill="#d8ffe4" opacity="0.6" textLength="14" lengthAdjust="spacingAndGlyphs">░░</text>
 <text x="465.5" y="455.0" fill="#d8ffe4" opacity="0.6" textLength="7" lengthAdjust="spacingAndGlyphs">░</text>
 <text x="472.5" y="455.0" fill="#d8ffe4" opacity="0.7" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
 <text x="479.5" y="455.0" fill="#d8ffe4" opacity="0.7" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
@@ -911,7 +911,7 @@
 <text x="339.5" y="511.0" fill="#d8ffe4" opacity="0.7" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
 <text x="346.5" y="511.0" fill="#d8ffe4" opacity="0.8" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
 <text x="353.5" y="511.0" fill="#d8ffe4" opacity="0.8" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
-<text x="360.5" y="511.0" fill="#d8ffe4" opacity="0.7" textLength="14" lengthAdjust="spacingAndGlyphs">▒▒</text>
+<text x="364.0" y="511.0" fill="#d8ffe4" opacity="0.7" textLength="14" lengthAdjust="spacingAndGlyphs">▒▒</text>
 <text x="374.5" y="511.0" fill="#d8ffe4" opacity="0.8" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
 <text x="395.5" y="511.0" fill="#d8ffe4" opacity="0.5" textLength="7" lengthAdjust="spacingAndGlyphs">░</text>
 <text x="402.5" y="511.0" fill="#d8ffe4" opacity="0.6" textLength="7" lengthAdjust="spacingAndGlyphs">░</text>
@@ -1040,7 +1040,7 @@
 <text x="255.5" y="553.0" fill="#d8ffe4" opacity="1" textLength="7" lengthAdjust="spacingAndGlyphs">█</text>
 <text x="262.5" y="553.0" fill="#d8ffe4" opacity="0.9" textLength="7" lengthAdjust="spacingAndGlyphs">▓</text>
 <text x="269.5" y="553.0" fill="#d8ffe4" opacity="0.7" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
-<text x="276.5" y="553.0" fill="#d8ffe4" opacity="0.5" textLength="14" lengthAdjust="spacingAndGlyphs">░░</text>
+<text x="280.0" y="553.0" fill="#d8ffe4" opacity="0.5" textLength="14" lengthAdjust="spacingAndGlyphs">░░</text>
 <text x="297.5" y="553.0" fill="#d8ffe4" opacity="0.6" textLength="7" lengthAdjust="spacingAndGlyphs">░</text>
 <text x="318.5" y="553.0" fill="#d8ffe4" opacity="0.7" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
 <text x="325.5" y="553.0" fill="#d8ffe4" opacity="0.5" textLength="7" lengthAdjust="spacingAndGlyphs">░</text>
@@ -1383,7 +1383,7 @@
 <text x="101.5" y="721.0" fill="#d8ffe4" opacity="0.6" textLength="7" lengthAdjust="spacingAndGlyphs">░</text>
 <text x="283.5" y="721.0" fill="#d8ffe4" opacity="0.6" textLength="7" lengthAdjust="spacingAndGlyphs">░</text>
 <text x="290.5" y="721.0" fill="#d8ffe4" opacity="0.5" textLength="7" lengthAdjust="spacingAndGlyphs">░</text>
-<text x="311.5" y="721.0" fill="#d8ffe4" opacity="0.6" textLength="14" lengthAdjust="spacingAndGlyphs">░░</text>
+<text x="315.0" y="721.0" fill="#d8ffe4" opacity="0.6" textLength="14" lengthAdjust="spacingAndGlyphs">░░</text>
 <text x="332.5" y="721.0" fill="#d8ffe4" opacity="0.6" textLength="7" lengthAdjust="spacingAndGlyphs">░</text>
 <text x="339.5" y="721.0" fill="#d8ffe4" opacity="0.7" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
 <text x="346.5" y="721.0" fill="#d8ffe4" opacity="0.7" textLength="7" lengthAdjust="spacingAndGlyphs">▒</text>
