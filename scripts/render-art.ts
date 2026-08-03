@@ -34,23 +34,34 @@ interface Art {
 
 const ART: Art[] = [
   { name: 'secrets', ink: '#d6f6ff', floor: 0.14, gamma: 0.75 },
-  { name: 'skull', ink: '#ffffff', floor: 0.16, gamma: 0.8 },
-  { name: 'samurai', ink: '#c8ffd8', floor: 0.16, gamma: 0.8 },
-  // A lit panel rather than a subject on black: without a high floor the
-  // grille fills in and the speaker holes disappear.
-  { name: 'freshcast', ink: '#d8ffe4', floor: 0.3, gamma: 0.9 },
+  { name: 'skull', ink: '#ffffff', floor: 0.1, gamma: 0.65 },
+  { name: 'samurai', ink: '#c8ffd8', floor: 0.07, gamma: 0.6 },
+  { name: 'freshcast', ink: '#d8ffe4', floor: 0.16, gamma: 0.8 },
   { name: 'cat', ink: '#ffe9c4', floor: 0.16, gamma: 0.8 },
   { name: 'designers', ink: '#dff2ff', floor: 0.07, gamma: 0.6 },
-  // Same as freshcast — the pinboard is the light source.
+  // The only one of these where the subject IS the light source: the lit
+  // pinboard fills the frame and the figure is the hole in it. Without a
+  // floor this high the whole card floods solid.
   { name: 'pmcourse', ink: '#ffe0c4', floor: 0.42, gamma: 0.8 },
 ];
 
-/** Both passes cover the same ~644px, so the two SVGs overlay exactly. */
 const FINE = { cols: 92, cell: 7 } as const;
-/* Half the sampling, not a quarter. At 23 across the silhouettes stopped
-   being recognisable — the cat was a smear — and a card you cannot read
-   until you touch it is not a resting state, it is a broken image. */
-const COARSE = { cols: 46, cell: 14 } as const;
+
+/**
+ * The resting resolution.
+ *
+ * This has been walked down twice. 23 across was unrecognisable — the
+ * cat was a smear. 46 was legible but still read as an out-of-focus
+ * photograph rather than as a deliberately coarse rendering, which is
+ * not the same thing and looks like a loading state. 64 keeps the
+ * drawing sharp and leaves the hover to add detail rather than to
+ * rescue it.
+ */
+const COARSE_COLS = 64;
+
+/** Both passes span the same width, so the two SVGs overlay exactly. */
+const WIDTH = FINE.cols * FINE.cell;
+const COARSE = { cols: COARSE_COLS, cell: WIDTH / COARSE_COLS } as const;
 
 const only = Bun.argv.slice(2);
 const queue = only.length ? ART.filter((a) => only.includes(a.name)) : ART;

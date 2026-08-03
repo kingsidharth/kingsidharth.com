@@ -1,6 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import CardArt from '@/components/CardArt.astro';
+import { posterGround } from '@/lib/poster';
 
 interface Props {
   entry: CollectionEntry<'series'>;
@@ -27,18 +28,12 @@ const lines = layouts[entry.data.id] ?? [{ text: title, cls: 'block text-lg font
 
 /* Portrait, because that is the shape a series cover actually is.
  *
- * The ground is a layered gradient rather than the 1-bit dither used
- * elsewhere — you cannot desaturate art that has no colour in it. Angle
- * and blob positions come off the seed, so each cover is its own
- * composition but is identical between builds.
- *
- * The figure on top is the same block-glyph ascii art the banners use,
- * shipped as one <img> rather than inline: a thousand-odd <text> nodes
- * per card is what made this row scroll badly the first time.
+ * The ground and the figure are both shared with the programme cards
+ * beside it — `posterGround` for the colour, `CardArt` for the ascii —
+ * so the row reads as one set of seven rather than five of one kind and
+ * two of another.
  */
-const angle = 120 + (seed % 7) * 15;
-const bx = 20 + (seed % 5) * 12;
-const by = 25 + (seed % 3) * 18;
+const ground = posterGround(seed, { from, via, to });
 ---
 
 <!-- The aspect ratio lives on the anchor, not the article: as a grid
@@ -49,15 +44,7 @@ const by = 25 + (seed % 3) * 18;
   <article
     class="grain relative flex size-full flex-col overflow-hidden rounded-lg border border-chassis-edge saturate-[0.55] transition-[filter] duration-300 group-hover:saturate-100 group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:saturate-100"
   >
-    <div
-      class="absolute inset-0"
-      style={`background:
-        radial-gradient(60% 45% at ${bx}% ${by}%, ${via} 0%, transparent 70%),
-        radial-gradient(70% 55% at ${100 - bx}% ${100 - by}%, ${to} 0%, transparent 72%),
-        linear-gradient(${angle}deg, ${from} 0%, ${via} 55%, ${to} 100%)`}
-      aria-hidden="true"
-    >
-    </div>
+    <div class="absolute inset-0" style={`background:${ground};`} aria-hidden="true"></div>
 
     <CardArt name={art} />
 

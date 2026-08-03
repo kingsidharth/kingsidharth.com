@@ -9,6 +9,7 @@
  * quotes and backslashes in the old art arrived empty.
  */
 import CardArt from '@/components/CardArt.astro';
+import { posterGround } from '@/lib/poster';
 
 const programmes = [
   {
@@ -19,7 +20,10 @@ const programmes = [
     kind: 'Tool',
     verb: 'Open',
     href: '/prompts',
-    bg: 'oklch(0.28 0.11 275)',
+    seed: 5,
+    from: 'oklch(0.32 0.13 285)',
+    via: 'oklch(0.24 0.1 262)',
+    to: 'oklch(0.4 0.11 208)',
     ink: 'oklch(0.88 0.16 195)',
     shadow: 'oklch(0.16 0.09 275)',
     labelBg: 'oklch(0.78 0.13 190)',
@@ -39,7 +43,10 @@ const programmes = [
     kind: 'Guide',
     verb: 'Read',
     href: '/guides/vibe-coding/101',
-    bg: 'oklch(0.3 0.13 340)',
+    seed: 12,
+    from: 'oklch(0.36 0.17 342)',
+    via: 'oklch(0.25 0.13 322)',
+    to: 'oklch(0.42 0.16 12)',
     ink: 'oklch(0.98 0 0)',
     shadow: 'oklch(0.19 0.1 340)',
     title: 'wordmark',
@@ -58,7 +65,10 @@ const programmes = [
     kind: 'Guide',
     verb: 'Read',
     href: '/guides',
-    bg: 'oklch(0.27 0.09 195)',
+    seed: 19,
+    from: 'oklch(0.3 0.1 202)',
+    via: 'oklch(0.22 0.07 192)',
+    to: 'oklch(0.36 0.11 162)',
     ink: 'oklch(0.88 0.19 145)',
     shadow: 'oklch(0.15 0.07 195)',
     title: 'extruded',
@@ -77,7 +87,10 @@ const programmes = [
     verb: 'Listen',
     sub: 'AI updates in 5 minutes',
     href: 'https://freshcast.app',
-    bg: 'oklch(0.29 0.1 155)',
+    seed: 26,
+    from: 'oklch(0.33 0.11 158)',
+    via: 'oklch(0.23 0.09 168)',
+    to: 'oklch(0.4 0.13 132)',
     ink: 'oklch(0.9 0.17 140)',
     shadow: 'oklch(0.17 0.07 155)',
     title: 'sprite',
@@ -95,7 +108,10 @@ const programmes = [
     kind: 'Tool',
     verb: 'Play',
     href: '/tinkering',
-    bg: 'oklch(0.32 0.12 45)',
+    seed: 33,
+    from: 'oklch(0.38 0.14 42)',
+    via: 'oklch(0.27 0.11 28)',
+    to: 'oklch(0.44 0.15 72)',
     ink: 'oklch(0.92 0.15 85)',
     shadow: 'oklch(0.2 0.09 45)',
     title: 'sprite',
@@ -137,7 +153,7 @@ const { variant = 'panel' } = Astro.props;
             ? 'h-full items-center justify-center px-3 py-5'
             : 'aspect-[3/4] items-start justify-between px-4 py-4 text-left',
         ]}
-        style={`background:${p.bg}; --sprite-shadow:${p.shadow};`}
+        style={`background:${posterGround(p.seed, p)}; --sprite-shadow:${p.shadow};`}
       >
         {variant === 'lineup' && p.art && <CardArt name={p.art} />}
 
