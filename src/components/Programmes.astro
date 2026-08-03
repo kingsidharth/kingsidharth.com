@@ -130,7 +130,7 @@ const { variant = 'panel' } = Astro.props;
         href={p.href}
         data-face-card
         class:list={[
-          'screen-raised group relative flex flex-col gap-3 saturate-[0.55] transition-[filter] duration-300 hover:saturate-100 focus-visible:saturate-100 active:saturate-150',
+          'screen-raised grain group relative flex flex-col gap-3 saturate-[0.55] transition-[filter] duration-300 hover:saturate-100 focus-visible:saturate-100 active:saturate-150',
           variant === 'panel'
             ? 'h-full items-center justify-center px-3 py-5'
             : 'aspect-[3/4] items-start justify-between px-4 py-4 text-left',
@@ -182,7 +182,9 @@ const { variant = 'panel' } = Astro.props;
 
         {
           variant === 'lineup' ? (
-            <span class="mt-auto w-full">
+            /* z-10 clears the grain layer, which paints at z-3 — the
+               artwork should be grainy, the lettering should not. */
+            <span class="relative z-10 mt-auto w-full">
               {p.labelBg ? (
                 <span
                   class="label-marquee block w-full rounded-xs py-1"
@@ -203,7 +205,7 @@ const { variant = 'panel' } = Astro.props;
             </span>
           ) : p.title === 'marquee' ? (
             <span
-              class="label-marquee w-full rounded-sm py-1"
+              class="label-marquee relative z-10 w-full rounded-sm py-1"
               style={`background:${p.labelBg}; color:${p.labelInk};`}
             >
               <span class="font-mono text-[11px] font-semibold">
@@ -212,20 +214,20 @@ const { variant = 'panel' } = Astro.props;
             </span>
           ) : p.title === 'extruded' ? (
             <span
-              class="text-extruded text-center font-mono text-[13px] font-bold"
+              class="text-extruded relative z-10 text-center font-mono text-[13px] font-bold"
               style={`color:${p.ink};`}
             >
               {p.name}
             </span>
           ) : p.title === 'wordmark' ? (
             <span
-              class="sprite-text text-center font-mono text-[13px] font-bold"
+              class="sprite-text relative z-10 text-center font-mono text-[13px] font-bold"
               style={`color:${p.ink};`}
             >
               {p.name}
             </span>
           ) : (
-            <span class="sprite-text text-center font-mono text-[11px]" style={`color:${p.ink};`}>
+            <span class="sprite-text relative z-10 text-center font-mono text-[11px]" style={`color:${p.ink};`}>
               {p.name}
             </span>
           )

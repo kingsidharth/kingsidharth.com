@@ -115,6 +115,14 @@
 
   --rule: oklch(0.88 0.014 82);
 
+  /* One tile of fractal noise, stamped into a data URI rather than
+     applied as `filter: url(#…)` on the element itself. As a filter the
+     browser re-rasterises the whole subtree on every repaint, which the
+     cards do continuously while their saturation transitions on hover;
+     as a background image it is one texture upload that never changes.
+     160px so the repeat is past the eye's pattern-finding distance. */
+  --noise-tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+
   color-scheme: light;
 }
 
@@ -833,6 +841,68 @@
     z-index: 2;
     pointer-events: none;
     background: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.16) 0 1px, transparent 1px 3px);
+  }
+
+  /* ── film grain ──────────────────────────────────────────────────
+     Sits above the artwork and below anything set at z-10 or higher,
+     so the picture is grainy but the lettering stays crisp.
+
+     `overlay` rather than a flat alpha wash: overlay darkens what is
+     already dark and lightens what is already light, so the grain rides
+     the image instead of greying it uniformly. A wash reads as dust on
+     the lens; this reads as the emulsion. */
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: var(--grain-opacity, 0.42);
+    mix-blend-mode: overlay;
+    background-image: var(--noise-tile);
+    background-size: 160px 160px;
+  }
+
+  /* Overlay against a near-black ground has almost nothing to lighten,
+     so dark mode leans on soft-light, which lifts shadows. */
+  .dark .grain::after {
+    mix-blend-mode: soft-light;
+    opacity: var(--grain-opacity, 0.85);
+  }
+
+  /* The chassis takes the same texture at a fraction of the strength —
+     enough to stop a large flat panel reading as a rectangle of paint,
+     not enough to look like a photograph of metal. Bounded to the panel
+     rather than laid over the viewport: a fixed, blended full-page
+     overlay pushes the whole document onto one compositing layer and
+     re-blends it every scroll frame. */
+  .chassis {
+    position: relative;
+  }
+
+  .chassis::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: 0.3;
+    mix-blend-mode: overlay;
+    background-image: var(--noise-tile);
+    background-size: 160px 160px;
+  }
+
+  .dark .chassis::after {
+    mix-blend-mode: soft-light;
+    opacity: 0.45;
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .grain::after {
+      display: none;
+    }
   }
 
   /* Sprite lettering: a hard offset shadow, no blur — the way text sat
