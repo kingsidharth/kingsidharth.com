@@ -102,6 +102,13 @@ interface Options {
   floor: number;
   /** <1 lifts midtones, >1 crushes them. */
   gamma: number;
+  /**
+   * Render every glyph in one colour and carry tone as opacity instead.
+   * A luminance-ranked palette spends half its range on dark greys,
+   * which disappear against anything but pure black — fine for a poster,
+   * useless for art sitting on a coloured card.
+   */
+  ink: string;
 }
 
 function parseArgs(argv: string[]): Options {
@@ -118,6 +125,7 @@ function parseArgs(argv: string[]): Options {
     shape: true,
     floor: 0,
     gamma: 1,
+    ink: '',
   };
 
   const rest: string[] = [];
@@ -131,6 +139,7 @@ function parseArgs(argv: string[]): Options {
     else if (a === '--palette') opts.palette = next();
     else if (a === '--bg') opts.bg = next();
     else if (a === '--alt') opts.alt = next();
+    else if (a === '--ink') opts.ink = next();
     else if (a === '--floor') opts.floor = Number(next());
     else if (a === '--gamma') opts.gamma = Number(next());
     else if (a === '--invert') opts.invert = true;
@@ -140,6 +149,7 @@ function parseArgs(argv: string[]): Options {
         'bun scripts/asciify.ts <image> -o <out.svg|out.html> [--cols n] [--cell n]\n' +
           `  --ramp     ${Object.keys(RAMPS).join(' | ')}\n` +
           `  --palette  ${Object.keys(PALETTES).join(' | ')}\n` +
+          '  --ink <css> one colour for every glyph, tone carried by opacity\n' +
           '  --floor n   drop cells darker than n (0-1) to blank — this is what\n' +
           '              isolates a subject and gives the image depth\n' +
           '  --gamma n   <1 lifts midtones, >1 crushes them\n' +
@@ -182,7 +192,7 @@ function escapeXml(s: string): string {
   );
 }
 
-type Cell = { ch: string; colour: RGB };
+type Cell = { ch: string; colour: RGB; alpha: number };
 
 async function build(o: Options): Promise<string> {
   const img = sharp(o.image).ensureAlpha();
@@ -251,7 +261,7 @@ async function build(o: Options): Promise<string> {
       // a floor, a busy background fills every cell with low-value
       // texture and the subject never separates from it.
       if (o.floor > 0 && lum < o.floor) {
-        row.push({ ch: ' ', colour: [0, 0, 0] });
+        row.push({ ch: ' ', colour: [0, 0, 0], alpha: 0 });
         continue;
       }
 
@@ -278,7 +288,11 @@ async function build(o: Options): Promise<string> {
         Math.round(quads.reduce((a, p) => a + p[1], 0) / 4),
         Math.round(quads.reduce((a, p) => a + p[2], 0) / 4),
       ];
-      row.push({ ch, colour: quantise(avg, palette, lum) });
+      row.push({
+        ch,
+        colour: quantise(avg, palette, lum),
+        alpha: o.ink ? Math.min(1, 0.4 + lum * 0.7) : 1,
+      });
     }
     grid.push(row);
   }
@@ -287,18 +301,23 @@ async function build(o: Options): Promise<string> {
 }
 
 /** Collapse runs of identical colour so large images stay a sane size. */
-function runs(row: Cell[]): { text: string; colour: RGB; start: number }[] {
-  const out: { text: string; colour: RGB; start: number }[] = [];
+function runs(row: Cell[]): { text: string; colour: RGB; alpha: number; start: number }[] {
+  const out: { text: string; colour: RGB; alpha: number; start: number }[] = [];
   let i = 0;
   while (i < row.length) {
     const { colour } = row[i];
+    const alpha = Math.round(row[i].alpha * 10) / 10;
     let j = i;
     let text = '';
-    while (j < row.length && row[j].colour.every((v, k) => v === colour[k])) {
+    while (
+      j < row.length &&
+      row[j].colour.every((v, k) => v === colour[k]) &&
+      Math.round(row[j].alpha * 10) / 10 === alpha
+    ) {
       text += row[j].ch;
       j++;
     }
-    out.push({ text, colour, start: i });
+    out.push({ text, colour, alpha, start: i });
     i = j;
   }
   return out;
@@ -318,9 +337,11 @@ function renderSvg(grid: Cell[][], o: Options): string {
     for (const r of runs(row)) {
       if (!r.text.trim()) continue;
       const [cr, cg, cb] = r.colour;
+      const fill = o.ink ? o.ink : `rgb(${cr},${cg},${cb})`;
+      const op = o.ink ? ` opacity="${r.alpha}"` : '';
       parts.push(
         `<text x="${(r.start * cw + cw / 2).toFixed(1)}" y="${(ry * ch + ch / 2).toFixed(1)}" ` +
-          `fill="rgb(${cr},${cg},${cb})" textLength="${r.text.length * cw}" ` +
+          `fill="${fill}"${op} textLength="${r.text.length * cw}" ` +
           `lengthAdjust="spacingAndGlyphs">${escapeXml(r.text)}</text>`,
       );
     }

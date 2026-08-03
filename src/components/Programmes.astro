@@ -144,7 +144,7 @@ const { variant = 'panel' } = Astro.props;
               alt=""
               loading="lazy"
               decoding="async"
-              class="pointer-events-none absolute inset-0 size-full object-cover opacity-90 transition-opacity duration-300 group-hover:opacity-100"
+              class="pointer-events-none absolute inset-0 size-full object-cover opacity-100"
             />
           )
         }
@@ -168,7 +168,7 @@ const { variant = 'panel' } = Astro.props;
           data-frames={JSON.stringify(p.frames)}
           class:list={[
             'sprite-text block whitespace-nowrap text-center',
-            variant === 'lineup' ? 'relative my-auto text-sm opacity-90' : 'text-xl',
+            variant === 'lineup' ? 'relative self-start text-[11px] opacity-80' : 'text-xl',
           ]}
           style={`color:${p.ink};`}
           aria-hidden="true"
