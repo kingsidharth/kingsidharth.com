@@ -1,0 +1,222 @@
+---
+/**
+ * The cover plate at the top of a guide.
+ *
+ * The same drawing as the guide's card in the rail, at nearly twice the
+ * sampling and alive rather than flat. It renders from a tone grid on a
+ * canvas for the same reason the hero does: a cell cannot climb the ramp
+ * — under a cursor or under a passing shimmer — if the only thing
+ * shipped is the character it already landed on.
+ *
+ * The idle animation is a soft diagonal band of heat travelling across
+ * the plate, which is the same heat the pointer applies. One mechanism,
+ * so the cover is already doing quietly what your cursor does loudly,
+ * and reaching for it feels like joining in rather than switching modes.
+ */
+
+interface Props {
+  /** Basename of the grid in `static/art`, without `-grid.json`. */
+  art: string;
+  title: string;
+  description?: string;
+  /** Rendered above the title — "6 parts", a date, whatever the page has. */
+  eyebrow?: string;
+}
+
+const { art, title, description, eyebrow } = Astro.props;
+---
+
+<header class="relative isolate mb-10 overflow-hidden rounded-lg border border-chassis-edge">
+  <div class="relative aspect-[4/3] w-full sm:aspect-[16/9] lg:aspect-[2/1]">
+    <canvas
+      data-guide-cover
+      data-art={art}
+      aria-hidden="true"
+      class="absolute inset-0 size-full opacity-0 transition-opacity duration-700"></canvas>
+
+    <!-- The plate is a picture with type on it, so the type needs its own
+         ground. A gradient rather than a flat panel: the artwork should
+         still be visible behind the words, only quieter. -->
+    <div
+      class="absolute inset-0 bg-linear-to-t from-background via-background/70 via-40% to-transparent"
+      aria-hidden="true"
+    >
+    </div>
+
+    <div class="absolute inset-x-0 bottom-0 p-5 sm:p-7">
+      {eyebrow && <p class="nameplate mb-2 text-primary">{eyebrow}</p>}
+      <h1 class="max-w-[20ch] text-2xl sm:text-3xl">{title}</h1>
+      {
+        description && (
+          <p class="mt-3 max-w-[56ch] text-sm text-muted-foreground sm:text-base">{description}</p>
+        )
+      }
+    </div>
+  </div>
+</header>
+
+<script>
+  import { TREATMENT_RAMPS, readTreatment } from '@/lib/treatments';
+
+  /** Cutoff and its per-cell wobble, as in the hero: a single flat
+      threshold draws a clean contour, which inked art never has. */
+  const CUT = 0.11;
+  const JITTER = 0.06;
+  const HOT_INK: readonly [number, number, number] = [244, 122, 183];
+  /** Seconds for the shimmer to cross the plate once. */
+  const SWEEP = 9;
+  /** Half-width of the shimmer band, in fractions of the diagonal. */
+  const BAND = 0.13;
+
+  function inkFor(dark: boolean): [number, number, number] {
+    return dark ? [226, 236, 255] : [46, 52, 68];
+  }
+
+  function hash01(x: number, y: number): number {
+    return ((((x * 374761393) ^ (y * 668265263)) >>> 0) % 1024) / 1024;
+  }
+
+  interface Grid {
+    cols: number;
+    rows: number;
+    lum: string;
+  }
+
+  for (const canvas of document.querySelectorAll<HTMLCanvasElement>('canvas[data-guide-cover]')) {
+    const ctx = canvas.getContext('2d');
+    const art = canvas.dataset.art;
+    if (!ctx || !art) continue;
+
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    let cols = 0;
+    let rows = 0;
+    let lum = new Uint8Array(0);
+    let cw = 0;
+    let chh = 0;
+    /** Top-left of the drawn grid inside the canvas box; negative when
+        the plate is cropping. */
+    let ox = 0;
+    let oy = 0;
+    let ink = inkFor(document.documentElement.classList.contains('dark'));
+    let ramp = TREATMENT_RAMPS[readTreatment(document.documentElement)];
+    let raf = 0;
+    let phase = 0;
+
+    function measure(): boolean {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0 || cols === 0) return false;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      /* Cover, not stretch. The grid is 3:4 and the plate is nearly 2:1;
+         deriving cell size from each axis independently squashed the
+         drawing flat, which at a glance read as "the art is faint" rather
+         than "the art is the wrong shape". One scale for both axes, the
+         larger of the two fits, and the overflow crops evenly. */
+      const unit = Math.max(rect.width / cols, rect.height / (rows * 2));
+      cw = unit;
+      chh = unit * 2;
+      ox = (rect.width - cols * cw) / 2;
+      oy = (rect.height - rows * chh) / 2;
+
+      ctx.font = `${(chh * 0.98).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      return true;
+    }
+
+    function draw(): void {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Skip the rows and columns the crop has pushed outside the plate.
+      const rect = canvas.getBoundingClientRect();
+      const y0 = Math.max(0, Math.floor(-oy / chh));
+      const y1 = Math.min(rows - 1, Math.ceil((rect.height - oy) / chh));
+      const x0 = Math.max(0, Math.floor(-ox / cw));
+      const x1 = Math.min(cols - 1, Math.ceil((rect.width - ox) / cw));
+
+      for (let y = y0; y <= y1; y += 1) {
+        for (let x = x0; x <= x1; x += 1) {
+          const base = (lum[y * cols + x] ?? 0) / 255;
+
+          /* Distance from the travelling band, measured along a diagonal
+             so the sweep crosses the plate rather than wiping down it. */
+          const along = (x / cols) * 0.72 + (y / rows) * 0.28;
+          const d = Math.abs(along - phase);
+          const heat = d > BAND ? 0 : (1 - d / BAND) ** 2 * 0.55;
+
+          if (base + heat * 0.5 < CUT + (hash01(x, y) - 0.5) * 2 * JITTER) continue;
+
+          const lit = Math.min(1, base + heat * 0.35);
+          const glyph = ramp[Math.min(ramp.length - 1, Math.floor(lit * ramp.length))];
+          if (!glyph || glyph === ' ') continue;
+
+          const t = Math.min(1, heat * 1.6);
+          const r = Math.round(ink[0] + (HOT_INK[0] - ink[0]) * t);
+          const g = Math.round(ink[1] + (HOT_INK[1] - ink[1]) * t);
+          const b = Math.round(ink[2] + (HOT_INK[2] - ink[2]) * t);
+
+          ctx.fillStyle = `rgba(${r},${g},${b},${Math.min(1, 0.35 + lit * 0.7)})`;
+          ctx.fillText(glyph, ox + x * cw + cw / 2, oy + y * chh + chh / 2);
+        }
+      }
+    }
+
+    let last = 0;
+    function tick(now: number): void {
+      // Rate-limited to ~24fps. This repaints the whole plate — there is
+      // no small dirty region when the thing moving is a band crossing
+      // all of it — and a shimmer does not need 60.
+      if (now - last > 41) {
+        last = now;
+        phase = ((now / 1000 / SWEEP) % 1.4) - 0.2;
+        draw();
+      }
+      raf = requestAnimationFrame(tick);
+    }
+
+    fetch(`/art/${art}-grid.json`)
+      .then((res) => res.json() as Promise<Grid>)
+      .then((grid) => {
+        cols = grid.cols;
+        rows = grid.rows;
+        lum = Uint8Array.from(atob(grid.lum), (c) => c.charCodeAt(0));
+
+        if (!measure()) return;
+        draw();
+        canvas.classList.remove('opacity-0');
+
+        new ResizeObserver(() => {
+          if (measure()) draw();
+        }).observe(canvas);
+
+        new MutationObserver(() => {
+          ink = inkFor(document.documentElement.classList.contains('dark'));
+          ramp = TREATMENT_RAMPS[readTreatment(document.documentElement)];
+          draw();
+        }).observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['class', 'data-treatment'],
+        });
+
+        if (reduce.matches) return;
+
+        // Nothing off-screen has any business holding a rAF loop open.
+        new IntersectionObserver((entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting && !raf) raf = requestAnimationFrame(tick);
+            else if (!entry.isIntersecting && raf) {
+              cancelAnimationFrame(raf);
+              raf = 0;
+            }
+          }
+        }).observe(canvas);
+      })
+      .catch(() => {
+        /* No cover art; the title below still reads. */
+      });
+  }
+</script>

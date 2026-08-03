@@ -1,0 +1,61 @@
+---
+title: The full stack
+description: Final norm, unembedding, one token out — then the whole engine turns over again.
+pubDate: 2026-08-03
+part: 6
+navLabel: The full stack
+tags: [ai, transformers, inference]
+---
+
+After the last block, the residual stream holds dozens of layers of
+accumulated refinement. Three steps turn it into an output.
+
+## Final norm
+
+One last LayerNorm, applied to the stream alone. The stream's raw magnitudes
+drift as blocks add to it; the unembedding that follows is sensitive to
+scale, so the stream is normalised once before it's read.
+
+## Unembedding — the table, read backwards
+
+The final vector at the last position is dotted with **every row of the
+vocabulary** — usually the very same embedding table the tokens entered
+through, used in reverse ("tied weights"). Each dot product is one logit:
+how strongly the model's final state points at that vocabulary entry.
+
+Vocabulary-sized dot product, one number per entry — this is where the
+logits in the [sampling guide](/guides/sampling/logits-and-softmax) come
+from. Softmax makes them a distribution; temperature, top-k and top-p decide
+how boldly to draw from it.
+
+## One token per revolution
+
+Sampling picks one token — `mat`, say. That token is appended to the input
+and the **entire machine runs again**: tokenise (the new token gets its id),
+embed, all the blocks, final norm, unembed, sample. Generation is a loop,
+not a pass. A 500-token answer is 500 full revolutions of the engine.
+
+This is the real shape of an LLM at inference time:
+
+```
+prompt → [engine] → token₁
+prompt + token₁ → [engine] → token₂
+prompt + token₁ + token₂ → [engine] → token₃
+...
+```
+
+The only mercy is the KV cache: keys and values for old positions don't
+change when a new token arrives, so they're stored instead of recomputed.
+Each revolution then costs one position's worth of attention instead of the
+whole prefix's — which is why the first token of a response is slow and the
+rest stream out fast.
+
+## What the machine is
+
+Strip it down and a transformer is: a lookup table, one repeated block with a
+communication channel and a per-position function, the table read backwards,
+and a sampler. Every capability you've ever seen one demonstrate —
+translation, code, reasoning — emerges from turning that crank long enough,
+on enough text, with enough parameters.
+
+The engine is simple. What it learns to be is not.

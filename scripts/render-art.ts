@@ -30,11 +30,23 @@ interface Art {
   floor: number;
   /** Below 1 lifts the midtones, which thickens the drawing. */
   gamma: number;
+  /**
+   * Also emit a tone grid for a guide cover.
+   *
+   * A cover is the same drawing at four times the sampling and alive
+   * rather than flat, and neither is something an SVG of baked glyphs
+   * can become. The grid ships luminance per cell so the cover picks its
+   * own characters at paint time — which is what lets a shimmer travel
+   * across it, and lets the treatment setting reach it too.
+   */
+  cover?: boolean;
 }
 
 const ART: Art[] = [
   { name: 'secrets', ink: '#d6f6ff', floor: 0.14, gamma: 0.75 },
-  { name: 'skull', ink: '#ffffff', floor: 0.1, gamma: 0.65 },
+  { name: 'skull', ink: '#ffffff', floor: 0.1, gamma: 0.65, cover: true },
+  { name: 'sampling', ink: '#e8ecff', floor: 0.12, gamma: 0.72, cover: true },
+  { name: 'transformer', ink: '#dfe9ff', floor: 0.14, gamma: 0.8, cover: true },
   { name: 'samurai', ink: '#c8ffd8', floor: 0.07, gamma: 0.6 },
   { name: 'freshcast', ink: '#d8ffe4', floor: 0.16, gamma: 0.8 },
   { name: 'cat', ink: '#ffe9c4', floor: 0.16, gamma: 0.8 },
@@ -63,6 +75,14 @@ const COARSE_COLS = 64;
 const WIDTH = FINE.cols * FINE.cell;
 const COARSE = { cols: COARSE_COLS, cell: WIDTH / COARSE_COLS } as const;
 
+/**
+ * Cover resolution. Nearly twice the card's, because a cover is looked
+ * at rather than glanced at. Its floor drops to 0.03 as well, so the
+ * renderer can cut the edge itself with a jitter instead of inheriting a
+ * clean baked contour.
+ */
+const COVER_COLS = 168;
+
 const only = Bun.argv.slice(2);
 const queue = only.length ? ART.filter((a) => only.includes(a.name)) : ART;
 
@@ -79,5 +99,8 @@ for (const art of queue) {
   ] as const) {
     await $`bun scripts/asciify.ts art-src/${art.name}.png -o static/art/${art.name}${suffix}.svg --cols ${res.cols} --cell ${res.cell} --ink ${art.ink} --bg transparent --floor ${art.floor} --gamma ${art.gamma}`.quiet();
   }
-  console.log(`${art.name}  ${FINE.cols}c + ${COARSE.cols}c`);
+  if (art.cover) {
+    await $`bun scripts/asciify.ts art-src/${art.name}.png -o static/art/${art.name}-grid.json --cols ${COVER_COLS} --cell ${(FINE.cols * FINE.cell) / COVER_COLS} --bg transparent --ramp shade --no-shape --floor 0.03 --gamma ${art.gamma}`.quiet();
+  }
+  console.log(`${art.name}  ${FINE.cols}c + ${COARSE.cols}c${art.cover ? ` + ${COVER_COLS}c grid` : ''}`);
 }

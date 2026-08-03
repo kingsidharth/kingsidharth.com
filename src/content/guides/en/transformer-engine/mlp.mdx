@@ -1,0 +1,58 @@
+---
+title: The MLP
+description: Two matrices and a kink. The least-diagrammed two-thirds of the model.
+pubDate: 2026-08-03
+part: 5
+navLabel: The MLP
+tags: [ai, transformers, mlp]
+---
+
+import TransformerEngine from '@/components/instruments/TransformerEngine';
+
+The MLP gets a single box in most diagrams and most of the parameters in the
+model. Inside, it is almost disappointingly simple:
+
+<div className="my-10 lg:-ml-[17.5rem] lg:w-[calc(100%+17.5rem)]">
+  <TransformerEngine client:load initialLevel="mlp" />
+</div>
+
+```
+h = GELU(x · W↑)       # widen: d_model → 4 × d_model
+y = h · W↓             # narrow back: 4 × d_model → d_model
+```
+
+Two matrix multiplications with a nonlinearity between them. No cross-token
+communication — the same MLP is applied to every position's vector
+independently, like a function mapped over a list.
+
+## Why the widening matters
+
+The hidden layer is four times wider than the stream. In that expanded space
+the vector can be picked apart into many more features than `d_model`
+dimensions could hold at once; GELU then acts as a soft gate, zeroing the
+features that don't fire and passing the ones that do. The down-projection
+writes the surviving conclusions back onto the stream.
+
+GELU itself is a rounded ReLU: near-zero inputs leak through slightly instead
+of being hard-clipped. The curve glyph in the diagram is the whole function.
+Everything interesting is in the matrices around it.
+
+## Where knowledge lives
+
+Attention moves information that is already in the context. The MLP is where
+information from *training* gets applied. Mechanistic-interpretability work
+finds individual hidden-layer neurons that fire on strikingly specific
+patterns — a neuron for text in French, a neuron for legal citations, a
+neuron for numbers being compared — and the down-projection rows read like a
+library of facts to add to the stream.
+
+One crude but durable mental model: **attention retrieves from the context,
+the MLP retrieves from the weights.** A block runs both lookups per pass, and
+a stack runs the pair dozens of times.
+
+## Why nobody diagrams it
+
+Because there's nothing to draw. It has no grid of scores, no triangle mask,
+no heads — just a wide room the vector passes through. But when a model
+"knows" that Paris is in France, that fact was retrieved here, in a block's
+MLP, as a pattern match against weights frozen at the end of training.

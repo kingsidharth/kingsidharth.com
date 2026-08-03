@@ -12,6 +12,7 @@ const { locale } = Astro.props;
 const t = useTranslations(locale);
 
 const links = [
+  { href: localePath(locale, 'guides'), label: t('nav.guides') },
   { href: localePath(locale, 'broadcasts'), label: t('nav.watch') },
   { href: localePath(locale, 'blog'), label: t('nav.notes') },
   { href: localePath(locale, 'tinkering'), label: t('nav.tools') },

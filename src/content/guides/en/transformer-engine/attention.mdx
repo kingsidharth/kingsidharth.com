@@ -1,0 +1,78 @@
+---
+title: Attention, opened
+description: Three matrices, one grid of scores, and a weighted average. Attention is simpler than its reputation.
+pubDate: 2026-08-03
+part: 4
+navLabel: Attention, opened
+tags: [ai, transformers, attention]
+---
+
+import TransformerEngine from '@/components/instruments/TransformerEngine';
+
+Attention is the mechanism that lets one token position read from the others.
+Dive into the attention slab and this is what's inside:
+
+<div className="my-10 lg:-ml-[17.5rem] lg:w-[calc(100%+17.5rem)]">
+  <TransformerEngine client:load initialLevel="attention" />
+</div>
+
+## Q, K, V — three readings of the same vector
+
+Every position's vector is projected three ways, by three learned matrices:
+
+- **Query (Q)** — what this position is looking for.
+- **Key (K)** — what this position advertises.
+- **Value (V)** — what this position will hand over if selected.
+
+Same input, three interpretations. A query asking "what is the subject of
+this sentence?" will score highly against keys whose tokens can be subjects.
+
+## The score grid
+
+Each position's query is dotted with every position's key:
+
+```
+scores = Q · Kᵀ / √d
+```
+
+One number per (reader, source) pair — how much position *i* should listen to
+position *j*. Dividing by √d keeps the dot products from growing with the
+dimension and saturating the softmax that comes next.
+
+Then the **causal mask**: position *i* may not look at any *j > i*. The
+future is blanked out (−∞ before softmax), which turns the score grid into a
+triangle — that's the half-lit plate in the diagram. This mask is what makes
+it a *decoder*: the model predicts the next token using only the past, which
+is exactly what training and generation both need.
+
+Softmax turns each row of the surviving triangle into weights that sum to 1.
+
+## The weighted sum
+
+```
+out = softmax(Q · Kᵀ / √d) · V
+```
+
+Each position's new state is a weighted average of *every* past position's
+value vector. Attention, stripped of the mystique, is a content-addressed
+blur: "mix into me a little of everyone who matches what I'm looking for."
+
+## Why "multi-head"
+
+One Q/K/V projection would let each position attend with one criterion at one
+granularity. So the model runs several attention operations in parallel —
+the heads — each with its own smaller Q, K, V matrices, each free to
+specialise: one head tracks the current subject, another resolves pronouns,
+another matches brackets or indentation.
+
+The heads' outputs are concatenated and passed through one more matrix,
+`Wₒ`, which mixes them back down to `d_model`. That result is what gets added
+to the residual stream.
+
+## What heads actually learn
+
+Probe a trained model and the heads are not random: some reliably attend to
+the previous token, some to the start of the clause, some to matching
+delimiters, some to the token a copy would come from ("induction heads" —
+the mechanism behind in-context learning). None of this is programmed. It is
+what gradient descent found useful for predicting the next token.

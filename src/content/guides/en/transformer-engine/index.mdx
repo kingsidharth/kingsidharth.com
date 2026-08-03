@@ -1,0 +1,38 @@
+---
+title: Transformer, Attention, & Engine
+description: A large language model is one machine with one moving part, repeated. Take it apart, look inside, put it back together.
+pubDate: 2026-08-03
+part: 0
+art: transformer
+navLabel: Overview
+tags: [ai, transformers, attention, llm]
+---
+
+import TransformerEngine from '@/components/instruments/TransformerEngine';
+
+Every large language model — GPT, Claude, Llama, all of them — is the same
+machine. Text goes in the bottom as numbers, something comes out the top as a
+distribution over what comes next. Everything in between is one block, copied
+and stacked.
+
+This is the machine, exploded:
+
+<div className="my-10 lg:-ml-[17.5rem] lg:w-[calc(100%+17.5rem)]">
+  <TransformerEngine client:load />
+</div>
+
+Drag to orbit it. Scroll to zoom. Tap a part — the first block, the attention
+slab, the MLP — and the camera takes you inside, where the block opens up into
+its real contents: attention built out of three matrices called Q, K and V,
+and an MLP that is just two matrices with a kink between them.
+
+The rest of this guide reads the machine part by part, bottom to top:
+
+1. **Tokenisation** — text becomes integers.
+2. **Embeddings** — integers become vectors, and the residual stream begins.
+3. **One block** — attention, add & norm, MLP, add & norm. The whole trick.
+4. **Attention, opened** — Q, K, V, and what the heads are doing.
+5. **The MLP** — the two-thirds of the model nobody diagrams.
+6. **The full stack** — unembedding, sampling, and why it loops.
+
+Read it in order. Each part assumes the previous one.

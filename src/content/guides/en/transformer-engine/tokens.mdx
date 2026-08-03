@@ -1,0 +1,52 @@
+---
+title: Tokenisation
+description: The model never sees text. It sees integers, and the tokenizer decides which ones.
+pubDate: 2026-08-03
+part: 1
+navLabel: Tokenisation
+tags: [ai, transformers, tokenisation]
+---
+
+A neural network cannot read. Before anything else happens, raw text is cut
+into pieces and each piece is replaced by an integer from a fixed vocabulary.
+
+```
+"the cat sat on"  →  [262, 9388, 3339, 319]
+```
+
+Those four integers are the entire input. Everything the model knows about
+your sentence, it reconstructs from them.
+
+## Tokens are not words
+
+Modern tokenizers (BPE and its cousins) learn the vocabulary from data, so
+common strings become single tokens and rare ones shatter:
+
+- `the` is one token. So is ` the` — with the leading space, a different id.
+- `sat` is one token. `Sat` is another.
+- `unbelievable` might be `un` + `believ` + `able`.
+- A rare word, an emoji, or a string in a low-resource script can shatter
+  into one token per byte.
+
+This is why models fumble character-level tasks — counting the letters in
+"strawberry", reversing a string. They never see the letters. They see chunk
+ids, and the chunks don't align with the characters you see.
+
+## The vocabulary is a lookup table's height
+
+A typical vocabulary is 32k–256k entries. Every id in it names one row of the
+embedding table, which is the very next thing the model touches — and the
+first chapter of parameters it ever learns.
+
+Two consequences worth keeping:
+
+- **Context length is counted in tokens, not words.** A 128k context window
+  is 128k of these ids, and pathological text (code, dense non-Latin scripts)
+  spends them faster than prose does.
+- **Token boundaries are invisible to you and load-bearing for the model.**
+  A prompt that ends mid-token, or a word that splits oddly, can change the
+  output in ways that look superstitious until you open the tokenizer.
+
+Everything downstream — embeddings, attention, the whole engine — operates on
+one token position at a time. From here on, "the cat sat on" is four columns
+of numbers, and the machine never looks back at the text.

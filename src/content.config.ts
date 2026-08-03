@@ -55,6 +55,12 @@ const guides = defineCollection({
     part: z.number().int().min(0).default(0),
     /** Shown in the sidebar instead of `title` when the title is long. */
     navLabel: z.string().optional(),
+    /**
+     * Basename in `static/art` of the cover plate's tone grid. Set on a
+     * guide's root (part 0) only — chapters inherit nothing, because a
+     * cover is the thing you arrive at, not a header on every page.
+     */
+    art: z.string().optional(),
     instruments: z.array(reference('instruments')).default([]),
   }),
 });

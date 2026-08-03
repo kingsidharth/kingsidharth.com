@@ -2,6 +2,7 @@
 import type { GetStaticPaths } from 'astro';
 import { getCollection, render } from 'astro:content';
 import Base from '@/layouts/Base.astro';
+import GuideCover from '@/components/GuideCover.astro';
 import { chapterNeighbours, getGuides, splitId } from '@/lib/content';
 import { LOCALES, formatDate, localeParam, localePath, useTranslations } from '@/lib/i18n';
 import type { Locale } from '@/lib/i18n';
@@ -83,20 +84,38 @@ const sequence = [guide.root, ...guide.chapters];
 
     <!-- ── Chapter body ─────────────────────────────────────── -->
     <article class="min-w-0">
-      <header class="mb-8">
-        <p class="nameplate mb-3 flex flex-wrap gap-x-3">
-          <a href={localePath(locale, `guides/${guide.slug}`)} class="hover:text-primary">
-            {guide.root.data.title}
-          </a>
-          {!isRoot && <span class="text-primary">{t('guides.part')} {entry.data.part}</span>}
-          <time datetime={entry.data.pubDate.toISOString()}>
-            {formatDate(entry.data.pubDate, locale)}
-          </time>
-        </p>
+      {
+        /* A guide's root is its cover, so it gets the plate and the plain
+           header steps aside — two titles on one page is a page that has
+           not decided what it is. Chapters keep the plain header. */
+        isRoot && entry.data.art ? (
+          <GuideCover
+            art={entry.data.art}
+            title={entry.data.title}
+            description={entry.data.description}
+            eyebrow={`${sequence.length} ${t('guides.parts')} · ${formatDate(entry.data.pubDate, locale, { day: undefined })}`}
+          />
+        ) : (
+          <header class="mb-8">
+            <p class="nameplate mb-3 flex flex-wrap gap-x-3">
+              <a href={localePath(locale, `guides/${guide.slug}`)} class="hover:text-primary">
+                {guide.root.data.title}
+              </a>
+              {!isRoot && (
+                <span class="text-primary">
+                  {t('guides.part')} {entry.data.part}
+                </span>
+              )}
+              <time datetime={entry.data.pubDate.toISOString()}>
+                {formatDate(entry.data.pubDate, locale)}
+              </time>
+            </p>
 
-        <h1 class="text-3xl">{entry.data.title}</h1>
-        <p class="mt-3 text-lg text-muted-foreground">{entry.data.description}</p>
-      </header>
+            <h1 class="text-3xl">{entry.data.title}</h1>
+            <p class="mt-3 text-lg text-muted-foreground">{entry.data.description}</p>
+          </header>
+        )
+      }
 
       <div class="prose-bench">
         <Content />
