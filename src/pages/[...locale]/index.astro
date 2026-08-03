@@ -12,6 +12,7 @@ import GotchaQuiz from '@/components/instruments/GotchaQuiz';
 import HeroIntro from '@/components/HeroIntro.astro';
 import TeachingStats from '@/components/TeachingStats.astro';
 import SocialLinks from '@/components/SocialLinks.astro';
+import AsciiField from '@/components/AsciiField.astro';
 import { getLocalized } from '@/lib/content';
 import { localePath, localeStaticPaths, useTranslations } from '@/lib/i18n';
 import type { Locale } from '@/lib/i18n';
@@ -40,7 +41,11 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
          and Teaching + Challenge as one attached instrument on the
          right — vertically middle-aligned against the intro rather
          than top-aligned, which is what makes them read as a pair. ── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-12 sm:pt-16">
+  <section
+    class="relative isolate mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-12 sm:pt-16"
+  >
+    <AsciiField class="-z-10 opacity-50" />
+
     <div class="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
       <HeroIntro />
 

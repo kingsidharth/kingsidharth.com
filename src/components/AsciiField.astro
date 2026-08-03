@@ -1,0 +1,204 @@
+---
+/**
+ * A slow ascii field behind a section, which the pointer disturbs.
+ *
+ * This is two of the effects folded into one. An animated ascii backdrop
+ * and a particle trail that follows the cursor are, stacked separately,
+ * two gimmicks competing for the same attention; run together they are
+ * one behaviour — a field that is already alive, and moves aside when
+ * you reach into it. Glyphs near the pointer take on heat, which decays
+ * over about a second, so the wake is the trail.
+ *
+ * No island: a canvas and a listener do not need React, and hydrating
+ * one here would cost more than the effect does.
+ */
+interface Props {
+  /**
+   * Colours as space-separated rgb triples. Passed in rather than read
+   * off the cascade on purpose — every colour in this design system is
+   * declared in oklch, and canvas fillStyle will not take it. Reading
+   * `--foreground` back and feeding it to the canvas is exactly the bug
+   * that once rendered the video thumbnails solid black.
+   */
+  ink?: string;
+  /** The colour a glyph takes under the pointer. */
+  hot?: string;
+  class?: string;
+}
+
+const { ink = '235 245 255', hot = '244 122 183', class: extra = '' } = Astro.props;
+---
+
+<canvas
+  data-ascii-field
+  data-ink={ink}
+  data-hot={hot}
+  aria-hidden="true"
+  class:list={[
+    'pointer-events-none absolute inset-0 size-full',
+    '[mask-image:radial-gradient(72%_70%_at_50%_45%,#000_0%,transparent_100%)]',
+    extra,
+  ]}></canvas>
+
+<script>
+  /** Sparse on purpose — most cells stay blank and are never drawn. */
+  const RAMP = ' .:-=+*#%@';
+  const CELL = 16;
+  /** Roughly a second to fall from full heat to nothing at 60fps. */
+  const DECAY = 0.93;
+  /** Radius of the pointer's stamp, in cells. */
+  const REACH = 3;
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function parseRgb(value: string): [number, number, number] {
+    const parts = value.split(/[\s,]+/).map(Number);
+    return [parts[0] ?? 255, parts[1] ?? 255, parts[2] ?? 255];
+  }
+
+  /**
+   * Three drifting ridges. Their periods share no small common multiple,
+   * so the pattern does not visibly loop — which is the entire reason
+   * not to reach for a noise library for something this small.
+   */
+  function field(x: number, y: number, time: number): number {
+    const a = Math.sin(x * 0.18 + time * 0.7);
+    const b = Math.sin(y * 0.23 - time * 0.5);
+    const c = Math.sin((x + y) * 0.11 + time * 0.31);
+    return (a + b + c) / 3;
+  }
+
+  for (const canvas of document.querySelectorAll<HTMLCanvasElement>('canvas[data-ascii-field]')) {
+    const host = canvas.parentElement;
+    const ctx = canvas.getContext('2d');
+    if (!host || !ctx) continue;
+
+    const [ir, ig, ib] = parseRgb(canvas.dataset.ink ?? '255 255 255');
+    const [hr, hg, hb] = parseRgb(canvas.dataset.hot ?? '255 255 255');
+
+    let cols = 0;
+    let rows = 0;
+    let heat = new Float32Array(0);
+    let px = -1;
+    let py = -1;
+    let time = 0;
+    let raf = 0;
+
+    function measure(): boolean {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return false;
+
+      // Cap the ratio at 2. Beyond that the glyphs are past the point of
+      // being resolvable at 14px and it is only fill cost.
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      // setTransform, not scale: scale multiplies into whatever is
+      // already there, so every resize would compound the last one.
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.font = `${CELL - 4}px ui-monospace, SFMono-Regular, monospace`;
+      ctx.textBaseline = 'top';
+
+      const nextCols = Math.ceil(rect.width / CELL);
+      const nextRows = Math.ceil(rect.height / CELL);
+      if (nextCols !== cols || nextRows !== rows) {
+        cols = nextCols;
+        rows = nextRows;
+        heat = new Float32Array(cols * rows);
+      }
+      return true;
+    }
+
+    function draw(): void {
+      ctx.clearRect(0, 0, cols * CELL, rows * CELL);
+      for (let row = 0; row < rows; row += 1) {
+        for (let col = 0; col < cols; col += 1) {
+          const i = row * cols + col;
+          const h = heat[i] ?? 0;
+          const lit = Math.min(1, ((field(col, row, time) + 1) / 2) * 0.55 + h);
+          // The early-out is what makes this cheap: at rest most of the
+          // grid is under the threshold and never reaches fillText.
+          if (lit < 0.2) continue;
+
+          const glyph = RAMP[Math.round(lit * (RAMP.length - 1))];
+          if (!glyph || glyph === ' ') continue;
+
+          ctx.fillStyle =
+            h > 0.04
+              ? `rgba(${hr},${hg},${hb},${Math.min(1, lit + h * 0.4)})`
+              : `rgba(${ir},${ig},${ib},${lit * 0.55})`;
+          ctx.fillText(glyph, col * CELL, row * CELL);
+        }
+      }
+    }
+
+    function tick(): void {
+      time += 0.016;
+
+      for (let i = 0; i < heat.length; i += 1) {
+        const h = heat[i] ?? 0;
+        heat[i] = h > 0.002 ? h * DECAY : 0;
+      }
+
+      if (px >= 0) {
+        for (let dy = -REACH; dy <= REACH; dy += 1) {
+          for (let dx = -REACH; dx <= REACH; dx += 1) {
+            const col = px + dx;
+            const row = py + dy;
+            if (col < 0 || row < 0 || col >= cols || row >= rows) continue;
+            const d = Math.hypot(dx, dy);
+            if (d > REACH) continue;
+            const i = row * cols + col;
+            heat[i] = Math.min(1, (heat[i] ?? 0) + (1 - d / REACH) * 0.45);
+          }
+        }
+      }
+
+      draw();
+      raf = requestAnimationFrame(tick);
+    }
+
+    function start(): void {
+      if (raf || !measure()) return;
+      raf = requestAnimationFrame(tick);
+    }
+
+    function stop(): void {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    }
+
+    if (reduce) {
+      // One frame, no loop, no pointer. The texture is the point; the
+      // motion is the part someone asked us not to do.
+      if (measure()) draw();
+      new ResizeObserver(() => {
+        if (measure()) draw();
+      }).observe(canvas);
+      continue;
+    }
+
+    host.addEventListener('pointermove', (event: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      px = Math.floor((event.clientX - rect.left) / CELL);
+      py = Math.floor((event.clientY - rect.top) / CELL);
+    });
+
+    host.addEventListener('pointerleave', () => {
+      px = -1;
+      py = -1;
+    });
+
+    // Nothing off-screen has any business holding a rAF loop open.
+    new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) start();
+        else stop();
+      }
+    }).observe(canvas);
+
+    new ResizeObserver(() => {
+      measure();
+    }).observe(canvas);
+  }
+</script>
