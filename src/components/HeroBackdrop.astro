@@ -203,7 +203,13 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
     art: 'cloud-far' | 'cloud-mid' | 'cloud-near';
     /** Row the sprite's top sits on. */
     row: number;
-    /** Cells per second. */
+    /**
+     * Cells per second. These are slow on purpose — the nearest crosses
+     * the frame in about two and a half minutes, the farthest in nearly
+     * twenty. Sky that moves at a speed you can watch is weather, and
+     * weather pulls focus; this should only be noticeable if you stop
+     * and look for it.
+     */
     speed: number;
     alpha: number;
     /** Starting offset along the loop, in cells. */
@@ -211,14 +217,14 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
   }
 
   const BACK_CLOUDS: Cloud[] = [
-    { art: 'cloud-far', row: 3, speed: 0.9, alpha: 0.5, offset: 0 },
-    { art: 'cloud-far', row: 20, speed: 1.3, alpha: 0.45, offset: 150 },
-    { art: 'cloud-mid', row: 8, speed: 2.1, alpha: 0.62, offset: 250 },
+    { art: 'cloud-far', row: 3, speed: 0.28, alpha: 0.5, offset: 0 },
+    { art: 'cloud-far', row: 20, speed: 0.4, alpha: 0.45, offset: 150 },
+    { art: 'cloud-mid', row: 8, speed: 0.7, alpha: 0.62, offset: 250 },
   ];
 
   const FRONT_CLOUDS: Cloud[] = [
-    { art: 'cloud-mid', row: 42, speed: 4.2, alpha: 0.72, offset: 60 },
-    { art: 'cloud-near', row: 30, speed: 7.5, alpha: 0.85, offset: 300 },
+    { art: 'cloud-mid', row: 42, speed: 1.3, alpha: 0.72, offset: 60 },
+    { art: 'cloud-near', row: 30, speed: 2.2, alpha: 0.85, offset: 300 },
   ];
 
   /** Birds, on the front layer so they pass over everything. */
@@ -435,35 +441,75 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
      * one side entirely before it re-enters the other and there is never
      * a moment where the same cloud is visible twice.
      */
+    /** Each sprite's glyphs, rasterised once at the current cell size. */
+    const stamps = new Map<string, HTMLCanvasElement>();
+
+    /**
+     * Rasterise every cloud's glyphs into its own canvas.
+     *
+     * This is what makes the drift smooth. Drawing the glyphs afresh each
+     * frame meant re-quantising the cloud onto the grid every time, so it
+     * could only ever move a whole CELL at a step — a four-pixel jolt,
+     * several times a second, which is exactly as smooth as it sounds.
+     * Rasterised once, the cloud is an image that slides by the pixel.
+     *
+     * Rebuilt whenever the cell size, ink or treatment changes, since all
+     * three are baked into the stamp.
+     */
+    function buildStamps(): void {
+      stamps.clear();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      for (const [art, sprite] of sprites) {
+        const stamp = document.createElement('canvas');
+        stamp.width = Math.ceil(sprite.cols * cw * dpr);
+        stamp.height = Math.ceil(sprite.rows * chh * dpr);
+        const sctx = stamp.getContext('2d');
+        if (!sctx) continue;
+
+        sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        sctx.font = `${(chh * 0.98).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+        sctx.textAlign = 'center';
+        sctx.textBaseline = 'middle';
+
+        for (let y = 0; y < sprite.rows; y += 1) {
+          for (let x = 0; x < sprite.cols; x += 1) {
+            const base = (sprite.lum[y * sprite.cols + x] ?? 0) / 255;
+            if (base < 0.1) continue;
+
+            /* Biased up the ramp. Mapped linearly a cloud spends most of
+               its range on the faint opening mark and disappears — right
+               for the empty sky, wrong for the thing crossing it. */
+            const lit = Math.min(1, 0.3 + base * 0.7);
+            const glyph = cool[Math.min(cool.length - 1, Math.floor(lit * cool.length))];
+            if (!glyph || glyph === ' ') continue;
+
+            // Alpha is applied per instance at blit time, so one stamp
+            // serves several clouds at different depths.
+            sctx.fillStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${lit.toFixed(3)})`;
+            sctx.fillText(glyph, x * cw + cw / 2, y * chh + chh / 2);
+          }
+        }
+
+        stamps.set(art, stamp);
+      }
+    }
+
     function drawCloud(ctx: CanvasRenderingContext2D, cloud: Cloud, t: number): void {
       const sprite = sprites.get(cloud.art);
-      if (!sprite) return;
+      const stamp = stamps.get(cloud.art);
+      if (!sprite || !stamp) return;
 
-      const span = cols + sprite.cols;
-      const originX = Math.round(((cloud.offset + t * cloud.speed) % span) - sprite.cols);
+      const w = sprite.cols * cw;
+      const h = sprite.rows * chh;
+      const span = cols * cw + w;
+      // Rounded to the pixel, not to the cell: one-pixel steps read as
+      // motion, four-pixel steps read as a stutter.
+      const x = Math.round(((cloud.offset * cw + t * cloud.speed * cw) % span) - w);
 
-      for (let y = 0; y < sprite.rows; y += 1) {
-        const gy = cloud.row + y;
-        if (gy < 0 || gy >= rows) continue;
-
-        for (let x = 0; x < sprite.cols; x += 1) {
-          const gx = originX + x;
-          if (gx < 0 || gx >= cols) continue;
-
-          const base = (sprite.lum[y * sprite.cols + x] ?? 0) / 255;
-          if (base < 0.1) continue;
-
-          /* Biased up the ramp. Mapped linearly a cloud spends most of
-             its range on the faint opening mark and disappears — right
-             for the empty sky, wrong for the thing crossing it. */
-          const lit = Math.min(1, 0.3 + base * 0.7);
-          const glyph = cool[Math.min(cool.length - 1, Math.floor(lit * cool.length))];
-          if (!glyph || glyph === ' ') continue;
-
-          ctx.fillStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${(lit * cloud.alpha).toFixed(3)})`;
-          ctx.fillText(glyph, gx * cw + cw / 2, gy * chh + chh / 2);
-        }
-      }
+      ctx.globalAlpha = cloud.alpha;
+      ctx.drawImage(stamp, x, cloud.row * chh, w, h);
+      ctx.globalAlpha = 1;
     }
 
     /**
@@ -529,6 +575,7 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
 
     function repaintAll(): void {
       if (!measure()) return;
+      buildStamps();
       for (const canvas of [far, near]) {
         ctxOf(canvas)?.clearRect(0, 0, cols * cw, rows * chh);
       }
@@ -608,7 +655,10 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
               lum: Uint8Array.from(atob(g.lum), (c) => c.charCodeAt(0)),
             });
           }),
-        ).then(() => drawClouds(performance.now() / 1000));
+        ).then(() => {
+          buildStamps();
+          drawClouds(performance.now() / 1000);
+        });
 
         repaintAll();
         enter([cloudBack, far, near, cloudFront]);
@@ -655,7 +705,7 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
           let skyRaf = 0;
           let lastSky = 0;
           const sky = (now: number) => {
-            if (now - lastSky > 48) {
+            if (now - lastSky > 32) {
               lastSky = now;
               drawClouds(now / 1000);
             }
