@@ -1407,3 +1407,19 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* A card that only resolves on hover is a card that never resolves on a
+   phone. Where there is no pointer, ship the detailed render.
+
+   Deliberately unlayered. Inside `@layer components` this loses to the
+   `opacity-0` utility on the same element — Tailwind orders utilities
+   after components — and the override silently does nothing. */
+@media (hover: none) {
+  .art-coarse {
+    opacity: 0;
+  }
+
+  .art-fine {
+    opacity: 1;
+  }
+}

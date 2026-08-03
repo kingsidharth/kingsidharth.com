@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import CardArt from '@/components/CardArt.astro';
 
 interface Props {
   entry: CollectionEntry<'series'>;
@@ -58,13 +59,7 @@ const by = 25 + (seed % 3) * 18;
     >
     </div>
 
-    <img
-      src={`/art/${art}.svg`}
-      alt=""
-      loading="lazy"
-      decoding="async"
-      class="pointer-events-none absolute inset-0 size-full object-cover"
-    />
+    <CardArt name={art} />
 
     <div
       class="absolute inset-0 bg-[repeating-linear-gradient(0deg,rgb(0_0_0/0.13)_0_1px,transparent_1px_3px)]"

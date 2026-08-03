@@ -8,12 +8,14 @@
  * one JSON attribute per card; as individual `data-*` attributes the
  * quotes and backslashes in the old art arrived empty.
  */
+import CardArt from '@/components/CardArt.astro';
+
 const programmes = [
   {
     // Peeking from behind a wall, then leaning further out with each
     // nudge until it makes off with the goods.
     name: 'Steal the Secret Prompts',
-    art: 'steal',
+    art: 'secrets',
     kind: 'Tool',
     verb: 'Open',
     href: '/prompts',
@@ -70,7 +72,7 @@ const programmes = [
   },
   {
     name: 'Freshcast',
-    art: 'dragon',
+    art: 'freshcast',
     kind: 'Tool',
     verb: 'Listen',
     sub: 'AI updates in 5 minutes',
@@ -137,17 +139,7 @@ const { variant = 'panel' } = Astro.props;
         ]}
         style={`background:${p.bg}; --sprite-shadow:${p.shadow};`}
       >
-        {
-          variant === 'lineup' && p.art && (
-            <img
-              src={`/art/${p.art}.svg`}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              class="pointer-events-none absolute inset-0 size-full object-cover opacity-100"
-            />
-          )
-        }
+        {variant === 'lineup' && p.art && <CardArt name={p.art} />}
 
         {
           p.symbols && (

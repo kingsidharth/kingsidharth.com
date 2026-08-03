@@ -13,6 +13,7 @@
     "jekyll:server": "jekyll s --watch",
     "jekyll:scss": "sass --watch app/scss:app/assets/css",
     "asciify": "bun scripts/asciify.ts",
+    "art:render": "bun scripts/render-art.ts",
     "art": "bun scripts/gen-art.ts"
   },
   "dependencies": {
