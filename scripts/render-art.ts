@@ -81,7 +81,7 @@ const COARSE = { cols: COARSE_COLS, cell: WIDTH / COARSE_COLS } as const;
  * renderer can cut the edge itself with a jitter instead of inheriting a
  * clean baked contour.
  */
-const COVER_COLS = 168;
+const COVER_COLS = 200;
 
 const only = Bun.argv.slice(2);
 const queue = only.length ? ART.filter((a) => only.includes(a.name)) : ART;

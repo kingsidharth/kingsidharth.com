@@ -103,3 +103,31 @@ const grid = (await Bun.file('static/art/hero-grid.json').json()) as {
   rows: number;
 };
 console.log(`static/art/hero-grid.json  ${grid.cols}x${grid.rows}`);
+
+/*
+ * Cloud sprites.
+ *
+ * The first version of the sky was procedural — a threshold on a few
+ * sines — and it read as wide horizontal smears, because that is what a
+ * sine field is. Clouds have lobes, and lobes are the thing you
+ * recognise; no amount of tuning a sine gets them.
+ *
+ * So they are drawn artwork now, dithered like everything else and
+ * blitted as sprites. Column counts are chosen so each cloud's cells are
+ * the SAME SIZE as the statue's — they share one grid, which is why a
+ * cloud passing in front of the mountains looks like it belongs to the
+ * same print rather than being pasted over it.
+ */
+const CLOUDS = [
+  { name: 'cloud-far', cols: 52 },
+  { name: 'cloud-mid', cols: 84 },
+  { name: 'cloud-near', cols: 124 },
+] as const;
+
+for (const cloud of CLOUDS) {
+  const out = `static/art/${cloud.name}-grid.json`;
+  await Bun
+    .$`bun scripts/asciify.ts art-src/${cloud.name}.png -o ${out} --cols ${cloud.cols} --cell ${WIDTH / GRID_COLS} --bg transparent --ramp shade --no-shape --floor 0.06 --gamma 0.85`.quiet();
+  const grid = (await Bun.file(out).json()) as { cols: number; rows: number };
+  console.log(`${out}  ${grid.cols}x${grid.rows}`);
+}
