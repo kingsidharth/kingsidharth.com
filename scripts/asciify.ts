@@ -202,7 +202,13 @@ function escapeXml(s: string): string {
   );
 }
 
-type Cell = { ch: string; colour: RGB; alpha: number };
+type Cell = {
+  ch: string;
+  /** Normalised 0-1 tone, kept so a consumer can re-pick the glyph. */
+  lum: number;
+  colour: RGB;
+  alpha: number;
+};
 
 async function build(o: Options): Promise<string> {
   const img = sharp(o.image).ensureAlpha();
@@ -271,7 +277,7 @@ async function build(o: Options): Promise<string> {
       // a floor, a busy background fills every cell with low-value
       // texture and the subject never separates from it.
       if (o.floor > 0 && lum < o.floor) {
-        row.push({ ch: ' ', colour: [0, 0, 0], alpha: 0 });
+        row.push({ ch: ' ', lum: 0, colour: [0, 0, 0], alpha: 0 });
         continue;
       }
 
@@ -300,6 +306,7 @@ async function build(o: Options): Promise<string> {
       ];
       row.push({
         ch,
+        lum,
         colour: quantise(avg, palette, lum),
         alpha: o.ink ? Math.min(1, 0.4 + lum * 0.7) : 1,
       });
@@ -307,7 +314,9 @@ async function build(o: Options): Promise<string> {
     grid.push(row);
   }
 
-  return extname(o.out) === '.html' ? renderHtml(grid, o) : renderSvg(grid, o);
+  if (extname(o.out) === '.html') return renderHtml(grid, o);
+  if (extname(o.out) === '.json') return renderGrid(grid);
+  return renderSvg(grid, o);
 }
 
 /** Collapse runs of identical colour so large images stay a sane size. */
@@ -331,6 +340,27 @@ function runs(row: Cell[]): { text: string; colour: RGB; alpha: number; start: n
     i = j;
   }
   return out;
+}
+
+/**
+ * The tone grid, for consumers that pick their own glyphs.
+ *
+ * An SVG bakes one glyph per cell, which is right for a static image and
+ * useless for anything that wants to re-render — a cell cannot climb the
+ * ramp under a cursor if the only thing shipped is the character it
+ * landed on. This ships the luminance instead, one byte per cell, so the
+ * choosing happens at paint time.
+ */
+function renderGrid(grid: Cell[][]): string {
+  const cols = grid[0].length;
+  const rows = grid.length;
+  const bytes = new Uint8Array(cols * rows);
+  grid.forEach((row, y) =>
+    row.forEach((cell, x) => {
+      bytes[y * cols + x] = Math.round(cell.lum * 255);
+    }),
+  );
+  return JSON.stringify({ cols, rows, lum: Buffer.from(bytes).toString('base64') });
 }
 
 function renderSvg(grid: Cell[][], o: Options): string {

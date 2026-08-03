@@ -60,3 +60,16 @@ for (const { suffix, ink } of INKS) {
   const svg = await Bun.file(out).text();
   console.log(`${out}  ${COLS} cols, ${svg.split('<text').length - 1} glyphs`);
 }
+
+/* The same grid as tone rather than as glyphs. The SVGs are the static
+   paint; this is what the canvas re-renders from, because a cell cannot
+   climb the ramp under a cursor if the only thing shipped is the
+   character it already landed on. */
+await Bun
+  .$`bun scripts/asciify.ts ${PREPPED} -o static/art/hero-grid.json --cols ${COLS} --cell ${CELL} --bg transparent --ramp shade --no-shape --floor 0.07 --gamma 0.68`.quiet();
+
+const grid = (await Bun.file('static/art/hero-grid.json').json()) as {
+  cols: number;
+  rows: number;
+};
+console.log(`static/art/hero-grid.json  ${grid.cols}x${grid.rows}`);

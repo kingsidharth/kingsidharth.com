@@ -13,7 +13,6 @@ import GotchaQuiz from '@/components/instruments/GotchaQuiz';
 import HeroIntro from '@/components/HeroIntro.astro';
 import TeachingStats from '@/components/TeachingStats.astro';
 import SocialLinks from '@/components/SocialLinks.astro';
-import AsciiField from '@/components/AsciiField.astro';
 import HeroBackdrop from '@/components/HeroBackdrop.astro';
 import { getLocalized } from '@/lib/content';
 import { localePath, localeStaticPaths, useTranslations } from '@/lib/i18n';
@@ -51,7 +50,6 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
        to it rather than the reverse. -->
   <div class="relative isolate min-h-[min(84vw,41rem)] overflow-hidden">
     <HeroBackdrop class="-z-20" />
-    <AsciiField class="-z-10 opacity-20" />
 
     <!-- The top padding is the point of the backdrop: it is what leaves
          the deity's head, crown and held attributes clear of the

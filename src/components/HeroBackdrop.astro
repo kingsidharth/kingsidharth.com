@@ -8,19 +8,16 @@
  * ratio; the figure is cropped by the top edge because being cut off by
  * the frame is what tells you how big something is.
  *
- * Symbolic rather than painted — flat solid shapes, no ornament — and
- * then run through the same block-glyph pipeline as every other image on
- * this site. An ornate raster sitting on top of an ascii site is a
- * visitor; this is made of the same material as the cards.
+ * Symbolic rather than painted, then run through the same block-glyph
+ * pipeline as every other image on this site. An ornate raster on top of
+ * an ascii site is a visitor; this is made of the same material.
  *
- * Braille rather than shade blocks: eight steps of dot density read as a
- * printed halftone screen, where five steps of block coverage read as a
- * sticker. See `scripts/render-hero.ts` for the grading that gives the
- * ramp something to climb.
- *
- * Both themes, because an ascii layer is transparent — the colour is one
- * ink and there are two renders of it. The black-ground painting this
- * replaced could only ever be dark-mode.
+ * It ships twice. The SVGs are the immediate paint and the no-JS
+ * fallback. The canvas re-renders the same grid from tone rather than
+ * from baked characters, which is the only way a cell can climb the ramp
+ * and change glyph under the cursor — that is the interaction: the
+ * statue's own glyphs transform, rather than something else moving over
+ * the top of it.
  */
 interface Props {
   class?: string;
@@ -39,12 +36,10 @@ const { class: extra = '' } = Astro.props;
  * the frame, including the parts no text ever touches. The second layer
  * is a soft ellipse over the copy block itself, so the band can stay
  * gentle and the loss stays local to where it buys something.
- */
-/* Real spaces, not underscores. The underscore-for-space escape is a
-   Tailwind arbitrary-value convention and means nothing in a plain
-   `style` attribute — `rgb(0_0_0/0.5)` is simply invalid CSS, and one
-   invalid colour stop throws away the whole declaration. An earlier
-   version of this mask was silently doing nothing at all. */
+ *
+ * Real spaces, not underscores: the underscore-for-space escape is a
+ * Tailwind arbitrary-value convention and means nothing in a plain
+ * `style` attribute, where one invalid stop discards the declaration. */
 const maskLayers = [
   'linear-gradient(to bottom,#000 0%,#000 26%,rgb(0 0 0 / 0.5) 42%,rgb(0 0 0 / 0.5) 72%,#000 86%,#000 96%,transparent 100%)',
   'radial-gradient(52% 38% at 30% 56%,rgb(0 0 0 / 0.1) 0%,rgb(0 0 0 / 0.45) 55%,#000 100%)',
@@ -59,21 +54,6 @@ const maskStyle = [
   '-webkit-mask-composite:source-in',
   'mask-composite:intersect',
 ].join(';');
-
-/* The torch: a second copy of the same artwork, masked to a soft disc
-   that follows the pointer, stacked over the dimmed base. Stacking two
-   images unions them, which is what "reveal" needs — trying to do it as
-   another layer of the base mask would have meant mixing `intersect` and
-   `add` composites in one list, and the whole point of the base mask is
-   that it subtracts.
- *
- * Held below full strength on purpose. It has to be able to pass under
- * the copy without making it unreadable, so it lifts the statue back
- * toward its unmasked weight rather than all the way to it. */
-const torchLayer =
-  'radial-gradient(9rem 9rem at var(--hero-x,-40rem) var(--hero-y,-40rem),rgb(0 0 0 / 0.5) 0%,rgb(0 0 0 / 0.28) 45%,transparent 76%)';
-
-const torchStyle = [`-webkit-mask-image:${torchLayer}`, `mask-image:${torchLayer}`].join(';');
 ---
 
 <div
@@ -82,16 +62,14 @@ const torchStyle = [`-webkit-mask-image:${torchLayer}`, `mask-image:${torchLayer
     /* Wider than the phone on purpose. A 2:1 image fitted to a 390px
        viewport is a 195px strip, and a colossal statue rendered 195px
        tall is not colossal — the scale the whole picture is built on
-       collapses. Overflowing the viewport and letting the sides run off
-       keeps the figure big, which is the only way the human at its feet
-       means anything. */
+       collapses. Overflowing the viewport keeps the figure big, which is
+       the only way the human at its feet means anything. */
     'w-[168%] max-w-none sm:w-full sm:max-w-[82rem]',
     /* The edges are dissolved rather than cut: a hard vertical boundary
        between artwork and page reads as a mistake. */
     '[mask-image:linear-gradient(90deg,transparent_0%,#000_9%,#000_91%,transparent_100%)]',
     extra,
   ]}
-  data-hero-backdrop
   aria-hidden="true"
 >
   <img
@@ -102,7 +80,7 @@ const torchStyle = [`-webkit-mask-image:${torchLayer}`, `mask-image:${torchLayer
     decoding="async"
     fetchpriority="low"
     style={maskStyle}
-    class="hidden w-full dark:block"
+    class="hidden w-full [.hero-live_&]:invisible dark:block"
   />
   <img
     src="/art/hero-thangka-light.svg"
@@ -112,78 +90,209 @@ const torchStyle = [`-webkit-mask-image:${torchLayer}`, `mask-image:${torchLayer
     decoding="async"
     fetchpriority="low"
     style={maskStyle}
-    class="w-full dark:hidden"
+    class="w-full [.hero-live_&]:invisible dark:hidden"
   />
 
-  <!-- Torch copies. `absolute inset-0` so they sit exactly over the base
-       rather than adding height; the browser serves them from the same
-       decoded image, so this is a second paint, not a second download.
-       With no pointer the disc stays parked off-canvas, so the layer
-       masks out to nothing and costs a hidden image. -->
-  <img
-    src="/art/hero-thangka.svg"
-    alt=""
-    width="1320"
-    height="660"
-    decoding="async"
-    fetchpriority="low"
-    style={torchStyle}
-    class="absolute inset-0 hidden size-full dark:block"
-  />
-  <img
-    src="/art/hero-thangka-light.svg"
-    alt=""
-    width="1320"
-    height="660"
-    decoding="async"
-    fetchpriority="low"
-    style={torchStyle}
-    class="absolute inset-0 size-full dark:hidden"
-  />
+  <!-- Sized off the image beside it rather than given its own box, so
+       the swap when it goes live cannot shift anything. -->
+  <canvas data-hero-canvas style={maskStyle} class="absolute inset-0 size-full opacity-0"></canvas>
 </div>
 
 <script>
-  /* The pointer moves the torch and drifts the whole backdrop a few
-     pixels against it. Both go through custom properties and a single
-     rAF, so a burst of pointermove events costs one style write per
-     frame rather than one per event. */
-  const DRIFT = 9;
+  /* Cool and hot glyph sets.
+   *
+   * The heated cells do not just brighten — they switch alphabet, block
+   * shades for ascii punctuation. That switch is the effect: under the
+   * cursor the picture stops being a printed screen and starts looking
+   * like something being decoded. Brightening alone reads as a light,
+   * which is a different and much more ordinary idea. */
+  const COOL = ' ░▒▓█';
+  const HOT = ' .:-=+*#%@';
 
-  for (const layer of document.querySelectorAll<HTMLElement>('[data-hero-backdrop]')) {
-    const host = layer.parentElement;
-    if (!host || !matchMedia('(hover: hover)').matches) continue;
+  /** Radius of the pointer's stamp, in cells. */
+  const REACH = 8;
+  /** Per-frame heat decay: about two seconds of tail at 60fps. */
+  const DECAY = 0.955;
+  const HOT_INK: readonly [number, number, number] = [244, 122, 183];
 
-    const drifts = !matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let x = 0;
-    let y = 0;
-    let queued = false;
+  interface Grid {
+    cols: number;
+    rows: number;
+    lum: string;
+  }
 
-    const paint = () => {
-      queued = false;
-      const box = layer.getBoundingClientRect();
-      layer.style.setProperty('--hero-x', `${x - box.left}px`);
-      layer.style.setProperty('--hero-y', `${y - box.top}px`);
+  function inkFor(dark: boolean): [number, number, number] {
+    return dark ? [242, 227, 196] : [58, 47, 34];
+  }
 
-      if (!drifts) return;
-      // Away from the cursor, not toward it: the backdrop reads as
-      // sitting behind the page rather than stuck to the pointer.
-      const dx = (x / window.innerWidth - 0.5) * -2;
-      const dy = (y / window.innerHeight - 0.5) * -2;
-      layer.style.translate = `${(dx * DRIFT).toFixed(1)}px ${(dy * DRIFT).toFixed(1)}px`;
+  const canvas = document.querySelector<HTMLCanvasElement>('canvas[data-hero-canvas]');
+  const host = canvas?.parentElement?.parentElement;
+  const ctx = canvas?.getContext('2d');
+
+  if (canvas && host && ctx) {
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    let cols = 0;
+    let rows = 0;
+    let lum = new Uint8Array(0);
+    let heat = new Float32Array(0);
+    let cw = 0;
+    let chh = 0;
+    let ink = inkFor(document.documentElement.classList.contains('dark'));
+    let raf = 0;
+
+    /** Bounding box of cells with heat, so a frame redraws a patch and
+        not the whole 260x65 grid. */
+    let box = { x0: 0, y0: 0, x1: -1, y1: -1 };
+
+    const widen = (x: number, y: number) => {
+      if (box.x1 < box.x0) {
+        box = { x0: x, y0: y, x1: x, y1: y };
+        return;
+      }
+      box.x0 = Math.min(box.x0, x);
+      box.y0 = Math.min(box.y0, y);
+      box.x1 = Math.max(box.x1, x);
+      box.y1 = Math.max(box.y1, y);
     };
 
-    host.addEventListener('pointermove', (event: PointerEvent) => {
-      x = event.clientX;
-      y = event.clientY;
-      if (queued) return;
-      queued = true;
-      requestAnimationFrame(paint);
-    });
+    function paint(x0: number, y0: number, x1: number, y1: number): void {
+      if (x1 < x0 || y1 < y0) return;
+      ctx.clearRect(x0 * cw, y0 * chh, (x1 - x0 + 1) * cw, (y1 - y0 + 1) * chh);
 
-    host.addEventListener('pointerleave', () => {
-      layer.style.setProperty('--hero-x', '-40rem');
-      layer.style.setProperty('--hero-y', '-40rem');
-      layer.style.translate = '0px 0px';
-    });
+      for (let y = y0; y <= y1; y += 1) {
+        for (let x = x0; x <= x1; x += 1) {
+          const i = y * cols + x;
+          const base = (lum[i] ?? 0) / 255;
+          if (base === 0) continue;
+
+          const h = heat[i] ?? 0;
+          const t = Math.min(1, h * 2);
+          const lit = Math.min(1, base + h * 0.4);
+
+          const set = h > 0.1 ? HOT : COOL;
+          const glyph = set[Math.min(set.length - 1, Math.floor(lit * set.length))];
+          if (!glyph || glyph === ' ') continue;
+
+          // Crossfade toward the accent rather than switching at a
+          // threshold — a hard switch leaves a visible ring where the
+          // stamp ends, instead of a trail cooling on its way out.
+          const r = Math.round(ink[0] + (HOT_INK[0] - ink[0]) * t);
+          const g = Math.round(ink[1] + (HOT_INK[1] - ink[1]) * t);
+          const b = Math.round(ink[2] + (HOT_INK[2] - ink[2]) * t);
+          ctx.fillStyle = `rgba(${r},${g},${b},${Math.min(1, 0.4 + lit * 0.7)})`;
+          ctx.fillText(glyph, x * cw + cw / 2, y * chh + chh / 2);
+        }
+      }
+    }
+
+    function measure(): boolean {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0 || cols === 0) return false;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      // setTransform, not scale: scale multiplies into whatever is
+      // already there, so every resize would compound the last one.
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      cw = rect.width / cols;
+      chh = rect.height / rows;
+      ctx.font = `${(chh * 0.98).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      return true;
+    }
+
+    function repaintAll(): void {
+      if (!measure()) return;
+      ctx.clearRect(0, 0, cols * cw, rows * chh);
+      paint(0, 0, cols - 1, rows - 1);
+    }
+
+    function tick(): void {
+      const prev = { ...box };
+      box = { x0: 0, y0: 0, x1: -1, y1: -1 };
+
+      let alive = false;
+      for (let y = prev.y0; y <= prev.y1; y += 1) {
+        for (let x = prev.x0; x <= prev.x1; x += 1) {
+          const i = y * cols + x;
+          const h = (heat[i] ?? 0) * DECAY;
+          heat[i] = h > 0.004 ? h : 0;
+          if (heat[i] > 0) {
+            widen(x, y);
+            alive = true;
+          }
+        }
+      }
+
+      // Repaint the union of where heat was and where it still is, or
+      // the cooled cells keep the colour they had when the loop stopped.
+      paint(prev.x0, prev.y0, prev.x1, prev.y1);
+      raf = alive ? requestAnimationFrame(tick) : 0;
+    }
+
+    function stamp(clientX: number, clientY: number): void {
+      const rect = canvas.getBoundingClientRect();
+      const cx = Math.floor((clientX - rect.left) / cw);
+      const cy = Math.floor((clientY - rect.top) / chh);
+
+      for (let dy = -REACH; dy <= REACH; dy += 1) {
+        for (let dx = -REACH; dx <= REACH; dx += 1) {
+          const x = cx + dx;
+          const y = cy + dy;
+          if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
+          const d = Math.hypot(dx, dy);
+          if (d > REACH) continue;
+          const i = y * cols + x;
+          heat[i] = Math.min(1, (heat[i] ?? 0) + (1 - d / REACH) * 0.5);
+          widen(x, y);
+        }
+      }
+
+      if (reduce.matches) {
+        // No tail: the cells under the pointer transform, and release
+        // the moment it moves on.
+        paint(0, 0, cols - 1, rows - 1);
+        heat.fill(0);
+        return;
+      }
+      if (!raf) raf = requestAnimationFrame(tick);
+    }
+
+    fetch('/art/hero-grid.json')
+      .then((res) => res.json() as Promise<Grid>)
+      .then((grid) => {
+        cols = grid.cols;
+        rows = grid.rows;
+        lum = Uint8Array.from(atob(grid.lum), (c) => c.charCodeAt(0));
+        heat = new Float32Array(cols * rows);
+
+        repaintAll();
+        // Only now hide the static copy, so a slow grid never leaves the
+        // hero empty.
+        canvas.classList.remove('opacity-0');
+        document.documentElement.classList.add('hero-live');
+
+        new ResizeObserver(repaintAll).observe(canvas);
+
+        // The ink changes with the theme and the canvas cannot inherit
+        // it, so the toggle has to be watched rather than listened to.
+        new MutationObserver(() => {
+          const next = inkFor(document.documentElement.classList.contains('dark'));
+          if (next[0] === ink[0]) return;
+          ink = next;
+          repaintAll();
+        }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+        if (!matchMedia('(hover: hover)').matches) return;
+        host.addEventListener('pointermove', (event: PointerEvent) => {
+          stamp(event.clientX, event.clientY);
+        });
+      })
+      .catch(() => {
+        /* The SVG is still there; nothing to recover. */
+      });
   }
 </script>
