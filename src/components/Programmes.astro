@@ -13,6 +13,7 @@ const programmes = [
     // Peeking from behind a wall, then leaning further out with each
     // nudge until it makes off with the goods.
     name: 'Steal the Secret Prompts',
+    art: 'aperture',
     kind: 'Tool',
     verb: 'Open',
     href: '/prompts',
@@ -32,6 +33,7 @@ const programmes = [
   },
   {
     name: 'Vibe Coding 101',
+    art: 'signal',
     kind: 'Guide',
     verb: 'Read',
     href: '/guides/vibe-coding/101',
@@ -50,6 +52,7 @@ const programmes = [
   {
     // Sinking deeper with each interaction.
     name: 'Deep AI',
+    art: 'descent',
     kind: 'Guide',
     verb: 'Read',
     href: '/guides',
@@ -67,6 +70,7 @@ const programmes = [
   },
   {
     name: 'Freshcast',
+    art: 'broadcast',
     kind: 'Tool',
     verb: 'Listen',
     sub: 'AI updates in 5 minutes',
@@ -85,6 +89,7 @@ const programmes = [
   },
   {
     name: 'Fun AI',
+    art: 'spark',
     kind: 'Tool',
     verb: 'Play',
     href: '/tinkering',
@@ -133,6 +138,18 @@ const { variant = 'panel' } = Astro.props;
         style={`background:${p.bg}; --sprite-shadow:${p.shadow};`}
       >
         {
+          variant === 'lineup' && p.art && (
+            <img
+              src={`/art/${p.art}.svg`}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              class="pointer-events-none absolute inset-0 size-full object-cover opacity-90 transition-opacity duration-300 group-hover:opacity-100"
+            />
+          )
+        }
+
+        {
           p.symbols && (
             <span
               class="symbol-drift pointer-events-none absolute inset-x-0 top-2 overflow-hidden text-center text-[11px] opacity-50"
@@ -161,7 +178,7 @@ const { variant = 'panel' } = Astro.props;
           data-frames={JSON.stringify(p.frames)}
           class:list={[
             'sprite-text block whitespace-nowrap text-center',
-            variant === 'lineup' ? 'my-auto text-xl' : 'text-xl',
+            variant === 'lineup' ? 'relative my-auto text-sm opacity-90' : 'text-xl',
           ]}
           style={`color:${p.ink};`}
           aria-hidden="true"

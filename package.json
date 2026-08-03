@@ -12,7 +12,8 @@
     "check": "astro check",
     "jekyll:server": "jekyll s --watch",
     "jekyll:scss": "sass --watch app/scss:app/assets/css",
-    "asciify": "bun scripts/asciify.ts"
+    "asciify": "bun scripts/asciify.ts",
+    "art": "bun scripts/gen-art.ts"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.5",

@@ -20,7 +20,7 @@ const { series } = Astro.props;
   and emits bare portrait cards via `display: contents`, so both card
   types land as direct children of this grid and share its tracks.
 -->
-<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+<div class="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
   <Programmes variant="lineup" />
   {series.map((entry) => <SeriesCard entry={entry} />)}
 </div>
