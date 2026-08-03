@@ -13,7 +13,7 @@ const programmes = [
     // Peeking from behind a wall, then leaning further out with each
     // nudge until it makes off with the goods.
     name: 'Steal the Secret Prompts',
-    art: 'hands',
+    art: 'steal',
     kind: 'Tool',
     verb: 'Open',
     href: '/prompts',
@@ -163,18 +163,22 @@ const { variant = 'panel' } = Astro.props;
 
 
 
+        {
+          variant === 'panel' && (
         <span
-          data-face
-          data-frames={JSON.stringify(p.frames)}
-          class:list={[
-            'sprite-text block whitespace-nowrap text-center',
-            variant === 'lineup' ? 'relative self-start text-[11px] opacity-80' : 'text-xl',
-          ]}
-          style={`color:${p.ink};`}
-          aria-hidden="true"
-        >
-          {p.frames.idle[0]}
-        </span>
+              data-face
+              data-frames={JSON.stringify(p.frames)}
+              class:list={[
+                'sprite-text block whitespace-nowrap text-center',
+                variant === 'lineup' ? 'relative self-start text-[11px] opacity-80' : 'text-xl',
+              ]}
+              style={`color:${p.ink};`}
+              aria-hidden="true"
+            >
+              {p.frames.idle[0]}
+            </span>
+          )
+        }
 
         {
           variant === 'lineup' ? (
