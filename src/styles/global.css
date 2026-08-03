@@ -1443,3 +1443,101 @@
     opacity: 1;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   THE CARD RAIL
+   A slow marquee rather than a grid. There are more cards than fit a
+   row, and a grid answers that by either shrinking them all or hiding
+   the overflow; a rail shows every one of them at full size, in turn.
+   ══════════════════════════════════════════════════════════════════ */
+
+@keyframes rail-scroll {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* Two identical passes of the same cards, so -50% lands exactly on the
+   start of the second pass and the loop has no seam to hide. */
+.rail-track {
+  width: max-content;
+  animation: rail-scroll 96s linear infinite;
+}
+
+/* Every card is an anchor, and the descendant selector is deliberate:
+   `Programmes` emits its cards inside a `display: contents` wrapper, so
+   they are flex ITEMS of this track but not DOM children of it. `>` sized
+   the wrapper — which has no box — and left the cards to collapse. */
+/* A step up from the seven-column grid these replaced, not a leap. The
+   3:4 ratio is set on the cards themselves and is not touched here —
+   only the width, and the height follows it. */
+.rail-track a {
+  flex: none;
+  width: 9.5rem;
+}
+
+@media (min-width: 640px) {
+  .rail-track a {
+    width: 10.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .rail-track a {
+    width: 11.5rem;
+  }
+}
+
+/* Hover, keyboard focus, and an explicit tap all stop it. `:focus-within`
+   matters more than it looks: without it, tabbing into the rail would
+   walk the focus ring straight off the side of a moving strip. */
+[data-rail]:hover .rail-track,
+[data-rail]:focus-within .rail-track,
+[data-rail][data-paused] .rail-track {
+  animation-play-state: paused;
+}
+
+/* The resting state. Cards breathe slightly out of phase with each
+   other so the rail reads as alive rather than as one thing animating;
+   hover then takes over and resolves the card properly. */
+@keyframes card-breathe {
+  from {
+    opacity: 0.72;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Period and phase come in per card as custom properties. nth-child
+   cannot do it here — the cards live under two different parents — and
+   without the offset every card in the rail breathes in lockstep, which
+   reads as one animation rather than a row of separate things idling. */
+.rail-track .art-coarse {
+  animation: card-breathe var(--breathe-dur, 7s) ease-in-out infinite alternate;
+  animation-delay: var(--breathe-delay, 0s);
+}
+
+.rail-track a:hover .art-coarse {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail-track {
+    animation: none;
+  }
+
+  .rail-track .art-coarse {
+    animation: none;
+  }
+
+  /* With nothing moving, the duplicate pass is just the same cards
+     twice, and the rail has to be draggable to reach the far end. */
+  .rail-track [data-rail-clone] {
+    display: none;
+  }
+
+  [data-rail] {
+    overflow-x: auto;
+  }
+}

@@ -143,7 +143,7 @@ const { variant = 'panel' } = Astro.props;
   ]}
 >
   {
-    programmes.map((p) => (
+    programmes.map((p, i) => (
       <a
         href={p.href}
         data-face-card
@@ -153,7 +153,14 @@ const { variant = 'panel' } = Astro.props;
             ? 'h-full items-center justify-center px-3 py-5'
             : 'aspect-[3/4] items-start justify-between px-4 py-4 text-left',
         ]}
-        style={`background:${posterGround(p.seed, p)}; --sprite-shadow:${p.shadow};`}
+        style={[
+          `background:${posterGround(p.seed, p)}`,
+          `--sprite-shadow:${p.shadow}`,
+          /* Period and phase for the resting breath, so the rail reads as
+             a row of separate things idling rather than one animation. */
+          `--breathe-dur:${7 + (i % 3) * 2}s`,
+          `--breathe-delay:${-(i * 1.7).toFixed(1)}s`,
+        ].join(';')}
       >
         {variant === 'lineup' && p.art && <CardArt name={p.art} />}
 

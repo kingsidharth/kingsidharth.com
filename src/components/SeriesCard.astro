@@ -40,7 +40,11 @@ const ground = posterGround(seed, { from, via, to });
      item the anchor is stretched to the row height, and an article
      sizing itself independently ended up a few pixels taller than the
      programme cards beside it. -->
-<a href={url} class="group block aspect-[3/4] focus-visible:outline-none">
+<a
+  href={url}
+  class="group block aspect-[3/4] focus-visible:outline-none"
+  style={`--breathe-dur:${7 + (seed % 3) * 2}s; --breathe-delay:-${(seed % 7) * 0.9}s`}
+>
   <article
     class="grain relative flex size-full flex-col overflow-hidden rounded-lg border border-chassis-edge saturate-[0.55] transition-[filter] duration-300 group-hover:saturate-100 group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:saturate-100"
   >
