@@ -99,15 +99,12 @@ const maskStyle = [
 </div>
 
 <script>
-  /* Cool and hot glyph sets.
-   *
-   * The heated cells do not just brighten — they switch alphabet, block
-   * shades for ascii punctuation. That switch is the effect: under the
-   * cursor the picture stops being a printed screen and starts looking
-   * like something being decoded. Brightening alone reads as a light,
-   * which is a different and much more ordinary idea. */
-  const COOL = ' ░▒▓█';
-  const HOT = ' .:-=+*#%@';
+  import {
+    HOT_RAMP,
+    TREATMENT_RAMPS,
+    readFringeOffset,
+    readTreatment,
+  } from '@/lib/treatments';
 
   /** Radius of the pointer's stamp, in cells. */
   const REACH = 8;
@@ -138,6 +135,9 @@ const maskStyle = [
     let cw = 0;
     let chh = 0;
     let ink = inkFor(document.documentElement.classList.contains('dark'));
+    let treatment = readTreatment(document.documentElement);
+    let cool = TREATMENT_RAMPS[treatment];
+    let fringe = readFringeOffset(document.documentElement);
     let raf = 0;
 
     /** Bounding box of cells with heat, so a frame redraws a patch and
@@ -169,7 +169,7 @@ const maskStyle = [
           const t = Math.min(1, h * 2);
           const lit = Math.min(1, base + h * 0.4);
 
-          const set = h > 0.1 ? HOT : COOL;
+          const set = h > 0.1 ? HOT_RAMP : cool;
           const glyph = set[Math.min(set.length - 1, Math.floor(lit * set.length))];
           if (!glyph || glyph === ' ') continue;
 
@@ -179,8 +179,49 @@ const maskStyle = [
           const r = Math.round(ink[0] + (HOT_INK[0] - ink[0]) * t);
           const g = Math.round(ink[1] + (HOT_INK[1] - ink[1]) * t);
           const b = Math.round(ink[2] + (HOT_INK[2] - ink[2]) * t);
-          ctx.fillStyle = `rgba(${r},${g},${b},${Math.min(1, 0.4 + lit * 0.7)})`;
-          ctx.fillText(glyph, x * cw + cw / 2, y * chh + chh / 2);
+
+          // Disco: a fixed hash picks roughly one cell in nine to catch
+          // the light — full block, pushed most of the way to white.
+          // Hashed rather than random so a repaint does not reshuffle the
+          // glitter; the ball would boil instead of turn. `>>> 0` because
+          // the XOR of two large products is signed, and a negative
+          // modulo never equals zero, so the sparkle never fired.
+          let alpha = Math.min(1, 0.4 + lit * 0.7);
+          let glyphOut = glyph;
+          let rr = r;
+          let gg = g;
+          let bb = b;
+          if (treatment === 'disco' && (((x * 73856093) ^ (y * 19349663)) >>> 0) % 9 === 0) {
+            glyphOut = '█';
+            alpha = 1;
+            rr = Math.round(r + (255 - r) * 0.75);
+            gg = Math.round(g + (255 - g) * 0.75);
+            bb = Math.round(b + (255 - b) * 0.75);
+          }
+
+          const px = x * cw + cw / 2;
+          const py = y * chh + chh / 2;
+
+          if (fringe === 0) {
+            ctx.fillStyle = `rgba(${rr},${gg},${bb},${alpha})`;
+            ctx.fillText(glyphOut, px, py);
+            continue;
+          }
+
+          // Three single-channel copies summed with `lighter`, which is
+          // what an additive display does: where they overlap they
+          // reconstruct the ink, and only the edges fringe. Compositing
+          // them normally would just stack three coloured glyphs and the
+          // last one would win.
+          const d = fringe * cw;
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.fillStyle = `rgba(${rr},0,0,${alpha})`;
+          ctx.fillText(glyphOut, px - d, py);
+          ctx.fillStyle = `rgba(0,${gg},0,${alpha})`;
+          ctx.fillText(glyphOut, px, py);
+          ctx.fillStyle = `rgba(0,0,${bb},${alpha})`;
+          ctx.fillText(glyphOut, px + d, py);
+          ctx.globalCompositeOperation = 'source-over';
         }
       }
     }
@@ -279,12 +320,29 @@ const maskStyle = [
 
         // The ink changes with the theme and the canvas cannot inherit
         // it, so the toggle has to be watched rather than listened to.
+        // Theme ink, treatment and fringing all arrive as attributes on
+        // <html>, and a canvas can inherit none of them.
         new MutationObserver(() => {
-          const next = inkFor(document.documentElement.classList.contains('dark'));
-          if (next[0] === ink[0]) return;
-          ink = next;
+          const root = document.documentElement;
+          const nextInk = inkFor(root.classList.contains('dark'));
+          const nextTreatment = readTreatment(root);
+          const nextFringe = readFringeOffset(root);
+          if (
+            nextInk[0] === ink[0] &&
+            nextTreatment === treatment &&
+            nextFringe === fringe
+          ) {
+            return;
+          }
+          ink = nextInk;
+          treatment = nextTreatment;
+          cool = TREATMENT_RAMPS[treatment];
+          fringe = nextFringe;
           repaintAll();
-        }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        }).observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['class', 'data-treatment', 'data-fringe'],
+        });
 
         if (!matchMedia('(hover: hover)').matches) return;
         host.addEventListener('pointermove', (event: PointerEvent) => {

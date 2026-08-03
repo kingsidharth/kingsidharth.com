@@ -30,6 +30,13 @@
       if (headline) root.setAttribute('data-headline', headline);
       var ligatures = localStorage.getItem('design:ligatures');
       if (ligatures) root.setAttribute('data-ligatures', ligatures);
+      // These two have to be set before the hero canvas reads them on
+      // load, or it draws blocks once and only switches when something
+      // else happens to touch the attribute.
+      var treatment = localStorage.getItem('design:treatment');
+      if (treatment) root.setAttribute('data-treatment', treatment);
+      var fringe = localStorage.getItem('design:fringe');
+      if (fringe) root.setAttribute('data-fringe', fringe);
     } catch (e) {
       /* private mode: fall through to the CSS defaults */
     }

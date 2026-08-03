@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { TREATMENT_RAMPS, type Treatment } from '@/lib/treatments';
 
 type Accent = 'amber' | 'purple' | 'pink' | 'teal' | 'cool';
 type Typeset = 'default' | 'comfortable' | 'compact';
@@ -8,7 +9,9 @@ type Scale = 'default' | 's' | 'l';
 type Headline = 'auto' | 'light' | 'regular' | 'bold';
 type Ligatures = 'default' | 'on' | 'off';
 type ThemeMode = 'light' | 'dark';
-type Tab = 'typesetting' | 'theme';
+/** Channel separation stacked on top of whatever treatment is chosen. */
+type Fringe = 'off' | 'subtle' | 'strong';
+type Tab = 'typesetting' | 'theme' | 'artwork';
 
 const ACCENT_KEY = 'design:accent';
 const TYPESET_KEY = 'design:typeset';
@@ -16,6 +19,8 @@ const FONT_KEY = 'design:font';
 const SCALE_KEY = 'design:scale';
 const HEADLINE_KEY = 'design:headline';
 const LIGATURES_KEY = 'design:ligatures';
+const TREATMENT_KEY = 'design:treatment';
+const FRINGE_KEY = 'design:fringe';
 const THEME_KEY = 'theme';
 
 /* The only hardcoded colours in this file — swatch previews for palettes
@@ -65,6 +70,20 @@ const SCALE_OPTIONS: { value: Scale; label: string }[] = [
   { value: 's', label: 'Small' },
   { value: 'default', label: 'Default' },
   { value: 'l', label: 'Large' },
+];
+
+const TREATMENT_OPTIONS: { value: Treatment; label: string; description: string }[] = [
+  { value: 'blocks', label: 'Blocks', description: 'Shade blocks — the default screen' },
+  { value: 'diagonal', label: 'Diagonal', description: 'Cross-hatch, like a pen drawing' },
+  { value: 'lines', label: 'Lines', description: 'Vertical rules — barcode, rain' },
+  { value: 'diamond', label: 'Diamond', description: 'Faceted, jewel-like cells' },
+  { value: 'disco', label: 'Disco', description: 'Mirror-ball tiles that catch the light' },
+];
+
+const FRINGE_OPTIONS: { value: Fringe; label: string }[] = [
+  { value: 'off', label: 'Off' },
+  { value: 'subtle', label: 'Subtle' },
+  { value: 'strong', label: 'Strong' },
 ];
 
 const HEADLINE_OPTIONS: { value: Headline; label: string }[] = [
@@ -248,6 +267,71 @@ function applyLigatures(ligatures: Ligatures) {
   }
 }
 
+function readTreatment(): Treatment {
+  try {
+    const stored = localStorage.getItem(TREATMENT_KEY);
+    if (
+      stored === 'diagonal' ||
+      stored === 'lines' ||
+      stored === 'diamond' ||
+      stored === 'disco'
+    ) {
+      return stored;
+    }
+  } catch {
+    /* private mode: fall back to the default */
+  }
+  return 'blocks';
+}
+
+function readFringe(): Fringe {
+  try {
+    const stored = localStorage.getItem(FRINGE_KEY);
+    if (stored === 'subtle' || stored === 'strong') return stored;
+  } catch {
+    /* private mode: fall back to the default */
+  }
+  return 'off';
+}
+
+/* Both of these land as attributes on <html> like every other setting
+   here, rather than being pushed at the canvas directly. The canvas is
+   one consumer today; the attribute is the contract, and anything else
+   that wants to answer to a treatment can read the same one. */
+function applyTreatment(treatment: Treatment) {
+  if (treatment === 'blocks') {
+    document.documentElement.removeAttribute('data-treatment');
+  } else {
+    document.documentElement.setAttribute('data-treatment', treatment);
+  }
+  try {
+    if (treatment === 'blocks') {
+      localStorage.removeItem(TREATMENT_KEY);
+    } else {
+      localStorage.setItem(TREATMENT_KEY, treatment);
+    }
+  } catch {
+    /* private mode: the choice just will not persist */
+  }
+}
+
+function applyFringe(fringe: Fringe) {
+  if (fringe === 'off') {
+    document.documentElement.removeAttribute('data-fringe');
+  } else {
+    document.documentElement.setAttribute('data-fringe', fringe);
+  }
+  try {
+    if (fringe === 'off') {
+      localStorage.removeItem(FRINGE_KEY);
+    } else {
+      localStorage.setItem(FRINGE_KEY, fringe);
+    }
+  } catch {
+    /* private mode: the choice just will not persist */
+  }
+}
+
 function applyTheme(mode: ThemeMode) {
   const dark = mode === 'dark';
   document.documentElement.classList.toggle('dark', dark);
@@ -309,6 +393,7 @@ function CloseGlyph({ className }: { className?: string }) {
 const TABS: { id: Tab; label: string }[] = [
   { id: 'typesetting', label: 'Typesetting' },
   { id: 'theme', label: 'Theme colour' },
+  { id: 'artwork', label: 'Artwork' },
 ];
 
 export default function DesignSettings() {
@@ -320,6 +405,8 @@ export default function DesignSettings() {
   const [scale, setScale] = useState<Scale>('default');
   const [headline, setHeadline] = useState<Headline>('auto');
   const [ligatures, setLigatures] = useState<Ligatures>('default');
+  const [treatment, setTreatment] = useState<Treatment>('blocks');
+  const [fringe, setFringe] = useState<Fringe>('off');
   const [themeMode, setThemeMode] = useState<ThemeMode>('light');
   const [mounted, setMounted] = useState(false);
 
@@ -336,6 +423,8 @@ export default function DesignSettings() {
     setScale(readScale());
     setHeadline(readHeadline());
     setLigatures(readLigatures());
+    setTreatment(readTreatment());
+    setFringe(readFringe());
     setThemeMode(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
     setMounted(true);
   }, []);
@@ -446,6 +535,16 @@ export default function DesignSettings() {
   const handleLigaturesSelect = useCallback((value: Ligatures) => {
     setLigatures(value);
     applyLigatures(value);
+  }, []);
+
+  const handleTreatmentSelect = useCallback((value: Treatment) => {
+    setTreatment(value);
+    applyTreatment(value);
+  }, []);
+
+  const handleFringeSelect = useCallback((value: Fringe) => {
+    setFringe(value);
+    applyFringe(value);
   }, []);
 
   const handleAccentSelect = useCallback((value: Accent) => {
@@ -726,6 +825,69 @@ export default function DesignSettings() {
                   Dark
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* Artwork panel */}
+          <div
+            role="tabpanel"
+            id={`${panelId}-panel-artwork`}
+            aria-labelledby={`${panelId}-tab-artwork`}
+            hidden={tab !== 'artwork'}
+            className="flex flex-col gap-4 p-4"
+          >
+            <div className="flex flex-col gap-2">
+              <span className="nameplate block">Treatment</span>
+              {TREATMENT_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleTreatmentSelect(option.value)}
+                  aria-pressed={treatment === option.value}
+                  className={cn(
+                    'groove flex items-center gap-3 rounded-md px-3 py-2 text-left transition-colors',
+                    treatment === option.value ? 'ring-2 ring-accent' : '',
+                  )}
+                >
+                  {/* The ramp itself as the swatch. A written label cannot
+                      tell you what "diagonal" looks like at cell size, and
+                      these are the exact characters that get drawn. */}
+                  <span
+                    aria-hidden="true"
+                    className="w-12 shrink-0 font-mono text-sm leading-none text-primary"
+                  >
+                    {TREATMENT_RAMPS[option.value].slice(1)}
+                  </span>
+                  <span className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium text-foreground">{option.label}</span>
+                    <span className="text-xs text-muted-foreground">{option.description}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <div className="panel-divider-h flex flex-col gap-2 pt-3">
+              <span className="nameplate block">Channel fringing</span>
+              <div className="groove flex rounded-full p-1">
+                {FRINGE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleFringeSelect(option.value)}
+                    aria-pressed={fringe === option.value}
+                    className={cn(
+                      'flex-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
+                      fringe === option.value ? 'cap text-foreground' : 'text-muted-foreground',
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                Splits every glyph into red, green and blue copies a fraction of a cell apart.
+                Stacks on whichever treatment is selected.
+              </span>
             </div>
           </div>
         </div>
