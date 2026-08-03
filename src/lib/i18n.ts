@@ -49,7 +49,7 @@ export function localeStaticPaths() {
 const en = {
   'nav.watch': 'Watch',
   'nav.work': 'Work',
-  'nav.tools': 'Tools & Experiments',
+  'nav.tools': 'Tinkering',
   'nav.notes': 'Notes',
   'nav.guides': 'Guides',
   'nav.about': 'About',
@@ -60,7 +60,7 @@ const en = {
   'theme.dark': 'Dark',
   'lang.switch': 'Change language',
 
-  'shelf.title': 'Tools & Experiments',
+  'shelf.title': 'Tinkering',
   'shelf.sub': 'things you can take apart',
   'shelf.figure': 'Fig.',
 

@@ -6,23 +6,27 @@ interface Props {
 }
 
 const { entry } = Astro.props;
-const { title, detail, url, seed, from, via, to } = entry.data;
+const { title, detail, url, seed, from, via, to, motif, parts, kicker } = entry.data;
 
-/* Portrait, because that is the shape a video series cover actually is.
+/* Portrait, because that is the shape a series cover actually is.
  *
- * The poster is a layered gradient rather than the dithered art used
- * elsewhere: that art is 1-bit, and you cannot desaturate something
- * with no colour in it. The angle and blob positions come off the seed
- * so each cover is its own composition but stays stable between builds.
+ * The ground is a layered gradient rather than the 1-bit dither used
+ * elsewhere — you cannot desaturate art that has no colour in it. Angle
+ * and blob positions come off the seed, so each cover is its own
+ * composition but is identical between builds.
+ *
+ * The drawing on top is line art rather than a photo: it survives being
+ * desaturated, scales to any size, and matches the schematic language
+ * the instruments already speak.
  */
 const angle = 120 + (seed % 7) * 15;
 const bx = 20 + (seed % 5) * 12;
 const by = 25 + (seed % 3) * 18;
 ---
 
-<a href={url} class="group block">
-  <div
-    class="relative aspect-[3/4] overflow-hidden rounded-lg border border-chassis-edge saturate-[0.35] transition-[filter,transform] duration-300 group-hover:saturate-100 group-focus-visible:saturate-100"
+<a href={url} class="group block focus-visible:outline-none">
+  <article
+    class="relative flex aspect-[3/4] flex-col overflow-hidden rounded-lg border border-chassis-edge saturate-[0.35] transition-[filter] duration-300 group-hover:saturate-100 group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:saturate-100"
   >
     <div
       class="absolute inset-0"
@@ -34,29 +38,98 @@ const by = 25 + (seed % 3) * 18;
     >
     </div>
 
-    <!-- Scanlines tie the poster back to the rest of the bench without
-         making it a screen. -->
+    <!-- Line art. Strokes are white at low alpha so one drawing works on
+         any of the gradients without per-card colour tuning. -->
+    <svg
+      viewBox="0 0 120 96"
+      class="absolute inset-x-0 top-9 mx-auto w-[76%] text-[oklch(0.92_0.14_190)] opacity-90 [filter:drop-shadow(-0.6px_0_0_oklch(0.62_0.22_25/0.5))_drop-shadow(0.6px_0_0_oklch(0.78_0.15_200/0.5))_drop-shadow(0_0_6px_currentColor)]"
+      fill="none"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      {
+        motif === 'roadmap' ? (
+          <g>
+            {/* A plan: staggered bars, a milestone diamond, a today line */}
+            <g opacity="0.28" stroke-width="1">
+              <path d="M4 12h112M4 32h112M4 52h112M4 72h112" />
+            </g>
+            <g stroke-width="7" opacity="0.9" stroke-linecap="round">
+              <path d="M14 12h34" />
+              <path d="M30 32h46" />
+              <path d="M52 52h40" />
+              <path d="M68 72h34" />
+            </g>
+            <g opacity="0.55" stroke-width="1.5">
+              <path d="M92 4v88" stroke-dasharray="4 4" />
+            </g>
+            <g fill="currentColor" stroke="none" opacity="0.95">
+              <path d="M92 46l6 6-6 6-6-6z" />
+            </g>
+          </g>
+        ) : (
+          <g>
+            {/* An artboard: chrome bar, sidebar, blocks, a cursor */}
+            <rect x="6" y="6" width="108" height="76" rx="4" stroke-width="2" opacity="0.9" />
+            <path d="M6 20h108" stroke-width="2" opacity="0.9" />
+            <g opacity="0.75" stroke-width="2">
+              <circle cx="14" cy="13" r="2" />
+              <circle cx="22" cy="13" r="2" />
+              <circle cx="30" cy="13" r="2" />
+            </g>
+            <path d="M40 20v62" stroke-width="2" opacity="0.55" />
+            <g opacity="0.5" stroke-width="4" stroke-linecap="round">
+              <path d="M14 32h16M14 42h16M14 52h10" />
+            </g>
+            <g opacity="0.8" stroke-width="2">
+              <rect x="50" y="30" width="52" height="20" rx="3" />
+              <rect x="50" y="58" width="24" height="16" rx="3" />
+              <rect x="80" y="58" width="22" height="16" rx="3" />
+            </g>
+            <g fill="currentColor" stroke="none">
+              <path d="M84 44l14 12-6 1 4 8-3 2-4-8-5 4z" opacity="0.95" />
+            </g>
+          </g>
+        )
+      }
+    </svg>
+
     <div
-      class="absolute inset-0 bg-[repeating-linear-gradient(0deg,rgb(0_0_0/0.14)_0_1px,transparent_1px_3px)]"
+      class="absolute inset-0 bg-[repeating-linear-gradient(0deg,rgb(0_0_0/0.13)_0_1px,transparent_1px_3px)]"
       aria-hidden="true"
     >
     </div>
 
     <div
-      class="absolute inset-0 bg-linear-to-t from-black/85 via-black/25 via-45% to-transparent"
+      class="absolute inset-0 bg-linear-to-t from-black/90 via-black/45 via-52% to-black/10"
       aria-hidden="true"
     >
     </div>
 
-    <span
-      class="absolute top-2.5 left-2.5 z-10 rounded-xs bg-black/60 px-1.5 py-0.5 font-mono text-2xs text-white/90"
-    >
-      Series
-    </span>
+    <!-- Top rail: what kind of thing this is, and how much of it -->
+    <div class="relative z-10 flex items-start justify-between gap-2 p-3">
+      <span class="rounded-xs bg-black/55 px-1.5 py-0.5 font-mono text-2xs text-white/90">
+        {kicker}
+      </span>
+      <span class="rounded-xs bg-black/55 px-1.5 py-0.5 font-mono text-2xs text-white/90">
+        {parts} parts
+      </span>
+    </div>
 
-    <div class="absolute inset-x-0 bottom-0 z-10 p-3.5">
+    <div class="relative z-10 mt-auto p-3.5">
       <h3 class="text-lg leading-tight font-bold text-white">{title}</h3>
-      <p class="mt-1 font-mono text-xs text-white/70">{detail}</p>
+
+      <p
+        class="mt-3 flex items-center gap-1.5 font-mono text-2xs text-white/60 transition-colors group-hover:text-white"
+      >
+        {detail}
+        <span
+          class="transition-transform duration-200 group-hover:translate-x-0.5"
+          aria-hidden="true">→</span
+        >
+      </p>
     </div>
-  </div>
+  </article>
 </a>

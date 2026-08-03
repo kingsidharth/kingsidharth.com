@@ -4,14 +4,13 @@ import { getCollection } from 'astro:content';
 import Base from '@/layouts/Base.astro';
 import SectionHead from '@/components/SectionHead.astro';
 import BroadcastCard from '@/components/BroadcastCard.astro';
-import SeriesCard from '@/components/SeriesCard.astro';
+import Lineup from '@/components/Lineup.astro';
 import NoteRow from '@/components/NoteRow.astro';
 import WorkList from '@/components/WorkList.astro';
 import TemperatureInstrument from '@/components/instruments/TemperatureInstrument';
 import GotchaQuiz from '@/components/instruments/GotchaQuiz';
 import HeroIntro from '@/components/HeroIntro.astro';
 import TeachingStats from '@/components/TeachingStats.astro';
-import Programmes from '@/components/Programmes.astro';
 import ToolsBento from '@/components/ToolsBento.astro';
 import SocialLinks from '@/components/SocialLinks.astro';
 import PromptsToSteal from '@/components/PromptsToSteal';
@@ -57,7 +56,6 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
         <span aria-hidden="true" class="screw absolute bottom-2.5 right-2.5"></span>
 
         <TeachingStats />
-        <Programmes />
       </div>
     </div>
   </section>
@@ -92,20 +90,16 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     });
   </script>
 
-  <!-- ── Watch. Ahead of Work: the videos are what most people came
-         for, and the CV can wait its turn. ─────────────────────── -->
+  <!-- ── The lineup. Programmes and video collections interleaved:
+         they are the same kind of offer, so two separate grids made
+         the page argue with itself. ───────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-16">
+    <Lineup series={series} />
+  </section>
+
+  <!-- ── Watch ────────────────────────────────────────────────── -->
   <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
     <SectionHead title={t('broadcasts.title')} />
-
-    {
-      series.length > 0 && (
-        <div class="mb-12 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-          {series.map((entry) => (
-            <SeriesCard entry={entry} />
-          ))}
-        </div>
-      )
-    }
 
     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
       {broadcasts.map((entry) => <BroadcastCard entry={entry} locale={locale} />)}

@@ -61,7 +61,7 @@ const programmes = [
   },
   {
     name: 'Fun AI',
-    href: '/instruments',
+    href: '/tinkering',
     bg: 'oklch(0.32 0.12 45)',
     ink: 'oklch(0.92 0.15 85)',
     shadow: 'oklch(0.2 0.09 45)',
@@ -76,15 +76,32 @@ const programmes = [
     },
   },
 ];
+
+interface Props {
+  /** `panel` is the tight 2x2 inside the hero chassis; `lineup` is the
+      portrait card that sits alongside the video collections. */
+  variant?: 'panel' | 'lineup';
+}
+
+const { variant = 'panel' } = Astro.props;
 ---
 
-<div class="grid grid-cols-2 gap-3 p-5 pt-0 sm:p-6 sm:pt-0">
+<div
+  class:list={[
+    variant === 'panel'
+      ? 'grid grid-cols-2 gap-3 p-5 pt-0 sm:p-6 sm:pt-0'
+      : 'contents',
+  ]}
+>
   {
     programmes.map((p) => (
       <a
         href={p.href}
         data-face-card
-        class="screen-raised group relative flex h-full flex-col items-center justify-center gap-3 px-3 py-5 saturate-[0.55] transition-[filter] duration-300 hover:saturate-100 focus-visible:saturate-100 active:saturate-150"
+        class:list={[
+          'screen-raised group relative flex flex-col items-center justify-center gap-3 saturate-[0.55] transition-[filter] duration-300 hover:saturate-100 focus-visible:saturate-100 active:saturate-150',
+          variant === 'panel' ? 'h-full px-3 py-5' : 'aspect-[3/4] px-4 py-6',
+        ]}
         style={`background:${p.bg}; --sprite-shadow:${p.shadow};`}
       >
         {

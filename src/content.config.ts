@@ -126,6 +126,10 @@ const collections_ = defineCollection({
     from: z.string(),
     via: z.string(),
     to: z.string(),
+    /** Which drawing sits on the poster. */
+    motif: z.enum(['roadmap', 'artboard']),
+    parts: z.number().int(),
+    kicker: z.string(),
   }),
 });
 

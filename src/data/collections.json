@@ -7,7 +7,10 @@
     "url": "#",
     "from": "oklch(0.55 0.2 25)",
     "via": "oklch(0.42 0.18 320)",
-    "to": "oklch(0.72 0.17 65)"
+    "to": "oklch(0.72 0.17 65)",
+    "motif": "roadmap",
+    "parts": 8,
+    "kicker": "Hinglish"
   },
   {
     "id": "for-designers",
@@ -17,6 +20,9 @@
     "url": "#",
     "from": "oklch(0.5 0.18 260)",
     "via": "oklch(0.62 0.16 195)",
-    "to": "oklch(0.7 0.15 320)"
+    "to": "oklch(0.7 0.15 320)",
+    "motif": "artboard",
+    "parts": 6,
+    "kicker": "For designers"
   }
 ]
