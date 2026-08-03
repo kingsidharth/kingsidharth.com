@@ -1,0 +1,79 @@
+---
+/**
+ * The thangka behind the hero.
+ *
+ * A black-ground Tibetan thangka whose bodhisattva holds technology
+ * instead of the usual attributes — a circuit lotus, a prayer wheel
+ * built from hard-disk platters, a mala of glowing nodes. At the bottom
+ * of the frame there is one present-day human, about 3% of the image
+ * height, and the whole composition exists for that ratio.
+ *
+ * Dark theme only, and not out of caution: this is a painting on a
+ * black ground. On the cream paper of light mode it would be a black
+ * rectangle stapled to the top of the page, which is not the same
+ * artwork shown differently — it is a different, worse artwork.
+ *
+ * The scrim is not decoration either. Everything below the deity's
+ * knees has to carry body copy, and gold on near-black is exactly the
+ * contrast range that eats small text.
+ */
+interface Props {
+  class?: string;
+}
+
+const { class: extra = '' } = Astro.props;
+---
+
+<!-- Capped at 82rem and centred, so the deity stops growing on a wide
+     monitor. That leaves page background either side, and the thangka's
+     ground is pure black where the page is only near-black — close
+     enough to look like a printing error rather than a choice. The
+     horizontal mask dissolves both edges instead. -->
+<div
+  class:list={[
+    'pointer-events-none absolute inset-x-0 top-0 mx-auto hidden max-w-[82rem] dark:block',
+    '[mask-image:linear-gradient(90deg,transparent_0%,#000_9%,#000_91%,transparent_100%)]',
+    extra,
+  ]}
+  aria-hidden="true"
+>
+  <picture>
+    <source
+      type="image/avif"
+      srcset="/art/hero-thangka-900.avif 900w, /art/hero-thangka-1536.avif 1536w"
+      sizes="100vw"
+    />
+    <source
+      type="image/webp"
+      srcset="/art/hero-thangka-900.webp 900w, /art/hero-thangka-1536.webp 1536w"
+      sizes="100vw"
+    />
+    <img
+      src="/art/hero-thangka-1536.webp"
+      alt=""
+      width="1536"
+      height="1024"
+      /* Above the fold, so lazy would guarantee a flash of empty hero.
+         Decoding async keeps it off the main thread all the same. */
+      decoding="async"
+      fetchpriority="low"
+      class="w-full object-cover object-top"
+    />
+  </picture>
+
+  <!-- A band, not a wash.
+       The first version faded the whole lower half to the page colour,
+       which read fine until you noticed it had erased the one thing the
+       painting is built around: the human at the bottom edge. So the
+       scrim now darkens only the horizontal band the copy actually
+       occupies and eases off above and below it, leaving the deity's
+       head clear at the top and the figure clear at the foot. -->
+  <div
+    class="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_24%,rgb(0_0_0/0.78)_40%,rgb(0_0_0/0.78)_64%,transparent_80%)]"
+  >
+  </div>
+
+  <!-- Only the last few percent, purely to kill the cut edge where the
+       image ends and the page begins. -->
+  <div class="absolute inset-0 bg-linear-to-b from-transparent from-90% to-background"></div>
+</div>

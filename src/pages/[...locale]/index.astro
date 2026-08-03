@@ -13,6 +13,7 @@ import HeroIntro from '@/components/HeroIntro.astro';
 import TeachingStats from '@/components/TeachingStats.astro';
 import SocialLinks from '@/components/SocialLinks.astro';
 import AsciiField from '@/components/AsciiField.astro';
+import HeroBackdrop from '@/components/HeroBackdrop.astro';
 import { getLocalized } from '@/lib/content';
 import { localePath, localeStaticPaths, useTranslations } from '@/lib/i18n';
 import type { Locale } from '@/lib/i18n';
@@ -41,24 +42,41 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
          and Teaching + Challenge as one attached instrument on the
          right — vertically middle-aligned against the intro rather
          than top-aligned, which is what makes them read as a pair. ── -->
-  <section
-    class="relative isolate mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-12 sm:pt-16"
-  >
-    <AsciiField class="-z-10 opacity-50" />
+  <!-- The min-height is the backdrop's own aspect ratio (3:2, capped at
+       the 82rem the image itself is capped to). Without it the hero box
+       is only as tall as its text, the artwork gets clipped by
+       overflow-hidden, and what gets cut off is the bottom edge — where
+       the tiny human stands. That figure is the entire reason the
+       painting works, so the box is sized to it rather than the reverse. -->
+  <div class="relative isolate overflow-hidden dark:min-h-[min(66.7vw,54.7rem)]">
+    <HeroBackdrop class="-z-20" />
+    <AsciiField class="-z-10 opacity-30" />
 
-    <div class="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
-      <HeroIntro />
+    <!-- The top padding is the point of the backdrop: it is what leaves
+         the deity's head, crown and held attributes clear of the
+         headline. Fluid rather than stepped, because the artwork scales
+         with the viewport and a breakpoint would crop its face at one
+         width and strand it at the next.
+         Dark-only, like the backdrop itself — in light mode there is no
+         painting to clear, and this much headroom would just be a very
+         confident block of nothing. -->
+    <section
+      class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-12 sm:pt-16 dark:pt-[clamp(7rem,26vw,22rem)]"
+    >
+      <div class="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
+        <HeroIntro />
 
-      <div class="chassis relative w-full">
-        <span aria-hidden="true" class="screw absolute left-2.5 top-2.5"></span>
-        <span aria-hidden="true" class="screw absolute right-2.5 top-2.5"></span>
-        <span aria-hidden="true" class="screw absolute bottom-2.5 left-2.5"></span>
-        <span aria-hidden="true" class="screw absolute bottom-2.5 right-2.5"></span>
+        <div class="chassis relative w-full">
+          <span aria-hidden="true" class="screw absolute left-2.5 top-2.5"></span>
+          <span aria-hidden="true" class="screw absolute right-2.5 top-2.5"></span>
+          <span aria-hidden="true" class="screw absolute bottom-2.5 left-2.5"></span>
+          <span aria-hidden="true" class="screw absolute bottom-2.5 right-2.5"></span>
 
-        <TeachingStats />
+          <TeachingStats />
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </div>
 
   <!-- Revealed by the quiz. Hidden rather than un-rendered so the
        reveal is instant and it stays out of the a11y tree until then.
