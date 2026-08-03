@@ -70,6 +70,13 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
 <div
   class:list={[
     'pointer-events-none absolute top-0 left-1/2 -translate-x-1/2',
+    /* The container states its own ratio.
+       It used to take its height from the fallback <img> inside it. That
+       image moved into `noscript`, which left a box of zero height —
+       every canvas here is absolutely positioned, so nothing was left to
+       give it one, `measure()` bailed on a zero rect, and the hero
+       rendered nothing at all. 2:1 is the grid's own aspect. */
+    'aspect-[2/1]',
     /* Wider than the phone on purpose. A 2:1 image fitted to a 390px
        viewport is a 195px strip, and a colossal statue rendered 195px
        tall is not colossal — the scale the whole picture is built on
