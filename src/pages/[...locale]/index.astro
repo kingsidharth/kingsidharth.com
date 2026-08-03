@@ -39,7 +39,7 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
 <Base
   locale={locale}
   title="Sidharth — Product builder"
-  description="Product builder in Bengaluru. Tools, writing and videos about how AI actually behaves."
+  description="Teaching AI, building products in Bengaluru. Tools, videos and writing about how AI actually behaves."
   bareTitle
 >
   <!-- ── Hero. Two columns on desktop: the introduction on the left,
@@ -75,9 +75,9 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     <p class="nameplate mb-3 text-primary">One of the teaching tools</p>
     <h2 class="max-w-[24ch] text-2xl sm:text-3xl">Temperature visualiser</h2>
     <p class="mt-4 mb-8 max-w-[58ch] text-muted-foreground">
-      Same knob, three prompts. Turn it up and the poem gets more interesting while the arithmetic
-      starts getting the answer wrong. Switch to greedy and the maths is safe at any temperature —
-      but the poem says "star" every single time.
+      Same knob, three prompts. Turn it up: the poem gets interesting, the arithmetic starts
+      failing. Switch to greedy and the maths is safe at any temperature — but the poem says
+      "star" every time.
     </p>
     <TemperatureInstrument client:idle />
   </section>
@@ -99,7 +99,7 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
 
     {
       series.length > 0 && (
-        <div class="mb-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="mb-12 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
           {series.map((entry) => (
             <SeriesCard entry={entry} />
           ))}
@@ -114,7 +114,10 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
 
   <!-- ── Prompts to steal. Its own section rather than a sidebar:
          it is a giveaway, and a giveaway should not be a margin note. -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
+  <section
+    id="prompts"
+    class="mx-auto max-w-(--container-wide) scroll-mt-24 px-(--spacing-gutter) py-16 sm:py-20"
+  >
     <PromptsToSteal client:visible />
   </section>
 

@@ -13,7 +13,7 @@ const programmes = [
     // Peeking from behind a wall, then leaning further out with each
     // nudge until it makes off with the goods.
     name: 'Steal the Secret Prompts',
-    href: '#',
+    href: '#prompts',
     bg: 'oklch(0.28 0.11 275)',
     ink: 'oklch(0.88 0.16 195)',
     shadow: 'oklch(0.16 0.09 275)',
@@ -30,7 +30,7 @@ const programmes = [
   },
   {
     name: 'Vibe Coding 101',
-    href: '#',
+    href: '/guides/vibe-coding/101',
     bg: 'oklch(0.3 0.13 340)',
     ink: 'oklch(0.98 0 0)',
     shadow: 'oklch(0.19 0.1 340)',
@@ -46,7 +46,7 @@ const programmes = [
   {
     // Sinking deeper with each interaction.
     name: 'Deep AI',
-    href: '#',
+    href: '/guides',
     bg: 'oklch(0.27 0.09 195)',
     ink: 'oklch(0.88 0.19 145)',
     shadow: 'oklch(0.15 0.07 195)',
@@ -61,7 +61,7 @@ const programmes = [
   },
   {
     name: 'Fun AI',
-    href: '#',
+    href: '/instruments',
     bg: 'oklch(0.32 0.12 45)',
     ink: 'oklch(0.92 0.15 85)',
     shadow: 'oklch(0.2 0.09 45)',
@@ -84,7 +84,7 @@ const programmes = [
       <a
         href={p.href}
         data-face-card
-        class="screen-raised group relative flex h-full flex-col items-center justify-center gap-3 px-3 py-5"
+        class="screen-raised group relative flex h-full flex-col items-center justify-center gap-3 px-3 py-5 saturate-[0.55] transition-[filter] duration-300 hover:saturate-100 focus-visible:saturate-100 active:saturate-150"
         style={`background:${p.bg}; --sprite-shadow:${p.shadow};`}
       >
         {

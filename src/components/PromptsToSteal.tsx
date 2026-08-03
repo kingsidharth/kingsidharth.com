@@ -25,7 +25,7 @@ const CARTRIDGES: Cartridge[] = [
   {
     id: 'anyone',
     audience: 'Anyone',
-    title: 'Unlock the power of you + AI',
+    title: 'Find the superpower you\'re not using',
     prompt: 'What superpower am I not using?',
     bg: 'oklch(0.30 0.11 275)',
     ink: 'oklch(0.90 0.15 195)',
@@ -33,7 +33,7 @@ const CARTRIDGES: Cartridge[] = [
   {
     id: 'founders',
     audience: 'Founders',
-    title: 'Ship to customers, fast',
+    title: 'Stress-test your landing page',
     prompt:
       "Act as a sceptical investor. Read my landing page copy and list the three claims you don't believe, and exactly what evidence would change your mind.",
     bg: 'oklch(0.31 0.13 20)',
@@ -42,7 +42,7 @@ const CARTRIDGES: Cartridge[] = [
   {
     id: 'designers',
     audience: 'Designers',
-    title: 'Use AI for design',
+    title: 'See your screen like a first-time user',
     prompt:
       "Here's my screen. Describe what a first-time user would try to do first, and where they'd hesitate. Don't suggest fixes yet — just tell me what you see.",
     bg: 'oklch(0.30 0.13 320)',
@@ -51,7 +51,7 @@ const CARTRIDGES: Cartridge[] = [
   {
     id: 'pms',
     audience: 'PMs',
-    title: 'Manage AI products',
+    title: 'Turn feature requests into evals',
     prompt:
       'Turn this feature request into three eval cases with pass/fail criteria a junior could apply without asking me anything.',
     bg: 'oklch(0.28 0.10 155)',
@@ -60,7 +60,7 @@ const CARTRIDGES: Cartridge[] = [
   {
     id: 'engineers',
     audience: 'Engineers',
-    title: 'AI can write better code. Promise.',
+    title: 'Understand code you didn\'t write',
     prompt:
       'Explain what this code does to whoever maintains it after I leave. Then list the three things most likely to break it.',
     bg: 'oklch(0.29 0.10 240)',

@@ -5,7 +5,7 @@
     "role": "Product & Design",
     "period": "Current",
     "current": true,
-    "summary": "Edtech for modern careers and upskilling. Traditional education cannot keep pace with how fast the industry moves, so the programmes exist to close that gap. I work on product and design, and teach AI to engineers and to people who have never written code.",
+    "summary": "Edtech for careers that didn't exist five years ago. I work on product and design, and teach AI to engineers and to people who have never written code.",
     "highlights": [],
     "order": 0
   },
@@ -15,14 +15,14 @@
     "role": "Product & Design",
     "period": "2019–2021",
     "current": false,
-    "summary": "Headout sells experiences to millions of travellers, competing on simplified choice and last-minute availability.",
+    "summary": "Last-minute tours and experiences for millions of travellers. Two years of product and design — including a rebrand, mid-pandemic.",
     "highlights": [
-      "Scaled the hyperlocal brand portfolio from ~100 to thousands of sub-brands, covering 80% of gross booking value",
-      "Designed a system handling 4,000+ kinds of pass, ticket and access code worldwide",
-      "Took user research and UAT coverage from 0 to 90% on every critical project — during a pandemic",
-      "Lifted conversion ~2% twice over: once with a product card system for discovery, once with a redesigned mobile-web booking flow",
-      "Launched Headout Hub, an extranet letting suppliers self-manage listings and inventory, cutting ops and support overhead",
-      "Rebranded Headout for a global audience and post-pandemic scale"
+      "Scaled the hyperlocal brand portfolio from ~100 to thousands of sub-brands — 80% of gross booking value",
+      "Designed one system for 4,000+ kinds of pass, ticket and access code worldwide",
+      "Took user research and UAT from 0 to 90% coverage on critical projects — during a pandemic",
+      "Lifted conversion ~2% twice: a product card system for discovery, then a redesigned mobile booking flow",
+      "Launched Headout Hub — suppliers self-manage listings and inventory, cutting ops and support load",
+      "Rebranded Headout for a global, post-pandemic audience"
     ],
     "order": 2
   },
@@ -32,15 +32,15 @@
     "role": "Head of Design, then Product Manager",
     "period": "2012–2019",
     "current": false,
-    "summary": "Fintech serving over 700,000 Indian businesses. Easy products and a simple experience got us to product-market fit and made us a leader in the MSME market. I ran the design team and managed payments, merchant and mobile products.",
+    "summary": "Payments for 700,000+ small Indian businesses. Seven years — joined to run design, ended up managing payments, merchant and mobile products.",
     "highlights": [
-      "Designed Payment Links — the product the company became known for, and more than half its GMV",
-      "Designed the payment flow used by 1.5M+ consumers a month, carrying 100% of GMV",
-      "Launched Smart Payment Links: 5% of active users, 7% of GMV",
+      "Designed Payment Links — the product the company became known for, over half its GMV",
+      "Designed the payment flow behind 100% of GMV, used by 1.5M+ people a month",
       "Cut sign-up to activation from 170 minutes to 7",
-      "Got 80% of users self-activating within 30 days, without high-touch sales",
-      "Grew MAU 17% with a new Android app; launched Virtual Account Numbers, closing 10+ enterprise customers in 15 days",
-      "Hired the design team and built its processes as the company went from 100 to 400,000+ customers"
+      "Got 80% of users self-activating within 30 days — no high-touch sales",
+      "Grew MAU 17% with a new Android app",
+      "Launched Virtual Account Numbers — 10+ enterprise customers in 15 days",
+      "Hired the design team and built its processes as customers grew from 100 to 400,000+"
     ],
     "order": 3
   },
@@ -50,7 +50,7 @@
     "role": "Founder & consultant",
     "period": "Before 2012",
     "current": false,
-    "summary": "Ran WebMutiny, a UX design agency, and an educational events company. Started Besperk and ReadJitsu, which was selected for Start-Up Chile. Worked with Cleartax, L-pad and other startups along the way.",
+    "summary": "Ran WebMutiny, a UX agency, and an events company. Started Besperk and ReadJitsu — the latter made Start-Up Chile. Consulting for Cleartax and other startups in between.",
     "highlights": [],
     "order": 4
   }

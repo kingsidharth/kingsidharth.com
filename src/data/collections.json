@@ -3,16 +3,20 @@
     "id": "pm-course-hinglish",
     "title": "PM Course in Hinglish",
     "detail": "8-part series",
-    "motif": "grid",
     "seed": 12,
-    "url": "#"
+    "url": "#",
+    "from": "oklch(0.55 0.2 25)",
+    "via": "oklch(0.42 0.18 320)",
+    "to": "oklch(0.72 0.17 65)"
   },
   {
     "id": "for-designers",
     "title": "For UI/UX Designers",
     "detail": "Series",
-    "motif": "shards",
     "seed": 27,
-    "url": "#"
+    "url": "#",
+    "from": "oklch(0.5 0.18 260)",
+    "via": "oklch(0.62 0.16 195)",
+    "to": "oklch(0.7 0.15 320)"
   }
 ]

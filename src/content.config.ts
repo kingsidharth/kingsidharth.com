@@ -120,9 +120,12 @@ const collections_ = defineCollection({
     title: z.string(),
     /** e.g. "8-part series" — what kind of thing this is. */
     detail: z.string(),
-    motif: z.enum(['reach', 'burst', 'orb', 'tunnel', 'shards', 'grid']),
     seed: z.number().int(),
     url: z.string(),
+    /** Poster gradient stops. Colour, so it can be desaturated. */
+    from: z.string(),
+    via: z.string(),
+    to: z.string(),
   }),
 });
 
