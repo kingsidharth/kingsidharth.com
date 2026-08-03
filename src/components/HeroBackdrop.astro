@@ -59,17 +59,39 @@ const maskStyle = [
   '-webkit-mask-composite:source-in',
   'mask-composite:intersect',
 ].join(';');
+
+/* The torch: a second copy of the same artwork, masked to a soft disc
+   that follows the pointer, stacked over the dimmed base. Stacking two
+   images unions them, which is what "reveal" needs — trying to do it as
+   another layer of the base mask would have meant mixing `intersect` and
+   `add` composites in one list, and the whole point of the base mask is
+   that it subtracts.
+ *
+ * Held below full strength on purpose. It has to be able to pass under
+ * the copy without making it unreadable, so it lifts the statue back
+ * toward its unmasked weight rather than all the way to it. */
+const torchLayer =
+  'radial-gradient(9rem 9rem at var(--hero-x,-40rem) var(--hero-y,-40rem),rgb(0 0 0 / 0.5) 0%,rgb(0 0 0 / 0.28) 45%,transparent 76%)';
+
+const torchStyle = [`-webkit-mask-image:${torchLayer}`, `mask-image:${torchLayer}`].join(';');
 ---
 
 <div
   class:list={[
-    'pointer-events-none absolute inset-x-0 top-0 mx-auto max-w-[82rem]',
-    /* Centred and capped so the deity stops growing on a wide monitor.
-       The edges are dissolved rather than cut: a hard vertical boundary
+    'pointer-events-none absolute top-0 left-1/2 -translate-x-1/2',
+    /* Wider than the phone on purpose. A 2:1 image fitted to a 390px
+       viewport is a 195px strip, and a colossal statue rendered 195px
+       tall is not colossal — the scale the whole picture is built on
+       collapses. Overflowing the viewport and letting the sides run off
+       keeps the figure big, which is the only way the human at its feet
+       means anything. */
+    'w-[168%] max-w-none sm:w-full sm:max-w-[82rem]',
+    /* The edges are dissolved rather than cut: a hard vertical boundary
        between artwork and page reads as a mistake. */
     '[mask-image:linear-gradient(90deg,transparent_0%,#000_9%,#000_91%,transparent_100%)]',
     extra,
   ]}
+  data-hero-backdrop
   aria-hidden="true"
 >
   <img
@@ -92,4 +114,76 @@ const maskStyle = [
     style={maskStyle}
     class="w-full dark:hidden"
   />
+
+  <!-- Torch copies. `absolute inset-0` so they sit exactly over the base
+       rather than adding height; the browser serves them from the same
+       decoded image, so this is a second paint, not a second download.
+       With no pointer the disc stays parked off-canvas, so the layer
+       masks out to nothing and costs a hidden image. -->
+  <img
+    src="/art/hero-thangka.svg"
+    alt=""
+    width="1320"
+    height="660"
+    decoding="async"
+    fetchpriority="low"
+    style={torchStyle}
+    class="absolute inset-0 hidden size-full dark:block"
+  />
+  <img
+    src="/art/hero-thangka-light.svg"
+    alt=""
+    width="1320"
+    height="660"
+    decoding="async"
+    fetchpriority="low"
+    style={torchStyle}
+    class="absolute inset-0 size-full dark:hidden"
+  />
 </div>
+
+<script>
+  /* The pointer moves the torch and drifts the whole backdrop a few
+     pixels against it. Both go through custom properties and a single
+     rAF, so a burst of pointermove events costs one style write per
+     frame rather than one per event. */
+  const DRIFT = 9;
+
+  for (const layer of document.querySelectorAll<HTMLElement>('[data-hero-backdrop]')) {
+    const host = layer.parentElement;
+    if (!host || !matchMedia('(hover: hover)').matches) continue;
+
+    const drifts = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let x = 0;
+    let y = 0;
+    let queued = false;
+
+    const paint = () => {
+      queued = false;
+      const box = layer.getBoundingClientRect();
+      layer.style.setProperty('--hero-x', `${x - box.left}px`);
+      layer.style.setProperty('--hero-y', `${y - box.top}px`);
+
+      if (!drifts) return;
+      // Away from the cursor, not toward it: the backdrop reads as
+      // sitting behind the page rather than stuck to the pointer.
+      const dx = (x / window.innerWidth - 0.5) * -2;
+      const dy = (y / window.innerHeight - 0.5) * -2;
+      layer.style.translate = `${(dx * DRIFT).toFixed(1)}px ${(dy * DRIFT).toFixed(1)}px`;
+    };
+
+    host.addEventListener('pointermove', (event: PointerEvent) => {
+      x = event.clientX;
+      y = event.clientY;
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(paint);
+    });
+
+    host.addEventListener('pointerleave', () => {
+      layer.style.setProperty('--hero-x', '-40rem');
+      layer.style.setProperty('--hero-y', '-40rem');
+      layer.style.translate = '0px 0px';
+    });
+  }
+</script>

@@ -49,7 +49,7 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
        gets cut is the bottom edge, where the tiny human stands. That
        figure is the entire reason the image works, so the box is sized
        to it rather than the reverse. -->
-  <div class="relative isolate min-h-[min(50vw,41rem)] overflow-hidden">
+  <div class="relative isolate min-h-[min(84vw,41rem)] overflow-hidden">
     <HeroBackdrop class="-z-20" />
     <AsciiField class="-z-10 opacity-20" />
 
@@ -60,7 +60,7 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
          width and strand it at the next.
 -->
     <section
-      class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-[clamp(6rem,19vw,16rem)]"
+      class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-[clamp(9rem,21vw,16rem)] pb-10 sm:pb-0"
     >
       <div class="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
         <HeroIntro />
