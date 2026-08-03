@@ -30,19 +30,20 @@ const { class: extra = '' } = Astro.props;
    near-black is wrong on cream; a mask removes ink and is correct in
    both themes.
  *
- * Two layers, intersected. A horizontal band alone had to be cut almost
- * to nothing to clear the copy, because the copy sits over the brightest
- * part of the statue — which meant erasing the same band right across
- * the frame, including the parts no text ever touches. The second layer
- * is a soft ellipse over the copy block itself, so the band can stay
- * gentle and the loss stays local to where it buys something.
+ * Two layers, intersected, and the split between them matters more than
+ * it used to. The artwork now reads as stacked tonal plates separated by
+ * pale mist, and those mist bands run straight through the middle of the
+ * frame — exactly where a horizontal scrim would sit. Dimming the whole
+ * band erased the thing that makes the layers legible. So the band does
+ * almost nothing now, and nearly all the work is done by an ellipse over
+ * the copy block itself, where the loss actually buys something.
  *
  * Real spaces, not underscores: the underscore-for-space escape is a
  * Tailwind arbitrary-value convention and means nothing in a plain
  * `style` attribute, where one invalid stop discards the declaration. */
 const maskLayers = [
-  'linear-gradient(to bottom,#000 0%,#000 26%,rgb(0 0 0 / 0.5) 42%,rgb(0 0 0 / 0.5) 72%,#000 86%,#000 96%,transparent 100%)',
-  'radial-gradient(52% 38% at 30% 56%,rgb(0 0 0 / 0.1) 0%,rgb(0 0 0 / 0.45) 55%,#000 100%)',
+  'linear-gradient(to bottom,#000 0%,#000 30%,rgb(0 0 0 / 0.82) 44%,rgb(0 0 0 / 0.82) 70%,#000 84%,#000 97%,transparent 100%)',
+  'radial-gradient(50% 40% at 27% 58%,rgb(0 0 0 / 0.06) 0%,rgb(0 0 0 / 0.38) 52%,#000 100%)',
 ].join(',');
 
 /* `intersect` so the two layers multiply. The default is `add`, which

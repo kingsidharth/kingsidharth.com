@@ -9,10 +9,16 @@
  * gradient laid over a shape describes the frame, not the form; nothing
  * in it says which way a surface turns.
  *
- * So the light moved into the source instead: one hard lamp, broad
- * gradients wrapping each mass, deep shadow on the shade side. Now the
- * ramp is reporting real volume, and the halftone reads as a carved
- * object rather than a stencil.
+ * So the light moved into the source instead. The current one goes
+ * further: depth comes from distinct tonal PLATES — statue, far range,
+ * mist, mid range, mist, foreground ledge — each at its own even value
+ * with a pale gap between. A five-step ramp cannot render a smooth
+ * recession, but it renders plates perfectly, because every plate lands
+ * on its own rung. The mist bands are what make the layers legible.
+ *
+ * 320 columns rather than 260: there is a human on the path down there
+ * at a twentieth of the frame, and its long cast shadow is the thing
+ * that has to survive the reduction.
  *
  *   bun scripts/render-hero.ts
  */
@@ -20,9 +26,27 @@
 const SOURCE = 'art-src/hero-a.png';
 const PREPPED = 'art-src/hero-prepped.png';
 
-/** Matches the 82rem the backdrop is capped to in the layout. */
-const COLS = 260;
-const CELL = 5.1;
+/** Overall width of both renders — the 82rem the backdrop is capped to. */
+const WIDTH = 1320;
+
+/**
+ * The canvas resolution. There is a human on the path down there at a
+ * twentieth of the frame, and their long cast shadow is the thing that
+ * has to survive the reduction.
+ */
+const GRID_COLS = 320;
+
+/**
+ * The SVG resolution, deliberately much coarser.
+ *
+ * The SVGs exist only as the first paint and the no-JS fallback; the
+ * canvas replaces them within a few hundred milliseconds. At 320 columns
+ * they came to 79KB gzipped EACH, and both ship because a hidden image
+ * is still fetched — 158KB to show something that is on screen briefly
+ * or never. At 120 the silhouette and the layer bands still read, which
+ * is all a placeholder has to do.
+ */
+const SVG_COLS = 120;
 
 /**
  * Two inks. An ascii layer is transparent, so unlike the black-ground
@@ -55,10 +79,10 @@ for (const { suffix, ink } of INKS) {
   // dissolves into speckle. Shade blocks hold the mass, and against a
   // modelled source they hold its volume with it.
   await Bun
-    .$`bun scripts/asciify.ts ${PREPPED} -o ${out} --cols ${COLS} --cell ${CELL} --ink ${ink} --bg transparent --ramp shade --no-shape --floor 0.07 --gamma 0.68`.quiet();
+    .$`bun scripts/asciify.ts ${PREPPED} -o ${out} --cols ${SVG_COLS} --cell ${WIDTH / SVG_COLS} --ink ${ink} --bg transparent --ramp shade --no-shape --floor 0.07 --gamma 0.68`.quiet();
 
   const svg = await Bun.file(out).text();
-  console.log(`${out}  ${COLS} cols, ${svg.split('<text').length - 1} glyphs`);
+  console.log(`${out}  ${SVG_COLS} cols, ${svg.split('<text').length - 1} glyphs`);
 }
 
 /* The same grid as tone rather than as glyphs. The SVGs are the static
@@ -66,7 +90,7 @@ for (const { suffix, ink } of INKS) {
    climb the ramp under a cursor if the only thing shipped is the
    character it already landed on. */
 await Bun
-  .$`bun scripts/asciify.ts ${PREPPED} -o static/art/hero-grid.json --cols ${COLS} --cell ${CELL} --bg transparent --ramp shade --no-shape --floor 0.07 --gamma 0.68`.quiet();
+  .$`bun scripts/asciify.ts ${PREPPED} -o static/art/hero-grid.json --cols ${GRID_COLS} --cell ${WIDTH / GRID_COLS} --bg transparent --ramp shade --no-shape --floor 0.07 --gamma 0.68`.quiet();
 
 const grid = (await Bun.file('static/art/hero-grid.json').json()) as {
   cols: number;
