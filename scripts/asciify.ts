@@ -98,6 +98,10 @@ interface Options {
   alt: string;
   invert: boolean;
   shape: boolean;
+  /** Cells below this normalised luminance render blank. */
+  floor: number;
+  /** <1 lifts midtones, >1 crushes them. */
+  gamma: number;
 }
 
 function parseArgs(argv: string[]): Options {
@@ -112,6 +116,8 @@ function parseArgs(argv: string[]): Options {
     alt: 'ASCII rendering',
     invert: false,
     shape: true,
+    floor: 0,
+    gamma: 1,
   };
 
   const rest: string[] = [];
@@ -125,6 +131,8 @@ function parseArgs(argv: string[]): Options {
     else if (a === '--palette') opts.palette = next();
     else if (a === '--bg') opts.bg = next();
     else if (a === '--alt') opts.alt = next();
+    else if (a === '--floor') opts.floor = Number(next());
+    else if (a === '--gamma') opts.gamma = Number(next());
     else if (a === '--invert') opts.invert = true;
     else if (a === '--no-shape') opts.shape = false;
     else if (a === '-h' || a === '--help') {
@@ -132,6 +140,9 @@ function parseArgs(argv: string[]): Options {
         'bun scripts/asciify.ts <image> -o <out.svg|out.html> [--cols n] [--cell n]\n' +
           `  --ramp     ${Object.keys(RAMPS).join(' | ')}\n` +
           `  --palette  ${Object.keys(PALETTES).join(' | ')}\n` +
+          '  --floor n   drop cells darker than n (0-1) to blank — this is what\n' +
+          '              isolates a subject and gives the image depth\n' +
+          '  --gamma n   <1 lifts midtones, >1 crushes them\n' +
           '  --bg <css>  --alt <text>  --invert  --no-shape',
       );
       process.exit(0);
@@ -210,7 +221,10 @@ async function build(o: Options): Promise<string> {
     }
   }
   const span = Math.max(1e-6, hi - lo);
-  const norm = (l: number) => Math.min(1, Math.max(0, (l - lo) / span));
+  const norm = (l: number) => {
+    const n = Math.min(1, Math.max(0, (l - lo) / span));
+    return o.gamma === 1 ? n : Math.pow(n, o.gamma);
+  };
 
   const ramp = [...RAMPS[o.ramp]];
   const palette = PALETTES[o.palette];
@@ -231,6 +245,15 @@ async function build(o: Options): Promise<string> {
       if (o.invert) q = q.map((v) => 1 - v);
 
       const lum = (q[0] + q[1] + q[2] + q[3]) / 4;
+
+      // Everything below the floor drops out entirely. Depth in this
+      // kind of art comes from how much of the frame is empty — without
+      // a floor, a busy background fills every cell with low-value
+      // texture and the subject never separates from it.
+      if (o.floor > 0 && lum < o.floor) {
+        row.push({ ch: ' ', colour: [0, 0, 0] });
+        continue;
+      }
 
       let ch: string;
       if (shapeOk) {
