@@ -6,7 +6,7 @@ interface Props {
 }
 
 const { entry } = Astro.props;
-const { title, url, seed, from, via, to, motif, parts } = entry.data;
+const { title, url, seed, from, via, to, art, parts } = entry.data;
 
 /* Each title is set differently — same ingredients, different recipe —
    so the row does not read as one template filled in twice. Letter
@@ -31,18 +31,22 @@ const lines = layouts[entry.data.id] ?? [{ text: title, cls: 'block text-lg font
  * and blob positions come off the seed, so each cover is its own
  * composition but is identical between builds.
  *
- * The drawing on top is line art rather than a photo: it survives being
- * desaturated, scales to any size, and matches the schematic language
- * the instruments already speak.
+ * The figure on top is the same block-glyph ascii art the banners use,
+ * shipped as one <img> rather than inline: a thousand-odd <text> nodes
+ * per card is what made this row scroll badly the first time.
  */
 const angle = 120 + (seed % 7) * 15;
 const bx = 20 + (seed % 5) * 12;
 const by = 25 + (seed % 3) * 18;
 ---
 
-<a href={url} class="group block focus-visible:outline-none">
+<!-- The aspect ratio lives on the anchor, not the article: as a grid
+     item the anchor is stretched to the row height, and an article
+     sizing itself independently ended up a few pixels taller than the
+     programme cards beside it. -->
+<a href={url} class="group block aspect-[3/4] focus-visible:outline-none">
   <article
-    class="relative flex aspect-[3/4] flex-col overflow-hidden rounded-lg border border-chassis-edge saturate-[0.35] transition-[filter] duration-300 group-hover:saturate-100 group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:saturate-100"
+    class="relative flex size-full flex-col overflow-hidden rounded-lg border border-chassis-edge saturate-[0.55] transition-[filter] duration-300 group-hover:saturate-100 group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:saturate-100"
   >
     <div
       class="absolute inset-0"
@@ -54,63 +58,13 @@ const by = 25 + (seed % 3) * 18;
     >
     </div>
 
-    <!-- Line art. Strokes are white at low alpha so one drawing works on
-         any of the gradients without per-card colour tuning. -->
-    <svg
-      viewBox="0 0 120 96"
-      class="absolute inset-x-0 top-9 mx-auto w-[76%] text-[oklch(0.92_0.14_190)] opacity-90 [filter:drop-shadow(-0.6px_0_0_oklch(0.62_0.22_25/0.5))_drop-shadow(0.6px_0_0_oklch(0.78_0.15_200/0.5))_drop-shadow(0_0_6px_currentColor)]"
-      fill="none"
-      stroke="currentColor"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      aria-hidden="true"
-    >
-      {
-        motif === 'roadmap' ? (
-          <g>
-            {/* A plan: staggered bars, a milestone diamond, a today line */}
-            <g opacity="0.28" stroke-width="1">
-              <path d="M4 12h112M4 32h112M4 52h112M4 72h112" />
-            </g>
-            <g stroke-width="7" opacity="0.9" stroke-linecap="round">
-              <path d="M14 12h34" />
-              <path d="M30 32h46" />
-              <path d="M52 52h40" />
-              <path d="M68 72h34" />
-            </g>
-            <g opacity="0.55" stroke-width="1.5">
-              <path d="M92 4v88" stroke-dasharray="4 4" />
-            </g>
-            <g fill="currentColor" stroke="none" opacity="0.95">
-              <path d="M92 46l6 6-6 6-6-6z" />
-            </g>
-          </g>
-        ) : (
-          <g>
-            {/* An artboard: chrome bar, sidebar, blocks, a cursor */}
-            <rect x="6" y="6" width="108" height="76" rx="4" stroke-width="2" opacity="0.9" />
-            <path d="M6 20h108" stroke-width="2" opacity="0.9" />
-            <g opacity="0.75" stroke-width="2">
-              <circle cx="14" cy="13" r="2" />
-              <circle cx="22" cy="13" r="2" />
-              <circle cx="30" cy="13" r="2" />
-            </g>
-            <path d="M40 20v62" stroke-width="2" opacity="0.55" />
-            <g opacity="0.5" stroke-width="4" stroke-linecap="round">
-              <path d="M14 32h16M14 42h16M14 52h10" />
-            </g>
-            <g opacity="0.8" stroke-width="2">
-              <rect x="50" y="30" width="52" height="20" rx="3" />
-              <rect x="50" y="58" width="24" height="16" rx="3" />
-              <rect x="80" y="58" width="22" height="16" rx="3" />
-            </g>
-            <g fill="currentColor" stroke="none">
-              <path d="M84 44l14 12-6 1 4 8-3 2-4-8-5 4z" opacity="0.95" />
-            </g>
-          </g>
-        )
-      }
-    </svg>
+    <img
+      src={`/art/${art}.svg`}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      class="pointer-events-none absolute inset-0 size-full object-cover"
+    />
 
     <div
       class="absolute inset-0 bg-[repeating-linear-gradient(0deg,rgb(0_0_0/0.13)_0_1px,transparent_1px_3px)]"

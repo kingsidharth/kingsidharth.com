@@ -125,8 +125,8 @@ const collections_ = defineCollection({
     from: z.string(),
     via: z.string(),
     to: z.string(),
-    /** Which drawing sits on the poster. */
-    motif: z.enum(['roadmap', 'artboard']),
+    /** Basename in `static/art` of the ascii artwork on the poster. */
+    art: z.string(),
     parts: z.number().int(),
     /** What sort of thing this is — shared vocabulary with the tools
         and guides it sits beside in the lineup. */
