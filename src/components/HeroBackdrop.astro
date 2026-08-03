@@ -65,7 +65,7 @@ const maskStyle = [
        tall is not colossal — the scale the whole picture is built on
        collapses. Overflowing the viewport keeps the figure big, which is
        the only way the human at its feet means anything. */
-    'w-[168%] max-w-none sm:w-full sm:max-w-[82rem]',
+    'w-[168%] max-w-none sm:w-full sm:max-w-[88rem]',
     /* The edges are dissolved rather than cut: a hard vertical boundary
        between artwork and page reads as a mistake. */
     '[mask-image:linear-gradient(90deg,transparent_0%,#000_9%,#000_91%,transparent_100%)]',
@@ -102,12 +102,24 @@ const maskStyle = [
 
        Sized off the image beside them rather than given their own box,
        so the swap when they go live cannot shift anything. -->
+  <!-- Paint order is DOM order here — none of these carry a z-index —
+       so the back cloud bank sits behind the statue and the front one
+       passes over it. That is the whole trick: without something in
+       front, layered clouds are just a busier sky. -->
+  <canvas
+    data-hero-cloud="back"
+    style={maskStyle}
+    class="absolute inset-0 size-full opacity-0 will-change-transform"></canvas>
   <canvas
     data-hero-canvas="far"
     style={maskStyle}
     class="absolute inset-0 size-full opacity-0 will-change-transform"></canvas>
   <canvas
     data-hero-canvas="near"
+    style={maskStyle}
+    class="absolute inset-0 size-full opacity-0 will-change-transform"></canvas>
+  <canvas
+    data-hero-cloud="front"
     style={maskStyle}
     class="absolute inset-0 size-full opacity-0 will-change-transform"></canvas>
 </div>
@@ -142,6 +154,40 @@ const maskStyle = [
   const FAR_DRIFT = 34;
   const NEAR_DRIFT = -16;
 
+  /**
+   * Cloud banks.
+   *
+   * Two of them, at different speeds, on opposite sides of the statue.
+   * The speed difference IS the parallax — a nearer bank has to cross
+   * the frame faster than a distant one, and without something passing
+   * in FRONT of the subject the whole thing reads as a busier sky rather
+   * than as depth.
+   *
+   * Generated rather than drawn. A cloud is a soft threshold on a noise
+   * field, which is a handful of sines; shipping a painted one would
+   * mean shipping a loop and hoping the seam lands somewhere dark.
+   */
+  interface Bank {
+    /** Rows the bank occupies, as fractions of the grid. */
+    from: number;
+    to: number;
+    /** Cells per second, and the noise scale. */
+    speed: number;
+    scale: number;
+    /** How much of the field survives the threshold. */
+    cut: number;
+    alpha: number;
+  }
+
+  const BANKS: Record<'back' | 'front', Bank> = {
+    back: { from: 0.04, to: 0.48, speed: 1.1, scale: 0.055, cut: 0.52, alpha: 0.6 },
+    front: { from: 0.5, to: 0.9, speed: 3.4, scale: 0.085, cut: 0.62, alpha: 0.82 },
+  };
+
+  /** Birds, on the front bank so they pass over everything. */
+  const FLOCK = 7;
+  const BIRD_GLYPHS = ['v', '^'] as const;
+
   interface Grid {
     cols: number;
     rows: number;
@@ -160,9 +206,11 @@ const maskStyle = [
 
   const far = document.querySelector<HTMLCanvasElement>('canvas[data-hero-canvas="far"]');
   const near = document.querySelector<HTMLCanvasElement>('canvas[data-hero-canvas="near"]');
+  const cloudBack = document.querySelector<HTMLCanvasElement>('canvas[data-hero-cloud="back"]');
+  const cloudFront = document.querySelector<HTMLCanvasElement>('canvas[data-hero-cloud="front"]');
   const host = far?.parentElement?.parentElement;
 
-  if (far && near && host) {
+  if (far && near && cloudBack && cloudFront && host) {
     const reduce = matchMedia('(prefers-reduced-motion: reduce)');
 
     let cols = 0;
@@ -295,6 +343,85 @@ const maskStyle = [
       paint(near, split, rows, x0, y0, x1, y1);
     }
 
+    /**
+     * A cloud field: three sines that share no small common multiple, so
+     * the bank never visibly repeats as it crosses. `t` shifts it along
+     * x, which is the drift.
+     */
+    function cloudAt(x: number, y: number, t: number, bank: Bank): number {
+      const u = (x - t * bank.speed) * bank.scale;
+      const v = y * bank.scale * 2.1;
+      const n =
+        Math.sin(u) * 0.5 +
+        Math.sin(u * 0.47 + v * 1.3) * 0.3 +
+        Math.sin(u * 0.23 - v * 0.7) * 0.2;
+      return (n + 1) / 2;
+    }
+
+    function drawBank(canvas: HTMLCanvasElement, bank: Bank, t: number): void {
+      const ctx = ctxOf(canvas);
+      if (!ctx) return;
+      ctx.clearRect(0, 0, cols * cw, rows * chh);
+
+      const y0 = Math.floor(rows * bank.from);
+      const y1 = Math.ceil(rows * bank.to);
+      const mid = (y0 + y1) / 2;
+      const halfSpan = Math.max(1, (y1 - y0) / 2);
+
+      for (let y = y0; y < y1; y += 1) {
+        // Fade the bank out at its own top and bottom, so it ends in air
+        // rather than against a straight edge.
+        const envelope = 1 - Math.min(1, Math.abs(y - mid) / halfSpan) ** 2;
+        for (let x = 0; x < cols; x += 1) {
+          const d = cloudAt(x, y, t, bank) * envelope;
+          if (d < bank.cut) continue;
+
+          /* Biased up the ramp on purpose. Mapped linearly, a cloud
+             spends nearly all of its range on the faint opening mark and
+             renders as a haze of dots you cannot see — which is right for
+             the empty sky behind the statue and wrong for the thing that
+             is supposed to be drifting across it. */
+          const lit = Math.min(1, 0.34 + ((d - bank.cut) / (1 - bank.cut)) * 0.66);
+          const glyph = cool[Math.min(cool.length - 1, Math.floor(lit * cool.length))];
+          if (!glyph || glyph === ' ') continue;
+
+          ctx.fillStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${(lit * bank.alpha).toFixed(3)})`;
+          ctx.fillText(glyph, x * cw + cw / 2, y * chh + chh / 2);
+        }
+      }
+    }
+
+    /**
+     * Birds, drawn on the front bank so they pass over everything.
+     *
+     * One cell each. At this size a bird is not a shape you can draw —
+     * it is a speck that moves like one, so the work is in the path: a
+     * slow crossing with a lazy vertical wander, and a flap slow enough
+     * to read as wingbeats rather than flicker.
+     */
+    function drawFlock(ctx: CanvasRenderingContext2D, t: number): void {
+      for (let i = 0; i < FLOCK; i += 1) {
+        const phase = i * 1.7;
+        const speed = 2.6 + (i % 3) * 0.9;
+        const span = cols + 24;
+        const x = ((i * 37 + t * speed) % span) - 12;
+        const y = rows * (0.16 + (i % 4) * 0.055) + Math.sin(t * 0.5 + phase) * 2.2;
+        if (x < 0 || x >= cols) continue;
+
+        const glyph = BIRD_GLYPHS[Math.floor(t * 3 + phase) % BIRD_GLYPHS.length];
+        ctx.fillStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},0.62)`;
+        ctx.fillText(glyph, x * cw + cw / 2, y * chh + chh / 2);
+      }
+    }
+
+    function drawClouds(t: number): void {
+      if (cols === 0) return;
+      drawBank(cloudBack, BANKS.back, t);
+      drawBank(cloudFront, BANKS.front, t);
+      const ctx = ctxOf(cloudFront);
+      if (ctx) drawFlock(ctx, t);
+    }
+
     function measure(): boolean {
       const rect = far.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0 || cols === 0) return false;
@@ -303,7 +430,7 @@ const maskStyle = [
       cw = rect.width / cols;
       chh = rect.height / rows;
 
-      for (const canvas of [far, near]) {
+      for (const canvas of [cloudBack, far, near, cloudFront]) {
         canvas.width = Math.round(rect.width * dpr);
         canvas.height = Math.round(rect.height * dpr);
         const ctx = ctxOf(canvas);
@@ -324,6 +451,7 @@ const maskStyle = [
         ctxOf(canvas)?.clearRect(0, 0, cols * cw, rows * chh);
       }
       paintBoth(0, 0, cols - 1, rows - 1);
+      drawClouds(performance.now() / 1000);
     }
 
     function tick(): void {
@@ -389,7 +517,9 @@ const maskStyle = [
         repaintAll();
         // Only now hide the static copy, so a slow grid never leaves the
         // hero empty.
-        for (const canvas of [far, near]) canvas.classList.remove('opacity-0');
+        for (const canvas of [cloudBack, far, near, cloudFront]) {
+          canvas.classList.remove('opacity-0');
+        }
         document.documentElement.classList.add('hero-live');
 
         new ResizeObserver(repaintAll).observe(far);
@@ -420,6 +550,39 @@ const maskStyle = [
           });
         }
 
+        /* The sky loop. Separate from the heat loop above because they
+           answer to different things: heat only runs while it is decaying,
+           clouds run for as long as the hero is on screen. 20fps — these
+           cross the frame over a minute, and nothing about that needs 60.
+
+           Under reduced motion the banks are drawn once and left there:
+           the layering is the picture, the drift is the part someone
+           asked us not to do. */
+        if (reduce.matches) {
+          drawClouds(0);
+        } else {
+          let skyRaf = 0;
+          let lastSky = 0;
+          const sky = (now: number) => {
+            if (now - lastSky > 48) {
+              lastSky = now;
+              drawClouds(now / 1000);
+            }
+            skyRaf = requestAnimationFrame(sky);
+          };
+
+          // Nothing off-screen has any business holding a rAF loop open.
+          new IntersectionObserver((entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting && !skyRaf) skyRaf = requestAnimationFrame(sky);
+              else if (!entry.isIntersecting && skyRaf) {
+                cancelAnimationFrame(skyRaf);
+                skyRaf = 0;
+              }
+            }
+          }).observe(cloudFront);
+        }
+
         /* Parallax. The two plates slide apart as the hero leaves, which
            is the only moment the separation is visible — a still hero has
            no parallax to show. Transform only, so this stays on the
@@ -431,8 +594,13 @@ const maskStyle = [
           scrollRaf = requestAnimationFrame(() => {
             scrollRaf = 0;
             const progress = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
+            // The banks take the drift too, further apart than the
+            // plates they sit between, so the depth order survives the
+            // scroll instead of collapsing halfway down it.
+            cloudBack.style.transform = `translate3d(0,${(progress * FAR_DRIFT * 1.35).toFixed(1)}px,0)`;
             far.style.transform = `translate3d(0,${(progress * FAR_DRIFT).toFixed(1)}px,0)`;
             near.style.transform = `translate3d(0,${(progress * NEAR_DRIFT).toFixed(1)}px,0)`;
+            cloudFront.style.transform = `translate3d(0,${(progress * NEAR_DRIFT * 1.6).toFixed(1)}px,0)`;
           });
         };
         addEventListener('scroll', onScroll, { passive: true });
