@@ -13,7 +13,7 @@ const programmes = [
     // Peeking from behind a wall, then leaning further out with each
     // nudge until it makes off with the goods.
     name: 'Steal the Secret Prompts',
-    art: 'aperture',
+    art: 'hands',
     kind: 'Tool',
     verb: 'Open',
     href: '/prompts',
@@ -33,7 +33,7 @@ const programmes = [
   },
   {
     name: 'Vibe Coding 101',
-    art: 'signal',
+    art: 'skull',
     kind: 'Guide',
     verb: 'Read',
     href: '/guides/vibe-coding/101',
@@ -52,7 +52,7 @@ const programmes = [
   {
     // Sinking deeper with each interaction.
     name: 'Deep AI',
-    art: 'descent',
+    art: 'samurai',
     kind: 'Guide',
     verb: 'Read',
     href: '/guides',
@@ -70,7 +70,7 @@ const programmes = [
   },
   {
     name: 'Freshcast',
-    art: 'broadcast',
+    art: 'dragon',
     kind: 'Tool',
     verb: 'Listen',
     sub: 'AI updates in 5 minutes',
@@ -89,7 +89,7 @@ const programmes = [
   },
   {
     name: 'Fun AI',
-    art: 'spark',
+    art: 'cat',
     kind: 'Tool',
     verb: 'Play',
     href: '/tinkering',
@@ -161,17 +161,7 @@ const { variant = 'panel' } = Astro.props;
           )
         }
 
-        {
-          variant === 'lineup' && (
-            <span
-              class="tab-notch absolute top-2.5 left-2.5 flex items-center gap-1.5 bg-black/55 px-1.5 py-1 font-mono text-[10px] ring-1 ring-white/12 ring-inset"
-              style={`color:${p.ink};`}
-            >
-              <span class="size-[3px] bg-current" aria-hidden="true" />
-              {p.kind}
-            </span>
-          )
-        }
+
 
         <span
           data-face
@@ -206,26 +196,6 @@ const { variant = 'panel' } = Astro.props;
                   {p.name}
                 </span>
               )}
-              {p.sub && (
-                <span
-                  class="mt-1 block font-mono text-[10px] opacity-65"
-                  style={`color:${p.ink};`}
-                >
-                  {p.sub}
-                </span>
-              )}
-              <span
-                class="mt-1.5 flex items-center gap-1.5 font-mono text-2xs opacity-70 transition-opacity group-hover:opacity-100"
-                style={`color:${p.ink};`}
-              >
-                {p.verb}
-                <span
-                  class="transition-transform duration-200 group-hover:translate-x-0.5"
-                  aria-hidden="true"
-                >
-                  →
-                </span>
-              </span>
             </span>
           ) : p.title === 'marquee' ? (
             <span

@@ -59,3 +59,7 @@ Gemfile.lock
 .netlify/
 bun.lockb.bak
 static/fonts
+
+# Source art for the ascii pipeline — generated, large, and only needed
+# to re-render. The SVG output in static/art is what ships.
+art-src/
