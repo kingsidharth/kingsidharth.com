@@ -3,6 +3,13 @@ title: Transformer, Attention, & Engine
 description: A large language model is one machine with one moving part, repeated. Take it apart, look inside, put it back together.
 pubDate: 2026-08-03
 part: 0
+subtitle: A large language model is one machine with one moving part, repeated. Take it apart, look inside, and put it back together.
+benefits:
+  - Say what attention actually does without hand-waving at "it looks at other words"
+  - Know which part of the stack to blame when the output goes wrong
+  - Read a model card and know what the numbers change
+  - Follow a paper past the abstract
+art: transformer-scroll
 navLabel: Overview
 tags: [ai, transformers, attention, llm]
 ---
@@ -47,10 +54,11 @@ apart for you.
           is cut into pieces and each piece is replaced by an integer from a
           fixed vocabulary.
         </p>
-        <pre><code>"the cat sat on"  →  [262, 9388, 3339, 319]</code></pre>
+        <pre><code>"What is the capital of France?"  →  [3923, 318, 262, 3139, 286, 4881, 30]</code></pre>
         <p>
-          Those four integers are the entire input. Everything the model knows
-          about your sentence, it reconstructs from them.
+          Those seven integers are the entire input. Everything the model knows
+          about your sentence, it reconstructs from them. Note <code> the</code> —
+          the leading space is part of the token.
         </p>
         <h3>Tokens are not words</h3>
         <p>
@@ -78,13 +86,13 @@ apart for you.
           The embedding layer is a lookup table with one row per vocabulary
           entry and one column per dimension of the model's internal width —
           <code>d_model</code>, from 768 in small models to 16k+ in large ones.
-          Token id 9388 goes in, row 9388 comes out. The entire operation is
-          indexing — and yet this table is learned, end to end, like
-          everything else.
+          Token id 4881 — <code> France</code> — goes in, row 4881 comes out.
+          The entire operation is indexing — and yet this table is learned, end
+          to end, like everything else.
         </p>
         <p>
           After training, the geometry is not arbitrary: tokens used similarly
-          land near each other. The table is where "cat" first becomes
+          land near each other. The table is where "France" first becomes
           something the machine can compute with. Not a definition of the
           word — a starting position the blocks above will rewrite beyond
           recognition.
@@ -233,7 +241,7 @@ y = h · W↓             # narrow back: 4 × d_model → d_model</code></pre>
           the very same embedding table, used in reverse — producing one logit
           per entry. That's where the logits in the <a href="/guides/sampling/logits-and-softmax">sampling
           guide</a> come from; softmax makes them a distribution, and the
-          sampler picks one token. <code>mat</code>, say.
+          sampler picks one token. <code>Paris</code>, say.
         </p>
         <h3>One token per revolution</h3>
         <p>

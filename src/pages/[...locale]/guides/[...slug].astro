@@ -61,7 +61,14 @@ const sequence = [guide.root, ...guide.chapters];
         title={entry.data.title}
         subtitle={entry.data.subtitle ?? entry.data.description}
         benefits={entry.data.benefits}
-        eyebrow={`${sequence.length} ${t('guides.parts')} · ${formatDate(entry.data.pubDate, locale, { day: undefined })}`}
+        eyebrow={
+          /* A one-part guide is a guide that has not been split, not a
+             guide with one part in it — saying "1 parts" advertises a
+             count nobody asked for and gets the grammar wrong doing it. */
+          sequence.length > 1
+            ? `${sequence.length} ${t('guides.parts')} · ${formatDate(entry.data.pubDate, locale, { day: undefined })}`
+            : formatDate(entry.data.pubDate, locale, { day: undefined })
+        }
         startHref={guide.chapters[0] ? chapterHref(guide.chapters[0]) : undefined}
         chapters={sequence.slice(1).map((chapter) => ({
           href: chapterHref(chapter),

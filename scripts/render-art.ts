@@ -44,12 +44,25 @@ interface Art {
 
 const ART: Art[] = [
   { name: 'secrets', ink: '#d6f6ff', floor: 0.14, gamma: 0.75 },
-  { name: 'skull', ink: '#ffffff', floor: 0.1, gamma: 0.65, cover: true },
+  // Vibe coding. The human arm is the brightest thing here and the
+  // agent hand is a quarter of its brightness, so the ramp gives one of
+  // them a solid bank of glyphs and the other a scatter. That density
+  // gap IS the idea; a low floor is what preserves it, because a high
+  // one would cut the faint hand away entirely and leave one arm
+  // reaching at nothing.
+  { name: 'vibe-touch', ink: '#ffffff', floor: 0.07, gamma: 0.66, cover: true },
   { name: 'sampling', ink: '#e8ecff', floor: 0.12, gamma: 0.72, cover: true },
-  { name: 'transformer', ink: '#dfe9ff', floor: 0.14, gamma: 0.8, cover: true },
-  { name: 'samurai', ink: '#c8ffd8', floor: 0.07, gamma: 0.6 },
+  // Transformers. Figures at each turn of the scroll are a twelfth of
+  // the frame, so they vanish at the resting resolution and appear on
+  // hover — the layers are the obvious thing, the operators inside them
+  // are what you only see when you look closer.
+  { name: 'transformer-scroll', ink: '#dfe9ff', floor: 0.1, gamma: 0.8, cover: true },
+  // Deep AI. The floor matters more than usual: the void has to stay
+  // absolutely empty, because an event horizon rendered with a few stray
+  // glyphs in it is just a dark circle.
+  { name: 'deep-space', ink: '#e6ecff', floor: 0.15, gamma: 0.85 },
+  { name: 'fun-ufo', ink: '#ffe9c4', floor: 0.12, gamma: 0.78 },
   { name: 'freshcast', ink: '#d8ffe4', floor: 0.16, gamma: 0.8 },
-  { name: 'cat', ink: '#ffe9c4', floor: 0.16, gamma: 0.8 },
   { name: 'designers', ink: '#dff2ff', floor: 0.07, gamma: 0.6 },
   // The only one of these where the subject IS the light source: the lit
   // pinboard fills the frame and the figure is the hole in it. Without a
