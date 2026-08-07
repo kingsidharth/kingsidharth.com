@@ -1,0 +1,589 @@
+---
+/**
+ * A parameterised ASCII hero, for comparing artwork concepts.
+ *
+ * NotesHero and JourneyHero each hard-code one scene: their plate list,
+ * palette and framing are baked into the file. That is right for art
+ * that has settled and wrong for choosing between candidates, where the
+ * only useful comparison is the same renderer showing three different
+ * pictures in the same box.
+ *
+ * So everything that differs between concepts is a prop, and the paint
+ * loop below is the one from NotesHero — the tuning in there was
+ * expensive and this is not the place to re-earn it. Deliberately a
+ * SEPARATE file: the shipped heroes keep their own copies rather than
+ * being refactored onto this, because a lab component is going to churn
+ * and the pages people actually read should not churn with it.
+ *
+ * What is new here, and what the lab exists to answer:
+ *
+ *   fit/anchor  Every source so far was drawn 2:1 for a letterbox. The
+ *               candidates are portraits and squares, so the plate has
+ *               to COVER the frame and be cropped, with the crop biased
+ *               toward whatever the picture is actually about.
+ *   drifter     A small plate that travels across the frame on a
+ *               compositor transform — the "tiny boat coming in". It is
+ *               painted once; nothing repaints while it moves.
+ */
+import type { LabDrifter, LabPalette, LabPlate } from '@/lib/art-lab';
+
+interface Props {
+  id: string;
+  plates: LabPlate[];
+  palette: LabPalette;
+  /** `cover` crops to fill the box; `contain` fits the whole picture in
+      and leaves the sides empty. */
+  fit?: 'cover' | 'contain';
+  /** Which part of a cropped plate survives. 0 is the top edge. */
+  anchorY?: number;
+  anchorX?: number;
+  drifter?: LabDrifter;
+  /** Scatter of points over the whole frame, painted once — for the
+      night scenes, where the sky is half the picture. */
+  stars?: boolean;
+  class?: string;
+}
+
+const {
+  id,
+  plates,
+  palette,
+  fit = 'cover',
+  anchorY = 0.5,
+  anchorX = 0.5,
+  drifter,
+  stars = false,
+  class: extra = '',
+} = Astro.props;
+
+const config = JSON.stringify({ id, plates, palette, fit, anchorY, anchorX, drifter, stars });
+
+/* Legibility by masking rather than by scrim: a scrim has to be a colour
+   and the one that works on near-black is wrong on cream. */
+const copyMask =
+  'radial-gradient(54% 44% at 26% 24%,rgb(0 0 0 / 0.2) 0%,rgb(0 0 0 / 0.62) 56%,#000 100%)';
+const vertMask = 'linear-gradient(180deg,transparent 0%,#000 9%,#000 84%,transparent 100%)';
+const edgeMask = 'linear-gradient(90deg,transparent 0%,#000 12%,#000 88%,transparent 100%)';
+
+const layerStyle = [
+  `-webkit-mask-image:${copyMask},${vertMask},${edgeMask}`,
+  `mask-image:${copyMask},${vertMask},${edgeMask}`,
+  '-webkit-mask-composite:source-in',
+  'mask-composite:intersect',
+].join(';');
+---
+
+<div
+  class:list={['pointer-events-none absolute inset-0 overflow-hidden', extra]}
+  data-lab-scene={id}
+  aria-hidden="true"
+>
+  <script type="application/json" data-lab-config set:html={config} />
+
+  {stars && <canvas data-lab-layer="stars" class="absolute inset-0 size-full opacity-0 transition-opacity duration-700"></canvas>}
+
+  {
+    plates.map((_, i) => (
+      <canvas
+        data-lab-layer={`p${i}`}
+        style={layerStyle}
+        class="absolute inset-0 size-full opacity-0 transition-opacity duration-700 will-change-transform"
+      />
+    ))
+  }
+
+  {
+    drifter && (
+      <canvas
+        data-lab-layer="drifter"
+        class="absolute opacity-0 transition-opacity duration-700 will-change-transform"
+      />
+    )
+  }
+
+  <div class="absolute inset-0 bg-[radial-gradient(125%_100%_at_50%_40%,transparent_38%,rgb(0_0_0/0.5)_100%)]"></div>
+</div>
+
+<script>
+  interface Grid {
+    cols: number;
+    rows: number;
+    lum: string;
+  }
+  type RGB = readonly [number, number, number];
+
+  interface Plate {
+    art: string;
+    depth: number;
+    alpha: number;
+    cut: number;
+    par: number;
+    focus?: boolean;
+  }
+  interface Palette {
+    ink: RGB;
+    hot: RGB;
+    lightInk: RGB;
+    lightHot: RGB;
+    famA?: RGB[];
+    famB?: RGB[];
+    famALight?: RGB[];
+    famBLight?: RGB[];
+    mix?: number;
+  }
+  interface Drifter {
+    art: string;
+    size: number;
+    y: number;
+    from: number;
+    to: number;
+    secs: number;
+    ink: RGB;
+    lightInk: RGB;
+  }
+  interface Config {
+    id: string;
+    plates: Plate[];
+    palette: Palette;
+    fit: 'cover' | 'contain';
+    anchorY: number;
+    anchorX: number;
+    drifter?: Drifter;
+    stars: boolean;
+  }
+
+  interface Loaded extends Plate {
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    cols: number;
+    rows: number;
+    lum: Uint8Array;
+  }
+
+  const RAMP = ' ░▒▓█';
+  /** ~11fps. Sixty is a cost with nothing to show for it — see NotesHero. */
+  const FRAME_MS = 90;
+  const GROUPS = 6;
+  const GROUP_PHASE = 2.39996;
+  const DRIFT_X = 0.3;
+  const DRIFT_Y = 0.22;
+  const FOCUS_R = 210;
+  const SHIFT = 34;
+
+  function smoothstep(a: number, b: number, v: number): number {
+    const u = Math.min(1, Math.max(0, (v - a) / (b - a)));
+    return u * u * (3 - 2 * u);
+  }
+
+  function hash01(x: number, y: number): number {
+    return ((((x * 374761393) ^ (y * 668265263)) >>> 0) % 1024) / 1024;
+  }
+
+  /* A smooth field, not a hash of a rectangle. Hashing blocks of cells
+     paints RECTANGLES of flat colour — the grid showing through as
+     colour, which is the opposite of the intent. Three low-frequency
+     sines drift continuously instead, so a subject picks up whatever
+     hue is passing under it and nothing is ever split down an edge. */
+  function field(x: number, y: number, fu: number, fv: number): number {
+    const u = x * fu;
+    const v = y * fv;
+    const n =
+      Math.sin(u) * 0.5 + Math.sin(u * 0.43 + v) * 0.3 + Math.sin(v * 0.71 - u * 0.19) * 0.2;
+    return (n + 1) / 2;
+  }
+
+  function rampPick(pal: readonly RGB[], n: number): RGB {
+    const pos = Math.min(0.9999, Math.max(0, n)) * pal.length;
+    const i = Math.min(pal.length - 1, Math.floor(pos));
+    const a = pal[i] ?? [0, 0, 0];
+    const b = pal[(i + 1) % pal.length] ?? [0, 0, 0];
+    const f = pos - i;
+    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+  }
+
+  async function grid(art: string): Promise<Grid> {
+    const res = await fetch(`/art/${art}-grid.json`);
+    return (await res.json()) as Grid;
+  }
+
+  function decode(g: Grid): Uint8Array {
+    return Uint8Array.from(atob(g.lum), (c) => c.charCodeAt(0));
+  }
+
+  function boot(root: HTMLElement): void {
+    const raw = root.querySelector('[data-lab-config]')?.textContent;
+    if (!raw) return;
+    const cfg = JSON.parse(raw) as Config;
+    const pal = cfg.palette;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+
+    const loaded: Loaded[] = [];
+    let dark = document.documentElement.classList.contains('dark');
+    let px = -1;
+    let py = -1;
+    let drifting = false;
+    let raf = 0;
+
+    /** Which colour family a cell belongs to, and which member of it.
+        From POSITION, never from brightness: the ramp spends tone on
+        light, so a lit edge is bright and a shadow is dark regardless of
+        what the thing is. Position is continuous, so it cannot split a
+        subject in half. */
+    function tint(x: number, y: number): RGB | null {
+      const a = dark ? pal.famA : pal.famALight;
+      const b = dark ? pal.famB : pal.famBLight;
+      if (!a || !b) return null;
+      const ca = rampPick(a, field(x, y, 0.055, 0.083));
+      const cb = rampPick(b, field(x, y, 0.071, 0.11));
+      const w = smoothstep(0.48, 0.7, field(x, y, 0.048, 0.075));
+      return [
+        ca[0] + (cb[0] - ca[0]) * w,
+        ca[1] + (cb[1] - ca[1]) * w,
+        ca[2] + (cb[2] - ca[2]) * w,
+      ];
+    }
+
+    function paint(l: Loaded, t: number): void {
+      const rect = l.canvas.getBoundingClientRect();
+      if (rect.width === 0) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (l.canvas.width !== Math.round(rect.width * dpr)) {
+        l.canvas.width = Math.round(rect.width * dpr);
+        l.canvas.height = Math.round(rect.height * dpr);
+      }
+      l.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      l.ctx.clearRect(0, 0, rect.width, rect.height);
+
+      /* Framing, which is the thing this renderer had to learn.
+         Every source in the project so far was drawn 2:1 and could be
+         fitted by height alone. A portrait fitted by height is a narrow
+         column with the frame empty either side, so the cell size is
+         solved for COVER — big enough on both axes — and the overflow is
+         cropped against the anchor. `contain` is kept for the case where
+         losing the top of the picture loses the picture. */
+      const byH = rect.height / l.rows;
+      const byW = (2 * rect.width) / l.cols;
+      const base = cfg.fit === 'cover' ? Math.max(byH, byW) : Math.min(byH, byW);
+      /* Exponential with depth, because that is how distance maps to
+         apparent size; spread linearly, every plate sits at much the
+         same scale and the depth stops reading. */
+      const chh = base * Math.pow(1.9, l.depth);
+      const cw = chh / 2;
+      const ox = (rect.width - l.cols * cw) * cfg.anchorX;
+      const oy = (rect.height - l.rows * chh) * cfg.anchorY;
+
+      l.ctx.font = `${(chh * 0.98).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+      l.ctx.textAlign = 'center';
+      l.ctx.textBaseline = 'middle';
+
+      const ink = dark ? pal.ink : pal.lightInk;
+      const hot = dark ? pal.hot : pal.lightHot;
+      const mix = pal.mix ?? 0.6;
+
+      const live = !!l.focus && drifting;
+      const attend = !!l.focus && px >= 0;
+      const pxPix = px * rect.width;
+      const pyPix = py * rect.height;
+      const reach2 = FOCUS_R * FOCUS_R;
+
+      const x0 = Math.max(0, Math.floor(-ox / cw));
+      const x1 = Math.min(l.cols - 1, Math.ceil((rect.width - ox) / cw));
+      const y0 = Math.max(0, Math.floor(-oy / chh));
+      const y1 = Math.min(l.rows - 1, Math.ceil((rect.height - oy) / chh));
+
+      for (let y = y0; y <= y1; y += 1) {
+        for (let x = x0; x <= x1; x += 1) {
+          const lit = (l.lum[y * l.cols + x] ?? 0) / 255;
+          if (lit < 0.02) continue;
+
+          let gx = ox + x * cw;
+          let gy = oy + y * chh;
+
+          /* The drift. Six groups, each moving as ONE object — a third
+             of a cell at most. Displacement that varies WITHIN a subject
+             tears it apart; a group sliding whole does not. */
+          let step = 0;
+          if (live) {
+            const ph = Math.floor(field(x, y, 0.034, 0.052) * GROUPS) * GROUP_PHASE;
+            gx += Math.sin(t * 0.5 + ph) * cw * DRIFT_X;
+            gy += Math.cos(t * 0.37 + ph * 1.3) * chh * DRIFT_Y;
+            /* And a per-cell offset up and down the ramp. Stepped in
+               unison this swings a tenth of the plate's ink at once,
+               which reads as the plate breathing; spread out, a group
+               transitions as a dissolve. */
+            step = Math.sin(t * 0.29 + ph * 0.7 + hash01(x, y) * 4.2) * 0.7;
+          }
+
+          if (lit < l.cut + (hash01(x, y) - 0.5) * 0.05) continue;
+
+          const gi = Math.min(RAMP.length - 1, Math.max(0, Math.floor(lit * RAMP.length + step)));
+          const glyph = RAMP[gi];
+          if (!glyph || glyph === ' ') continue;
+
+          let near = 0;
+          if (attend) {
+            const dx = gx + cw / 2 - pxPix;
+            const dy = gy + chh / 2 - pyPix;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < reach2) {
+              const u = 1 - d2 / reach2;
+              near = u * u;
+            }
+          }
+
+          const h = Math.max(0, (lit - 0.55) / 0.45);
+          let r = ink[0] + (hot[0] - ink[0]) * h;
+          let g = ink[1] + (hot[1] - ink[1]) * h;
+          let b = ink[2] + (hot[2] - ink[2]) * h;
+
+          const hue = tint(x, y);
+          if (hue) {
+            /* Attention shows up as SATURATION, not as light. Lifting
+               opacity drives the full-block marks opaque and paints a
+               bright rectangle around the cursor — a selection box, not
+               a glow. Colour has nowhere to blow out to. */
+            const w = Math.min(0.95, mix * (0.45 + lit * 0.55) * (1 + near * 0.6));
+            r += (hue[0] - r) * w;
+            g += (hue[1] - g) * w;
+            b += (hue[2] - b) * w;
+          }
+
+          /* Feather the PLATE's own edges, not the canvas's.
+             The masks on the element fade the frame, which is the right
+             thing for a plate that overflows it. A contained plate stops
+             short of the frame, so its own boundary is a hard cut down
+             the middle of the picture — the drawing ending in a straight
+             line, which reads as a pasted rectangle. Fading by position
+             within the grid catches both cases and costs two
+             smoothsteps. */
+          const fx = Math.min(
+            smoothstep(0, 0.055, x / l.cols),
+            smoothstep(0, 0.055, 1 - x / l.cols),
+          );
+          const fy = Math.min(
+            smoothstep(0, 0.045, y / l.rows),
+            smoothstep(0, 0.045, 1 - y / l.rows),
+          );
+
+          const a = Math.min(1, l.alpha * fx * fy * (0.3 + lit * 1.05) * (1 + near * 0.28));
+          if (a < 0.015) continue;
+          l.ctx.fillStyle = `rgba(${r | 0},${g | 0},${b | 0},${a.toFixed(3)})`;
+          l.ctx.fillText(glyph, gx + cw / 2, gy + chh / 2);
+        }
+      }
+    }
+
+    /* The drifter is its own painter, and much simpler: it fills its own
+       small box, has no depth, no drift and no pointer. It moves by a
+       CSS animation on the element, which the compositor runs on the GPU
+       — so "a tiny boat comes in" costs exactly one transform per frame
+       and no repaints at all. */
+    function paintDrifter(canvas: HTMLCanvasElement, g: Grid, lum: Uint8Array, d: Drifter): void {
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      if (!ctx || rect.width === 0) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, rect.width, rect.height);
+
+      const cw = rect.width / g.cols;
+      const chh = cw * 2;
+      ctx.font = `${(chh * 0.98).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const ink = dark ? d.ink : d.lightInk;
+
+      for (let y = 0; y < g.rows; y += 1) {
+        for (let x = 0; x < g.cols; x += 1) {
+          const lit = (lum[y * g.cols + x] ?? 0) / 255;
+          if (lit < 0.16) continue;
+          const glyph = RAMP[Math.min(RAMP.length - 1, Math.floor(lit * RAMP.length))];
+          if (!glyph || glyph === ' ') continue;
+          ctx.fillStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${Math.min(1, 0.35 + lit).toFixed(2)})`;
+          ctx.fillText(glyph, x * cw + cw / 2, y * chh + chh / 2);
+        }
+      }
+    }
+
+    /* Stars, painted once. A night sky that is genuinely empty reads as
+       a missing layer rather than as night. Deterministic, so it does
+       not reshuffle on every resize. */
+    function paintStars(canvas: HTMLCanvasElement): void {
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      if (!ctx || rect.width === 0) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      ctx.font = '9px ui-monospace, SFMono-Regular, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let i = 0; i < 320; i += 1) {
+        const x = hash01(i, 7) * rect.width;
+        const y = hash01(i, 13) * rect.height * 0.72;
+        const a = 0.12 + hash01(i, 29) * 0.5;
+        ctx.fillStyle = dark ? `rgba(226,232,255,${a})` : `rgba(60,66,92,${a * 0.5})`;
+        ctx.fillText(hash01(i, 41) > 0.75 ? '+' : '·', x, y);
+      }
+    }
+
+    const starCanvas = root.querySelector<HTMLCanvasElement>('[data-lab-layer="stars"]');
+    const driftCanvas = root.querySelector<HTMLCanvasElement>('[data-lab-layer="drifter"]');
+    let driftGrid: { g: Grid; lum: Uint8Array } | null = null;
+
+    void Promise.all([
+      ...cfg.plates.map(async (plate, i) => {
+        const canvas = root.querySelector<HTMLCanvasElement>(`[data-lab-layer="p${i}"]`);
+        const ctx = canvas?.getContext('2d');
+        if (!canvas || !ctx) return;
+        const g = await grid(plate.art);
+        loaded.push({ ...plate, canvas, ctx, cols: g.cols, rows: g.rows, lum: decode(g) });
+      }),
+      (async () => {
+        if (!cfg.drifter || !driftCanvas) return;
+        const g = await grid(cfg.drifter.art);
+        driftGrid = { g, lum: decode(g) };
+      })(),
+    ]).then(() => {
+      const d = cfg.drifter;
+      if (d && driftCanvas && driftGrid) {
+        const ratio = driftGrid.g.rows / (driftGrid.g.cols / 2);
+        driftCanvas.style.width = `${d.size * 100}%`;
+        driftCanvas.style.aspectRatio = `${1 / ratio}`;
+        driftCanvas.style.left = '0';
+        driftCanvas.style.top = `${d.y * 100}%`;
+        driftCanvas.style.setProperty('--from', `${d.from * 100}vw`);
+        driftCanvas.style.setProperty('--to', `${d.to * 100}vw`);
+        /* Asking for less motion must not mean losing the subject.
+           Parking the drifter at `--to` puts it off the far edge, so a
+           reader with reduced motion gets this scene with the one thing
+           that makes it this scene missing — and it is the concept whose
+           whole idea is something arriving. It sits mid-crossing
+           instead: still, but there. */
+        driftCanvas.style.animation = reduce.matches
+          ? 'none'
+          : `lab-drift ${d.secs}s linear infinite`;
+        if (reduce.matches) {
+          const rest = d.from + (d.to - d.from) * 0.45;
+          driftCanvas.style.transform = `translate3d(${rest * 100}vw,0,0)`;
+        }
+        paintDrifter(driftCanvas, driftGrid.g, driftGrid.lum, d);
+        driftCanvas.classList.remove('opacity-0');
+      }
+      if (starCanvas) {
+        paintStars(starCanvas);
+        starCanvas.classList.remove('opacity-0');
+      }
+
+      const now = performance.now() / 1000;
+      for (const l of loaded) {
+        paint(l, now);
+        l.canvas.classList.remove('opacity-0');
+      }
+
+      /* Parallax as a transform, not as a repaint — the plates are
+         painted once and moved by the compositor. And it STAYS where you
+         leave it: springing back on pointer-leave throws the whole scene
+         sideways every time the cursor crosses an edge, which is a
+         bigger movement than any you made on purpose. */
+      let queued = false;
+      let mx = 0;
+      let my = 0;
+      const apply = () => {
+        queued = false;
+        for (const l of loaded) {
+          l.canvas.style.transform = `translate3d(${(-mx * SHIFT * l.par).toFixed(1)}px,${(-my * SHIFT * 0.5 * l.par).toFixed(1)}px,0)`;
+        }
+      };
+
+      const host = root.parentElement ?? root;
+      if (matchMedia('(hover: hover)').matches) {
+        host.addEventListener('pointermove', (e: PointerEvent) => {
+          const r = root.getBoundingClientRect();
+          px = (e.clientX - r.left) / r.width;
+          py = (e.clientY - r.top) / r.height;
+          mx = px - 0.5;
+          my = py - 0.5;
+          if (queued) return;
+          queued = true;
+          requestAnimationFrame(apply);
+        });
+        host.addEventListener('pointerleave', () => {
+          px = -1;
+          py = -1;
+        });
+      }
+
+      const focus = loaded.find((l) => l.focus);
+      let inView = true;
+      let last = 0;
+
+      const tick = (t: number) => {
+        raf = requestAnimationFrame(tick);
+        if (t - last < FRAME_MS) return;
+        last = t;
+        if (focus) paint(focus, t / 1000);
+      };
+      const start = () => {
+        if (raf || !focus || reduce.matches || !inView) return;
+        drifting = true;
+        raf = requestAnimationFrame(tick);
+      };
+      /* No repaint on stop: a plate frozen mid-drift is correct, where
+         snapping every group back onto the grid at once is the most
+         visible movement the plate ever makes. */
+      const stop = () => {
+        if (!raf) return;
+        cancelAnimationFrame(raf);
+        raf = 0;
+        drifting = false;
+      };
+
+      new IntersectionObserver(
+        (entries) => {
+          inView = entries.some((e) => e.isIntersecting);
+          if (inView) start();
+          else stop();
+        },
+        { rootMargin: '80px' },
+      ).observe(root);
+
+      reduce.addEventListener('change', () => (reduce.matches ? stop() : start()));
+      start();
+
+      const repaint = () => {
+        const t = performance.now() / 1000;
+        for (const l of loaded) paint(l, t);
+        if (starCanvas) paintStars(starCanvas);
+        if (d && driftCanvas && driftGrid) paintDrifter(driftCanvas, driftGrid.g, driftGrid.lum, d);
+      };
+
+      new MutationObserver(() => {
+        const next = document.documentElement.classList.contains('dark');
+        if (next === dark) return;
+        dark = next;
+        repaint();
+      }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+      new ResizeObserver(repaint).observe(root);
+    });
+  }
+
+  for (const el of document.querySelectorAll<HTMLElement>('[data-lab-scene]')) boot(el);
+</script>
+
+<style is:global>
+  @keyframes lab-drift {
+    from {
+      transform: translate3d(var(--from), 0, 0);
+    }
+    to {
+      transform: translate3d(var(--to), 0, 0);
+    }
+  }
+</style>

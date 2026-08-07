@@ -1,0 +1,432 @@
+---
+/**
+ * The artwork lab. Temporary, unlisted, and meant to be deleted.
+ *
+ * The notes hero (a flowering jungle with a cat in it) is not landing,
+ * so this page puts candidate replacements through the SAME renderer in
+ * the SAME box, one under the other, at the size they would actually
+ * ship at. Three squares side by side would make the comparison
+ * meaningless — most of what is wrong with a hero is wrong about how it
+ * fills a wide frame.
+ *
+ * The grids behind these are placeholders made from the reference
+ * images, not final art. They exist to answer composition, palette and
+ * motion — whether a dragon reads at all at this cell size, whether a
+ * boat arriving is worth a plate. The real source images still have to
+ * be generated, one layer at a time on black, the way `journey-*` and
+ * `jungle-*` were. See the notes under each scene.
+ */
+import Base from '@/layouts/Base.astro';
+import ArtLabScene from '@/components/ArtLabScene.astro';
+import HeroBackdrop from '@/components/HeroBackdrop.astro';
+import JourneyHero from '@/components/JourneyHero.astro';
+import NotesHero from '@/components/NotesHero.astro';
+import type { LabDrifter, LabPalette } from '@/lib/art-lab';
+
+/* Monochrome, for the ink dragon. The reference is a brush drawing in
+   one colour on white — putting a palette on it would be arguing with
+   the thing that makes it work. */
+const MONO: LabPalette = {
+  ink: [104, 112, 132],
+  hot: [236, 240, 252],
+  lightInk: [152, 157, 168],
+  lightHot: [26, 30, 40],
+};
+
+/* The red dragon: crimson against cold grey, and nothing else. Two
+   families rather than a single hue, so the smoke stays grey while the
+   dragon takes the red — one flat crimson wash over everything loses
+   the drawing's whole structure. */
+const EMBER: LabPalette = {
+  ink: [98, 92, 104],
+  hot: [252, 238, 238],
+  lightInk: [150, 146, 154],
+  lightHot: [28, 26, 32],
+  famA: [
+    [196, 40, 48],
+    [232, 74, 62],
+    [158, 26, 40],
+  ],
+  famB: [
+    [126, 130, 146],
+    [96, 100, 118],
+    [162, 166, 180],
+  ],
+  famALight: [
+    [156, 20, 32],
+    [186, 48, 38],
+    [124, 12, 26],
+  ],
+  famBLight: [
+    [92, 96, 112],
+    [70, 74, 90],
+    [118, 122, 136],
+  ],
+  mix: 0.62,
+};
+
+/* Water: teal and green for the pads, lily colours for the blooms. */
+const LOTUS: LabPalette = {
+  ink: [108, 118, 138],
+  hot: [242, 246, 255],
+  lightInk: [140, 146, 158],
+  lightHot: [44, 50, 62],
+  famA: [
+    [86, 186, 172],
+    [70, 164, 128],
+    [52, 142, 152],
+    [124, 196, 116],
+  ],
+  famB: [
+    [248, 152, 196],
+    [252, 214, 228],
+    [212, 158, 240],
+    [244, 112, 148],
+  ],
+  famALight: [
+    [22, 106, 100],
+    [20, 96, 68],
+    [14, 82, 92],
+    [54, 112, 46],
+  ],
+  famBLight: [
+    [188, 54, 112],
+    [176, 88, 128],
+    [116, 60, 158],
+    [172, 32, 66],
+  ],
+  mix: 0.66,
+};
+
+/* The green-and-gold river. Gold is the light in that painting, so it
+   belongs at the top of the ramp — the family split does the rest. */
+const JADE: LabPalette = {
+  ink: [88, 118, 116],
+  hot: [250, 238, 198],
+  lightInk: [122, 140, 134],
+  lightHot: [30, 44, 40],
+  famA: [
+    [36, 122, 108],
+    [24, 96, 88],
+    [58, 148, 122],
+  ],
+  famB: [
+    [214, 178, 96],
+    [240, 214, 148],
+    [186, 146, 70],
+  ],
+  famALight: [
+    [16, 84, 74],
+    [12, 66, 60],
+    [28, 100, 82],
+  ],
+  famBLight: [
+    [148, 108, 26],
+    [172, 136, 52],
+    [120, 88, 18],
+  ],
+  mix: 0.7,
+};
+
+/* Night, violets, and a cat that is a hole in them. */
+const VIOLET: LabPalette = {
+  ink: [92, 96, 132],
+  hot: [236, 232, 255],
+  lightInk: [138, 140, 164],
+  lightHot: [34, 32, 52],
+  famA: [
+    [128, 112, 226],
+    [96, 88, 192],
+    [156, 136, 240],
+  ],
+  famB: [
+    [226, 214, 255],
+    [186, 164, 248],
+    [250, 244, 255],
+  ],
+  famALight: [
+    [78, 56, 168],
+    [56, 42, 132],
+    [98, 72, 190],
+  ],
+  famBLight: [
+    [120, 96, 200],
+    [92, 72, 170],
+    [142, 118, 214],
+  ],
+  mix: 0.68,
+};
+
+const BOAT: LabDrifter = {
+  art: 'lab-boat',
+  size: 0.075,
+  y: 0.6,
+  from: -0.18,
+  to: 1.05,
+  secs: 90,
+  ink: [236, 240, 250],
+  lightInk: [40, 46, 58],
+};
+---
+
+<Base
+  locale="en"
+  title="Artwork lab"
+  description="Candidate hero artwork, same renderer, same frame."
+  path="lab"
+>
+  <div class="mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter) pt-28 pb-6">
+    <h1 class="pixel-type text-3xl sm:text-4xl">Artwork lab</h1>
+    <p class="text-muted-foreground mt-3 max-w-2xl text-sm">
+      Candidates for the notes hero, all through the same renderer, all at shipping size. The
+      grids are placeholders traced off the reference images — they answer composition, palette
+      and motion, not final quality. Try both themes; the palettes are tuned twice.
+    </p>
+  </div>
+
+  {/* --- What ships today ---------------------------------------------
+       The candidates cannot be judged in isolation: the question is not
+       "is this nice", it is "does this belong on this site, next to the
+       other two heroes".
+
+       These are the REAL components, not re-renders. Rebuilding them
+       through ArtLabScene was the first attempt and it was worse than
+       nothing: guessed plate depths and anchors put the colossus's
+       shoulder in frame instead of its face, so the baseline was a
+       misrepresentation of the thing being compared against. The actual
+       components already know their own framing. They get their real
+       hero heights too — a hero cropped to a strip is not the hero. */}
+  <div class="mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter) pt-8">
+    <h2 class="nameplate border-rule border-b pb-2">Shipping today</h2>
+  </div>
+
+  <section class="mb-8">
+    <header
+      class="relative isolate flex flex-col justify-end overflow-hidden pb-8"
+      style="min-height:max(26rem,68svh)"
+    >
+      <HeroBackdrop class="-z-20" />
+      <div class="relative mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)">
+        <p class="nameplate text-muted-foreground">Home · the colossus</p>
+      </div>
+    </header>
+
+    <header
+      class="relative isolate flex flex-col justify-end overflow-hidden pb-8"
+      style="min-height:max(26rem,68svh)"
+    >
+      <JourneyHero />
+      <div class="relative mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)">
+        <p class="nameplate text-muted-foreground">Guides · the journey</p>
+      </div>
+    </header>
+
+    <header
+      class="relative isolate flex flex-col justify-end overflow-hidden pb-8"
+      style="min-height:max(26rem,68svh)"
+    >
+      <NotesHero />
+      <div class="relative mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)">
+        <p class="nameplate text-muted-foreground">Notes · the valley (the one being replaced)</p>
+      </div>
+    </header>
+
+    <div class="mx-auto max-w-2xl px-(--spacing-gutter) text-sm">
+      <p class="text-muted-foreground">
+        <strong class="text-foreground">Two things this row settles</strong>, and the first is not
+        what it looked like from the home page alone. The house rule is not monochrome — Guides is
+        violet with a pink sun in it. It is <em>one subject, one light source, and a lot of dark
+        around both</em>: a statue against sky, a walker against a horizon. The valley is the only
+        hero with no subject and no empty space, an all-over texture at one distance, and that is
+        why it does not hold. Which sorts the candidates immediately: A and C have a subject
+        against the dark; B · pond is another all-over texture, the same mistake in new colours.
+      </p>
+      <p class="text-muted-foreground mt-2">
+        Second, and it is a problem for concept A: the home page is <em>already</em> a colossal
+        figure with a tiny human beneath it, and Guides is <em>already</em> a lone figure walking
+        toward something vast and glowing. A massive dragon with a tiny human to the side is that
+        same sentence a third time. It is the strongest-looking scene on this page and the one
+        most likely to make the whole site read as one note held too long.
+      </p>
+    </div>
+  </section>
+
+  <div class="mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter) pt-6">
+    <h2 class="nameplate border-rule border-b pb-2">Candidates</h2>
+  </div>
+
+  {/* ------------------------------------------------------------------ */}
+  <section class="mb-4">
+    <header
+      class="relative isolate flex flex-col justify-end overflow-hidden pt-32 pb-12"
+      style="min-height:max(30rem,84svh)"
+    >
+      <ArtLabScene
+        id="a-ink"
+        fit="contain"
+        anchorY={0.42}
+        palette={MONO}
+        plates={[{ art: 'lab-dragon-ink', depth: 0, alpha: 0.92, cut: 0.08, par: 0.6, focus: true }]}
+      />
+      <div class="relative mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)">
+        <p class="nameplate text-muted-foreground">A · ink</p>
+        <h2 class="pixel-type text-3xl sm:text-4xl lg:text-5xl">Notes</h2>
+      </div>
+    </header>
+    <div class="mx-auto max-w-2xl px-(--spacing-gutter) text-sm">
+      <p class="text-muted-foreground">
+        <strong class="text-foreground">Massive dragon, tiny figure.</strong> The whole idea is the
+        scale gap, so the frame is tall and the picture is <em>contained</em> rather than cropped —
+        a portrait forced to fill a letterbox loses either the head or the figure, which is the
+        only two things in it. Empty sides are not a bug here; the reference is mostly empty.
+      </p>
+      <p class="text-muted-foreground mt-2">
+        Real art needs three plates generated separately on black, drawn 3:4 portrait:
+        <code>dragon</code> — the mass, filling one diagonal of the frame, head turned down toward
+        the figure; <code>mist</code> — the wash it dissolves into, so the body has somewhere to
+        end; <code>figure</code> — the human <em>off to one side</em>, not centred beneath it.
+        Both references put the figure dead centre, which reads as a confrontation; to the side it
+        reads as scale. Draw the figure large enough to survive 460 columns — below about 18 cells
+        tall it becomes a smudge and you are left with a dragon alone.
+      </p>
+    </div>
+  </section>
+
+  {/* ------------------------------------------------------------------ */}
+  <section class="mb-4">
+    <header
+      class="relative isolate flex flex-col justify-end overflow-hidden pt-32 pb-12"
+      style="min-height:max(30rem,84svh)"
+    >
+      <ArtLabScene
+        id="a-ember"
+        fit="contain"
+        anchorY={0.46}
+        palette={EMBER}
+        plates={[{ art: 'lab-dragon-red', depth: 0, alpha: 0.92, cut: 0.09, par: 0.6, focus: true }]}
+      />
+      <div class="relative mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)">
+        <p class="nameplate text-muted-foreground">A · ember</p>
+        <h2 class="pixel-type text-3xl sm:text-4xl lg:text-5xl">Notes</h2>
+      </div>
+    </header>
+    <div class="mx-auto max-w-2xl px-(--spacing-gutter) text-sm">
+      <p class="text-muted-foreground">
+        Same composition, one colour added. Crimson is carried by a positional field so the smoke
+        stays grey — a single wash over the whole plate flattens the drawing back out.
+      </p>
+    </div>
+  </section>
+
+  {/* ------------------------------------------------------------------ */}
+  <section class="mb-4">
+    <header
+      class="relative isolate flex flex-col justify-end overflow-hidden pt-32 pb-12"
+      style="min-height:max(26rem,68svh)"
+    >
+      <ArtLabScene
+        id="b-lilies"
+        anchorY={0.58}
+        palette={LOTUS}
+        stars
+        drifter={BOAT}
+        plates={[
+          { art: 'lab-lily-night', depth: 0, alpha: 0.62, cut: 0.1, par: 0.25 },
+          { art: 'lab-pads', depth: 0.34, alpha: 0.44, cut: 0.2, par: 0.9, focus: true },
+        ]}
+      />
+      <div class="relative mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)">
+        <p class="nameplate text-muted-foreground">B · pond</p>
+        <h2 class="pixel-type text-3xl sm:text-4xl lg:text-5xl">Notes</h2>
+      </div>
+    </header>
+    <div class="mx-auto max-w-2xl px-(--spacing-gutter) text-sm">
+      <p class="text-muted-foreground">
+        <strong class="text-foreground">Lilies and pads, then a boat comes in.</strong> The arrival
+        is temporal, not parallax, so the boat is its own plate on a ninety-second crossing — one
+        compositor transform, no repaints. Wait for it, or scrub the page and come back.
+      </p>
+      <p class="text-muted-foreground mt-2">
+        Real art needs: <code>water</code> (the dark surface), <code>pads-far</code> and
+        <code>pads-near</code> (two depths of leaf, each running off both side edges so they tile),
+        <code>blooms</code>, and <code>boat</code> alone on black at 3/4 view. The boat here is
+        lifted from the reference and is the weakest thing on the page.
+      </p>
+    </div>
+  </section>
+
+  {/* ------------------------------------------------------------------ */}
+  <section class="mb-4">
+    <header
+      class="relative isolate flex flex-col justify-end overflow-hidden pt-32 pb-12"
+      style="min-height:max(26rem,68svh)"
+    >
+      <ArtLabScene
+        id="b-river"
+        anchorY={0.5}
+        palette={JADE}
+        drifter={{ ...BOAT, size: 0.055, y: 0.66, secs: 120 }}
+        plates={[
+          { art: 'lab-river', depth: 0, alpha: 0.72, cut: 0.1, par: 0.3, focus: true },
+          { art: 'lab-lotus', depth: 0.62, alpha: 0.16, cut: 0.42, par: 1.5 },
+        ]}
+      />
+      <div class="relative mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)">
+        <p class="nameplate text-muted-foreground">B · river</p>
+        <h2 class="pixel-type text-3xl sm:text-4xl lg:text-5xl">Notes</h2>
+      </div>
+    </header>
+    <div class="mx-auto max-w-2xl px-(--spacing-gutter) text-sm">
+      <p class="text-muted-foreground">
+        The same boat against green and gold instead. A single lotus sits at the front as a near
+        plate, cut back to a scattering — the test of whether a foreground you can see through
+        buys depth or just fog.
+      </p>
+    </div>
+  </section>
+
+  {/* ------------------------------------------------------------------ */}
+  <section class="mb-4">
+    <header
+      class="relative isolate flex flex-col justify-end overflow-hidden pt-32 pb-12"
+      style="min-height:max(26rem,68svh)"
+    >
+      <ArtLabScene
+        id="c-cat"
+        anchorY={0.62}
+        palette={VIOLET}
+        stars
+        plates={[
+          { art: 'lab-cat-field', depth: 0, alpha: 0.78, cut: 0.09, par: 0.35, focus: true },
+        ]}
+      />
+      <div class="relative mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)">
+        <p class="nameplate text-muted-foreground">C · night field</p>
+        <h2 class="pixel-type text-3xl sm:text-4xl lg:text-5xl">Notes</h2>
+      </div>
+    </header>
+    <div class="mx-auto max-w-2xl px-(--spacing-gutter) text-sm">
+      <p class="text-muted-foreground">
+        <strong class="text-foreground">Cat in flowers</strong> — structurally the closest to what
+        ships today, so it has to differ on purpose or it reads as a recolour of the thing being
+        replaced. Two changes: night and violets instead of daylight teal, and the cat is a
+        silhouette you see immediately rather than a secret hidden behind the pointer.
+      </p>
+      <p class="text-muted-foreground mt-2">
+        Real art needs: <code>sky</code> (clouds and stars), <code>field-far</code> /
+        <code>field-near</code> (two depths of bloom, tiling), and <code>cat</code> alone on black,
+        back turned, sitting on the horizon of the flowers.
+      </p>
+    </div>
+  </section>
+
+  <div class="mx-auto max-w-2xl px-(--spacing-gutter) pt-6 pb-20 text-sm">
+    <p class="text-muted-foreground">
+      Placeholder grids are traced from third-party reference images and are not licensed for
+      release — whichever concept wins, its source has to be generated fresh before it ships.
+      This page is a scratch surface: delete <code>src/pages/lab.astro</code>,
+      <code>src/components/ArtLabScene.astro</code> and <code>static/art/lab-*-grid.json</code>
+      when it has done its job.
+    </p>
+  </div>
+</Base>
