@@ -8,6 +8,7 @@
 @import '@fontsource/ibm-plex-mono/500.css';
 @import '@fontsource/ibm-plex-sans-condensed/500.css';
 @import '@fontsource/ibm-plex-sans-condensed/600.css';
+@import '@fontsource/ibm-plex-sans-condensed/700.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -109,6 +110,13 @@
   --screen-bg: oklch(0.965 0.012 88);
   --screen-fg: var(--hue-700);
   --screen-dim: oklch(0.7 0.085 70);
+  /* A second, colourless phosphor. On a panel whose job is to be *read*
+     — a token list, a table of figures — amber-on-amber leaves nothing
+     for a signal to stand out against, because everything is already
+     wearing the accent. These two carry the data; the saturated tokens
+     above are then free to mean something. */
+  --screen-plain: oklch(0.32 0.008 80);
+  --screen-plain-dim: oklch(0.56 0.01 80);
   --screen-glow: 0 0 0 rgb(0 0 0 / 0);
   --screen-scanline: rgb(90 70 40 / 0.05);
   --screen-vignette: rgb(120 96 60 / 0.16);
@@ -164,6 +172,8 @@
   --screen-bg: oklch(0.135 0.01 120);
   --screen-fg: var(--hue-phosphor);
   --screen-dim: oklch(0.53 0.085 72);
+  --screen-plain: oklch(0.965 0.003 90);
+  --screen-plain-dim: oklch(0.7 0.006 85);
   /* The aperture does not glow — only the phosphor text does. A
      bloom on the whole panel reads as a light leak, not a screen. */
   --screen-glow: 0 0 0 rgb(0 0 0 / 0);
@@ -213,6 +223,8 @@
   --color-screen: var(--screen-bg);
   --color-screen-fg: var(--screen-fg);
   --color-screen-dim: var(--screen-dim);
+  --color-screen-plain: var(--screen-plain);
+  --color-screen-plain-dim: var(--screen-plain-dim);
   --color-well: var(--well);
   --color-success: var(--success);
   --color-success-screen: var(--success-screen);
@@ -1134,6 +1146,18 @@
   }
 }
 
+/* The engine's light-mode paper: a faint blueprint dot grid behind the
+   drawing, in the same blue as the machine's light-mode ink. Gone on
+   the dark bench — the grid on near-black reads as noise, not paper. */
+.engine-dots {
+  background-image: radial-gradient(circle, rgb(47 95 208 / 0.16) 1px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+.dark .engine-dots {
+  background-image: none;
+}
+
 /* ══════════════════════════════════════════════════════════════════
    ACCENT PALETTES
 
@@ -1445,99 +1469,151 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   THE CARD RAIL
-   A slow marquee rather than a grid. There are more cards than fit a
-   row, and a grid answers that by either shrinking them all or hiding
-   the overflow; a rail shows every one of them at full size, in turn.
+   THE CARD GRID
+   Was a marquee. A moving rail meant every card was a target that
+   slides away from the cursor, and pausing on hover only papered over
+   that — you still had to catch one first. A grid holds still, shows
+   every card at once, and lets the cards be big enough to look at.
    ══════════════════════════════════════════════════════════════════ */
 
-@keyframes rail-scroll {
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
-/* Two identical passes of the same cards, so -50% lands exactly on the
-   start of the second pass and the loop has no seam to hide. */
-.rail-track {
-  width: max-content;
-  animation: rail-scroll 96s linear infinite;
-}
-
-/* Every card is an anchor, and the descendant selector is deliberate:
-   `Programmes` emits its cards inside a `display: contents` wrapper, so
-   they are flex ITEMS of this track but not DOM children of it. `>` sized
-   the wrapper — which has no box — and left the cards to collapse. */
-/* A step up from the seven-column grid these replaced, not a leap. The
-   3:4 ratio is set on the cards themselves and is not touched here —
-   only the width, and the height follows it. */
-.rail-track a {
-  flex: none;
-  width: 9.5rem;
+.card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 @media (min-width: 640px) {
-  .rail-track a {
-    width: 10.5rem;
+  .card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1024px) {
-  .rail-track a {
-    width: 11.5rem;
+  /* `auto-fill` with a 16rem floor rather than a fixed count: the cards
+     want to be about 256px and the container is fluid, so let the track
+     count fall out of the width instead of guessing it per breakpoint. */
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: 1.25rem;
   }
 }
 
-/* Hover, keyboard focus, and an explicit tap all stop it. `:focus-within`
-   matters more than it looks: without it, tabbing into the rail would
-   walk the focus ring straight off the side of a moving strip. */
-[data-rail]:hover .rail-track,
-[data-rail]:focus-within .rail-track,
-[data-rail][data-paused] .rail-track {
-  animation-play-state: paused;
-}
+/* The resting state. Cards breathe out of phase with each other so the
+   grid reads as alive rather than as one thing animating.
 
-/* The resting state. Cards breathe slightly out of phase with each
-   other so the rail reads as alive rather than as one thing animating;
-   hover then takes over and resolves the card properly. */
+   On the WRAPPER, not on the coarse image. It used to sit on
+   `.art-coarse`, which is also the element the hover crossfade drives —
+   so hovering cancelled a running animation mid-cycle and opacity
+   snapped from wherever it was to 1. That snap was the flicker. Two
+   effects, two elements, no argument. */
 @keyframes card-breathe {
   from {
-    opacity: 0.72;
+    opacity: 0.78;
   }
   to {
     opacity: 1;
   }
 }
 
-/* Period and phase come in per card as custom properties. nth-child
-   cannot do it here — the cards live under two different parents — and
-   without the offset every card in the rail breathes in lockstep, which
-   reads as one animation rather than a row of separate things idling. */
-.rail-track .art-coarse {
+.card-grid .card-art {
   animation: card-breathe var(--breathe-dur, 7s) ease-in-out infinite alternate;
   animation-delay: var(--breathe-delay, 0s);
 }
 
-.rail-track a:hover .art-coarse {
-  animation: none;
+/* Hover settles the breath at full rather than cutting it, so there is
+   nothing to jump from. */
+.card-grid a:hover .card-art,
+.card-grid a:focus-visible .card-art {
+  animation-play-state: paused;
+  opacity: 1;
+  transition: opacity 220ms ease;
+}
+
+/* Brighten the artwork itself. Saturation alone left the sparser cards
+   looking unchanged — a card made of 300 glyphs has little colour to
+   saturate, so it needs luminance instead. */
+.card-grid a .card-art {
+  transition:
+    opacity 220ms ease,
+    filter 260ms ease;
+}
+
+.card-grid a:hover .card-art,
+.card-grid a:focus-visible .card-art {
+  filter: brightness(1.45) contrast(1.06);
+}
+
+/* The ground drifts under the artwork on hover. The gradient is sized
+   larger than the card so there is somewhere to drift TO. */
+.card-ground {
+  background-size: 165% 165%;
+  background-position: 30% 35%;
+  transition: background-position 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.card-grid a:hover .card-ground,
+.card-grid a:focus-visible .card-ground {
+  background-position: 70% 65%;
+}
+
+/* Condensed bold, and bigger than it was.
+ *
+ * The previous set leaned on size alone at a normal width and weight,
+ * and over a busy dithered picture that is not enough contrast to read
+ * against — a title on a card is competing with artwork, not sitting on
+ * paper. Condensed is what makes the size affordable: at 700 it is
+ * heavier AND narrower, so the type gets bolder and larger without the
+ * line running off the card.
+ *
+ * Every line takes the same weight. Size and opacity separate the title
+ * from its qualifier, which is the same rule as before — this raises the
+ * floor rather than adding a second axis back.
+ *
+ * Legibility without a scrim: a shadow mixed from the card's own base
+ * colour, driven dark and saturated. A neutral black shadow greys the
+ * card; this one deepens it. */
+.card-title {
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  text-shadow:
+    0 1px 0 color-mix(in oklch, var(--card-base, black) 45%, black),
+    0 2px 6px color-mix(in oklch, var(--card-base, black) 30%, black);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rail-track {
+  .card-grid .card-art {
     animation: none;
   }
 
-  .rail-track .art-coarse {
-    animation: none;
+  .card-ground {
+    transition: none;
   }
+}
 
-  /* With nothing moving, the duplicate pass is just the same cards
-     twice, and the rail has to be draggable to reach the far end. */
-  .rail-track [data-rail-clone] {
-    display: none;
-  }
+.pixel-type {
+  -webkit-mask-image: repeating-linear-gradient(
+    180deg,
+    #000 0 2px,
+    rgb(0 0 0 / 0.35) 2px 3px
+  );
+  mask-image: repeating-linear-gradient(180deg, #000 0 2px, rgb(0 0 0 / 0.35) 2px 3px);
+}
 
-  [data-rail] {
-    overflow-x: auto;
+/* Below about 14px the slices land inside the strokes and the text just
+   looks broken, so small labels get a finer, gentler screen. */
+.pixel-type-sm {
+  -webkit-mask-image: repeating-linear-gradient(
+    180deg,
+    #000 0 1px,
+    rgb(0 0 0 / 0.55) 1px 2px
+  );
+  mask-image: repeating-linear-gradient(180deg, #000 0 1px, rgb(0 0 0 / 0.55) 1px 2px);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .pixel-type,
+  .pixel-type-sm {
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 }
