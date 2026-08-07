@@ -61,6 +61,35 @@ const guides = defineCollection({
      * cover is the thing you arrive at, not a header on every page.
      */
     art: z.string().optional(),
+    /**
+     * Where the cover's two charges collide, in fractions of the artwork
+     * (not of the plate — the plate crops).
+     *
+     * The cover lights itself from two sources travelling inward from
+     * opposite edges, and this is the seam they meet on. It has to be
+     * authored per drawing because it is a fact about the picture, not
+     * about the layout: on the reaching hands it is the finger gap, and
+     * putting it anywhere else lights the knuckles and leaves the one
+     * charged point in the frame cold. The dwell ring draws here too.
+     */
+    artFocus: z.tuple([z.number().min(0).max(1), z.number().min(0).max(1)]).default([0.5, 0.5]),
+    /**
+     * How the cover idles. One per drawing, because a motion that suits
+     * one of them is arbitrary on the others — the whole reason the
+     * diagonal shimmer had to go.
+     *
+     *   reach    charges collide at the seam, and resting a cursor fills
+     *            a dwell ring there. The two hands, where the gap is the
+     *            subject and waiting for contact is the joke.
+     *   settle   waves fall from the held objects down into the hand.
+     *            The palm and its cubes, where the drawing is about what
+     *            is about to land.
+     *   stream   characters fall through the empty space behind the
+     *            drawing. The spiral, where the subject is a thing
+     *            travelling down through layers in order — so the
+     *            background is the traffic it is travelling in.
+     */
+    artMotion: z.enum(['reach', 'settle', 'stream']).default('reach'),
     /** One line under the title on the cover. Longer than a tagline. */
     subtitle: z.string().optional(),
     /**
@@ -71,6 +100,12 @@ const guides = defineCollection({
      * of a cover anyone reads twice.
      */
     benefits: z.array(z.string()).default([]),
+    /**
+     * Swap the cover's benefits list for the chat exchange — a question
+     * in, an answer out, and the two questions the guide answers. For
+     * guides whose pitch is a conversation, not a checklist.
+     */
+    exchange: z.boolean().default(false),
     instruments: z.array(reference('instruments')).default([]),
   }),
 });

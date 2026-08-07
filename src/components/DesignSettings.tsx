@@ -91,6 +91,7 @@ const TREATMENT_OPTIONS: { value: Treatment; label: string; description: string 
   { value: 'diagonal', label: 'Diagonal', description: 'Cross-hatch, like a pen drawing' },
   { value: 'lines', label: 'Lines', description: 'Vertical rules — barcode, rain' },
   { value: 'diamond', label: 'Diamond', description: 'Faceted, jewel-like cells' },
+  { value: 'cross', label: 'Cross', description: 'Woven screen — ink on both axes' },
   { value: 'disco', label: 'Disco', description: 'Mirror-ball tiles that catch the light' },
 ];
 

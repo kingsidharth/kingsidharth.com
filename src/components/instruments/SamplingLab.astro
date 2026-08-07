@@ -1,0 +1,215 @@
+---
+/**
+ * The sampling bench — four panels in the order the argument needs.
+ *
+ * The progression used to live *inside* the temperature instrument, as
+ * numbered stages that milled sections of one panel open. That put a
+ * table of contents on a machine, and made the machine responsible for
+ * pacing an argument. Here the pacing is the page: each panel is a
+ * whole instrument, the prose between them is the turn, and scrolling
+ * is the only navigation. The reveal that remains — panel 1's
+ * conclusion — is the one that has to be earned, because it is the
+ * only claim that would be spoiled by reading it early.
+ */
+import TemperatureInstrument from './TemperatureInstrument';
+import LogprobsInstrument from './LogprobsInstrument';
+import TokenPickQuiz from './TokenPickQuiz';
+import SamplerInstrument from './SamplerInstrument';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+
+/* Published recommendations, quoted rather than averaged. The whole
+   point of the card is that these differ per model, so smoothing them
+   into one "good default" would argue against itself. */
+const RECOMMENDED = [
+  {
+    model: 'Qwen3 — thinking mode',
+    settings: 'temperature 0.6 · top_p 0.95 · top_k 20 · min_p 0.0 · presence_penalty 0.0',
+  },
+  {
+    model: 'Qwen3 — instruct (non-thinking)',
+    settings: 'temperature 0.7 · top_p 0.8 · top_k 20 · min_p 0.0 · presence_penalty 1.5',
+  },
+  {
+    model: 'Gemma 3',
+    settings: 'temperature 1.0 · top_p 0.95 · top_k 64 · min_p 0.0',
+  },
+  {
+    model: 'DeepSeek-R1',
+    settings: 'temperature 0.6 · top_p 0.95',
+  },
+];
+
+const LIBERTIES = [
+  {
+    took: 'Tokens are shown as whole words.',
+    truth:
+      'They are not. A tokeniser splits text into fragments — "consistency" is likely two or three pieces, and a space usually belongs to the token after it. Words are close enough to think with and wrong enough that you should know.',
+  },
+  {
+    took: 'The logprobs are hypothetical.',
+    truth:
+      'They are hand-authored so the shapes are stable enough to reason about, not read off a live model. The arithmetic acting on them — softmax, greedy, top-k, nucleus, entropy — is the same code path a real sampler runs.',
+  },
+  {
+    took: 'The candidate lists are hand-picked.',
+    truth:
+      'Fifteen tokens each, chosen to make one shape legible. A real distribution has a vocabulary of ~50,000 with a tail so long it dominates the arithmetic — which is the reason truncation exists at all.',
+  },
+  {
+    took: 'One token, not a sentence.',
+    truth:
+      'Everything here decides a single next token. A real completion runs this loop hundreds of times, and each draw changes the prompt for the next one — which is how one unlucky token becomes a whole paragraph going sideways.',
+  },
+];
+---
+
+<div class:list={['flex flex-col gap-16 sm:gap-20', className]}>
+  <!-- ── 1 · the dial that appears to do nothing ─────────────────── -->
+  <section class="flex flex-col gap-6">
+    <header class="flex flex-col gap-3">
+      <p class="nameplate text-primary">01 — The dial</p>
+      <h2 class="my-0 max-w-[24ch] text-2xl sm:text-3xl">Turn it all the way up</h2>
+      <p class="max-w-[58ch] text-muted-foreground">
+        One temperature dial, three prompts, all on screen at once. Take it to 0, then to 2.0, and
+        watch what happens to the three outputs.
+      </p>
+    </header>
+    <TemperatureInstrument client:load />
+  </section>
+
+  <!-- ── 2 · what was underneath ─────────────────────────────────── -->
+  <section class="flex flex-col gap-6">
+    <header class="flex flex-col gap-3">
+      <p class="nameplate text-primary">02 — Underneath</p>
+      <h2 class="my-0 max-w-[26ch] text-2xl sm:text-3xl">
+        The model never picked a word. It scored all of them.
+      </h2>
+      <p class="max-w-[58ch] text-muted-foreground">
+        Here is the same three prompts, unreshaped — the distribution at temperature 1.0, which is
+        what the model was handing over the whole time. Panel one was reading the top row and
+        throwing the rest away.
+      </p>
+    </header>
+    <LogprobsInstrument client:visible />
+  </section>
+
+  <!-- ── 3 · the question ────────────────────────────────────────── -->
+  <section>
+    <TokenPickQuiz client:visible />
+  </section>
+
+  <!-- ── 4 · the sampler ─────────────────────────────────────────── -->
+  <section class="flex flex-col gap-6">
+    <header class="flex flex-col gap-3">
+      <p class="nameplate text-primary">03 — The sampler</p>
+      <h2 class="my-0 max-w-[26ch] text-2xl sm:text-3xl">One pipeline, four switches</h2>
+      <p class="max-w-[58ch] text-muted-foreground">
+        Temperature reshapes the distribution; the filters decide what is left to pick from. Top-K,
+        Top-P and Min-P are not a choice of three — engage any combination and they run in series,
+        each cutting what the last one left. Greedy is the only real alternative, because it never
+        gets as far as a distribution.
+      </p>
+      <p class="max-w-[58ch] text-muted-foreground">
+        Run the maths prompt at greedy, then switch to Top-P and push the heat up: the arithmetic
+        breaks in exactly the way the poem improves.
+      </p>
+    </header>
+    <SamplerInstrument client:visible />
+  </section>
+
+  <!-- ── the local-models note ──────────────────────────────────────
+         Plain content, deliberately. Wrapping a paragraph of advice in
+         a chassis and screws makes it look like another instrument to
+         operate, and the reader starts hunting for the control. There
+         isn't one — this is a thing to read. ───────────────────────── -->
+  <section class="flex flex-col gap-6">
+    <header class="flex flex-col gap-3">
+      <p class="nameplate">Field note</p>
+      <h2 class="my-0 max-w-[30ch] text-balance text-2xl sm:text-3xl">
+        Do you run models locally? Ollama, LM Studio, llama.cpp?
+      </h2>
+    </header>
+
+    <p class="max-w-[62ch] leading-relaxed text-muted-foreground">
+      Then don't set these from taste. A model is post-trained under a particular sampling regime,
+      and the people who trained it publish the one they tested. Running Qwen3 at the defaults
+      your UI shipped with is running a different model than the one on the benchmark chart — and
+      the failure looks like the model being bad rather than the settings being wrong.
+    </p>
+
+    <div class="max-w-[68ch] overflow-x-auto">
+      <table class="w-full border-collapse text-left">
+        <caption class="sr-only">Published sampling recommendations by model</caption>
+        <thead>
+          <tr class="border-b border-rule">
+            <th scope="col" class="nameplate py-2 pr-6 font-normal">Model</th>
+            <th scope="col" class="nameplate py-2 font-normal">Recommended</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            RECOMMENDED.map((row) => (
+              <tr class="border-b border-rule/60 last:border-0">
+                <th scope="row" class="py-3 pr-6 align-top text-[15px] font-medium whitespace-nowrap">
+                  {row.model}
+                </th>
+                <td class="py-3 align-top font-mono text-[13px] leading-relaxed text-muted-foreground">
+                  {row.settings}
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <p class="max-w-[62ch] text-sm leading-relaxed text-muted-foreground">
+      Copied from the model cards, and they move between releases — check the card for the build
+      you actually pulled. Support also varies by runtime: min_p, presence_penalty and
+      repetition_penalty are not implemented identically across llama.cpp, vLLM and Ollama, and
+      some are silently ignored.
+    </p>
+
+    <p class="max-w-[62ch] leading-relaxed text-muted-foreground">
+      Two of these are worth staring at. Qwen3 wants a <strong
+        class="font-semibold text-foreground">different sampler for thinking and for answering</strong
+      > — a tighter nucleus while it reasons, a looser one and a presence penalty while it writes.
+      And Gemma 3 asks for temperature 1.0 with top_k 64, which is a much hotter setting than the
+      0.7 people copy around: it was tuned there, so cooling it "to be safe" moves it off the
+      distribution it was aligned on.
+    </p>
+
+    <p class="max-w-[62ch] leading-relaxed text-muted-foreground">
+      Notice that every row names several at once. That is the normal case — top_k, top_p and
+      min_p are one pipeline, and the panel above runs them the same way.
+    </p>
+  </section>
+
+  <!-- ── liberties ───────────────────────────────────────────────── -->
+  <section class="flex flex-col gap-5">
+    <header class="flex flex-col gap-2">
+      <p class="nameplate">Liberties taken</p>
+      <p class="max-w-[58ch] text-muted-foreground">
+        Four simplifications, made on purpose to keep the panels legible. Each one is a place where
+        the real thing is messier.
+      </p>
+    </header>
+    <dl class="grid gap-x-10 gap-y-6 sm:grid-cols-2">
+      {
+        LIBERTIES.map((item) => (
+          <div class="flex flex-col gap-1.5">
+            <dt class="font-condensed text-[15px] font-semibold text-foreground">{item.took}</dt>
+            <dd class="max-w-[46ch] text-[15px] leading-relaxed text-muted-foreground">
+              {item.truth}
+            </dd>
+          </div>
+        ))
+      }
+    </dl>
+  </section>
+</div>

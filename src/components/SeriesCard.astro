@@ -13,18 +13,29 @@ const { title, url, seed, from, via, to, art, parts } = entry.data;
 /* Each title is set differently — same ingredients, different recipe —
    so the row does not read as one template filled in twice. Letter
    spacing is deliberately absent: every line here is under 24px. */
+/* One axis per line.
+ *
+ * The previous set stacked three at once — size AND weight AND italic —
+ * on lines that were already distinguished by position. Size alone
+ * separates a title from its qualifier; adding weight to that is already
+ * more than the job needs, and adding italic on top is a third answer to
+ * a question nobody asked twice. Weight appears once per card, on the
+ * line that IS the title. Italics are gone.
+ */
 const layouts: Record<string, { text: string; cls: string }[]> = {
   'pm-course-hinglish': [
-    { text: 'PM Course', cls: 'block text-[22px] font-bold leading-none' },
-    { text: 'in Hinglish', cls: 'mt-1 block text-[15px] font-light italic leading-none opacity-90' },
+    { text: 'PM Course', cls: 'block text-[28px] leading-[0.95]' },
+    { text: 'in Hinglish', cls: 'mt-1 block text-[15px] leading-none opacity-70' },
   ],
   'for-designers': [
-    { text: 'For', cls: 'block text-[13px] font-light leading-none opacity-75' },
-    { text: 'UI/UX', cls: 'mt-0.5 block text-[26px] font-extrabold leading-none' },
-    { text: 'Designers', cls: 'mt-0.5 block text-[15px] font-medium leading-none opacity-90' },
+    { text: 'For', cls: 'block text-[14px] leading-none opacity-65' },
+    { text: 'UI/UX', cls: 'mt-0.5 block text-[34px] leading-[0.9]' },
+    { text: 'Designers', cls: 'mt-0.5 block text-[15px] leading-none opacity-70' },
   ],
 };
-const lines = layouts[entry.data.id] ?? [{ text: title, cls: 'block text-lg font-bold leading-tight' }];
+const lines = layouts[entry.data.id] ?? [
+  { text: title, cls: 'block text-[24px] leading-[0.95]' },
+];
 
 /* Portrait, because that is the shape a series cover actually is.
  *
@@ -43,12 +54,12 @@ const ground = posterGround(seed, { from, via, to });
 <a
   href={url}
   class="group block aspect-[3/4] focus-visible:outline-none"
-  style={`--breathe-dur:${7 + (seed % 3) * 2}s; --breathe-delay:-${(seed % 7) * 0.9}s`}
+  style={`--breathe-dur:${7 + (seed % 3) * 2}s; --breathe-delay:-${(seed % 7) * 0.9}s; --card-base:${via}`}
 >
   <article
-    class="grain relative flex size-full flex-col overflow-hidden rounded-lg border border-chassis-edge saturate-[0.55] transition-[filter] duration-300 group-hover:saturate-100 group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:saturate-100"
+    class="grain relative flex size-full flex-col overflow-hidden rounded-lg border border-chassis-edge saturate-[0.6] transition-[filter] duration-300 group-hover:saturate-100 group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:saturate-100"
   >
-    <div class="absolute inset-0" style={`background:${ground};`} aria-hidden="true"></div>
+    <div class="card-ground absolute inset-0" style={`background:${ground};`} aria-hidden="true"></div>
 
     <CardArt name={art} />
 
@@ -67,11 +78,11 @@ const ground = posterGround(seed, { from, via, to });
 
 
     <div class="relative z-10 mt-auto p-3.5">
-      <h3 class="phosphor-type text-[oklch(0.97_0.03_190)]">
+      <h3 class="phosphor-type pixel-type card-title text-[oklch(0.97_0.03_190)]">
         {lines.map((l) => <span class={l.cls}>{l.text}</span>)}
       </h3>
 
-      <p class="mt-1.5 font-mono text-xs text-white/60">{parts} videos</p>
+      <p class="pixel-type-sm mt-1.5 font-mono text-xs text-white/60">{parts} videos</p>
     </div>
   </article>
 </a>

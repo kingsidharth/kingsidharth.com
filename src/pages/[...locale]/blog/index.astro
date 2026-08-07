@@ -1,7 +1,7 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import Base from '@/layouts/Base.astro';
-import SectionHead from '@/components/SectionHead.astro';
+import NotesHero from '@/components/NotesHero.astro';
 import NoteRow from '@/components/NoteRow.astro';
 import { getLocalized } from '@/lib/content';
 import { localeStaticPaths, useTranslations } from '@/lib/i18n';
@@ -31,8 +31,16 @@ const years = [...byYear.entries()].sort((a, b) => b[0] - a[0]);
   description="Findings, not claims. Short notes and essays on building with AI."
   path="blog"
 >
-  <div class="mx-auto max-w-3xl px-(--spacing-gutter) py-14">
-    <SectionHead title={t('notes.title')} as="h1" />
+  <header
+    class="relative isolate flex min-h-[max(24rem,62svh)] flex-col justify-start overflow-hidden pt-32 pb-12"
+  >
+    <NotesHero />
+    <div class="relative mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)">
+      <h1 class="pixel-type text-3xl sm:text-4xl lg:text-5xl">{t('notes.title')}</h1>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-3xl px-(--spacing-gutter) pb-14">
 
     {
       years.length === 0 && (

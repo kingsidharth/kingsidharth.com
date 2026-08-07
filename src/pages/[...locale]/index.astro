@@ -8,7 +8,6 @@ import Lineup from '@/components/Lineup.astro';
 import NoteRow from '@/components/NoteRow.astro';
 import WorkList from '@/components/WorkList.astro';
 import TemperatureInstrument from '@/components/instruments/TemperatureInstrument';
-import { LAST_STAGE } from '@/lib/sampling-stages';
 import GotchaQuiz from '@/components/instruments/GotchaQuiz';
 import HeroIntro from '@/components/HeroIntro.astro';
 import TeachingStats from '@/components/TeachingStats.astro';
@@ -88,14 +87,22 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     <p class="nameplate mb-3 text-primary">One of the teaching tools</p>
     <h2 class="max-w-[24ch] text-2xl sm:text-3xl">Temperature visualiser</h2>
     <p class="mt-4 mb-8 max-w-[58ch] text-muted-foreground">
-      Same knob, three prompts. Turn it up: the poem gets interesting, the arithmetic starts
-      failing. Switch to greedy and the maths is safe at any temperature — but the poem says
-      "star" every time.
+      One dial, three prompts. Take the temperature to zero, then to two, and watch all three
+      outputs refuse to move — then find out why that is the opposite of what everyone tells you
+      temperature does.
     </p>
-    {/* Fully opened. The paragraph above already promises greedy and the
-        three prompts, and the staged version belongs on the guide page
-        where the reader came to be walked through it. */}
-    <TemperatureInstrument startStage={LAST_STAGE} client:idle />
+    {/* The conclusion is suppressed here: this embed is a hook, and the
+        argument it opens is four panels long. It belongs on the sampling
+        bench, which is where the link underneath goes. */}
+    <TemperatureInstrument showConclusion={false} client:idle />
+    <p class="mt-6">
+      <a
+        href={localePath(locale, 'guides/sampling')}
+        class="plaque inline-flex px-3.5 py-2 font-condensed text-[13px] font-semibold text-primary transition-transform hover:brightness-110 active:translate-y-px"
+      >
+        Open the full bench →
+      </a>
+    </p>
   </section>
 
   <script>

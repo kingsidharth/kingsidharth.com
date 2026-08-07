@@ -28,7 +28,10 @@ const programmes = [
     shadow: 'oklch(0.16 0.09 275)',
     labelBg: 'oklch(0.78 0.13 190)',
     labelInk: 'oklch(0.22 0.07 220)',
-    title: 'marquee',
+    lines: [
+      { text: 'Steal the', cls: 'block text-[14px] leading-none opacity-65' },
+      { text: 'Secret Prompts', cls: 'mt-0.5 block text-[25px] leading-[0.95]' },
+    ],
     frames: {
       idle: ['┬┴┬┴┤ω・)', '┬┴┬┴┤・ω・)'],
       l1: '┬┴┬┤ ͡° ͜ʖ ͡°)',
@@ -49,35 +52,16 @@ const programmes = [
     to: 'oklch(0.42 0.16 12)',
     ink: 'oklch(0.98 0 0)',
     shadow: 'oklch(0.19 0.1 340)',
-    title: 'wordmark',
+    lines: [
+      { text: 'Vibe Coding', cls: 'block text-[26px] leading-[0.95]' },
+      { text: '101', cls: 'mt-1 block text-[15px] leading-none opacity-70' },
+    ],
     frames: {
       idle: ['(◑‿◐)'],
       l1: '(◑‿◐)♪',
       l2: '(ノ￣□￣)ノ ~┻━┻',
       l3: '(┛◉Д◉)┛彡┻━┻',
       recover: '┬─┬ノ( º _ ºノ)',
-    },
-  },
-  {
-    // Sinking deeper with each interaction.
-    name: 'Deep AI',
-    art: 'deep-space',
-    kind: 'Guide',
-    verb: 'Read',
-    href: '/guides',
-    seed: 19,
-    from: 'oklch(0.3 0.1 202)',
-    via: 'oklch(0.22 0.07 192)',
-    to: 'oklch(0.36 0.11 162)',
-    ink: 'oklch(0.88 0.19 145)',
-    shadow: 'oklch(0.15 0.07 195)',
-    title: 'extruded',
-    frames: {
-      idle: ['≋ (´⊙ω⊙`) ≋', '≋≋ (´⊙ω⊙`) ≋'],
-      l1: '≋ (っ´⊙ω⊙)っ',
-      l2: '≋ ( ⊙_⊙;) ≋',
-      l3: '≋≋ ( ×_×) ≋≋',
-      recover: '≋ ( ˘ω˘ ) ≋',
     },
   },
   {
@@ -93,35 +77,16 @@ const programmes = [
     to: 'oklch(0.4 0.13 132)',
     ink: 'oklch(0.9 0.17 140)',
     shadow: 'oklch(0.17 0.07 155)',
-    title: 'sprite',
+    lines: [
+      { text: 'Freshcast', cls: 'block text-[26px] leading-[0.95]' },
+      { text: 'AI in five minutes', cls: 'mt-1 block text-[14px] leading-none opacity-70' },
+    ],
     frames: {
       idle: ['( ⌐■_■)🎧', '( ⌐■_■)♫'],
       l1: '(♪ ᐛ )♪',
       l2: '(☞ ᐛ )☞♬',
       l3: '\\(^ᗜ^)/♬♬',
       recover: '( ˘▽˘)っ♨',
-    },
-  },
-  {
-    name: 'Fun AI',
-    art: 'fun-ufo',
-    kind: 'Tool',
-    verb: 'Play',
-    href: '/tinkering',
-    seed: 33,
-    from: 'oklch(0.38 0.14 42)',
-    via: 'oklch(0.27 0.11 28)',
-    to: 'oklch(0.44 0.15 72)',
-    ink: 'oklch(0.92 0.15 85)',
-    shadow: 'oklch(0.2 0.09 45)',
-    title: 'sprite',
-    symbols: '✦ ✧ ★ ☆ ✿ ❀ ♪ ✦ ✧ ★ ☆ ✿ ❀ ♪ ',
-    frames: {
-      idle: ['(ﾐⓛᆽⓛﾐ)✧', '(=^ ◡ ^=)', '(=◉ᆽ◉=)'],
-      l1: '/ᐠ｡ꞈ｡ᐟ\\',
-      l2: '(=^･ω･^=)ﾉ',
-      l3: '＼(=^▽^=)／',
-      recover: '(=˘ᆽ˘=)',
     },
   },
 ];
@@ -148,13 +113,15 @@ const { variant = 'panel' } = Astro.props;
         href={p.href}
         data-face-card
         class:list={[
-          'screen-raised grain group relative flex flex-col gap-3 saturate-[0.55] transition-[filter] duration-300 hover:saturate-100 focus-visible:saturate-100 active:saturate-150',
+          'screen-raised grain group relative flex cursor-pointer flex-col gap-3 saturate-[0.6] transition-[filter] duration-300 hover:saturate-100 focus-visible:saturate-100',
           variant === 'panel'
             ? 'h-full items-center justify-center px-3 py-5'
             : 'aspect-[3/4] items-start justify-between px-4 py-4 text-left',
         ]}
         style={[
-          `background:${posterGround(p.seed, p)}`,
+          /* The base colour the title's shadow is mixed from, so the
+             shadow deepens the card rather than greying it. */
+          `--card-base:${p.via}`,
           `--sprite-shadow:${p.shadow}`,
           /* Period and phase for the resting breath, so the rail reads as
              a row of separate things idling rather than one animation. */
@@ -162,6 +129,14 @@ const { variant = 'panel' } = Astro.props;
           `--breathe-delay:${-(i * 1.7).toFixed(1)}s`,
         ].join(';')}
       >
+        {/* The ground is its own element so it can drift on hover without
+            moving anything else. */}
+        <span
+          class="card-ground pointer-events-none absolute inset-0"
+          style={`background:${posterGround(p.seed, p)}`}
+          aria-hidden="true"
+        />
+
         {variant === 'lineup' && p.art && <CardArt name={p.art} />}
 
         {
@@ -196,56 +171,21 @@ const { variant = 'panel' } = Astro.props;
         }
 
         {
-          variant === 'lineup' ? (
-            /* z-10 clears the grain layer, which paints at z-3 — the
-               artwork should be grainy, the lettering should not. */
-            <span class="relative z-10 mt-auto w-full">
-              {p.labelBg ? (
-                <span
-                  class="label-marquee block w-full rounded-xs py-1"
-                  style={`background:${p.labelBg}; color:${p.labelInk};`}
-                >
-                  <span class="font-mono text-[11px] font-semibold">
-                    {`${p.name}\u00a0\u00a0·\u00a0\u00a0`.repeat(4)}
-                  </span>
-                </span>
-              ) : (
-                <span
-                  class="sprite-text block font-mono text-[13px] font-bold"
-                  style={`color:${p.ink};`}
-                >
-                  {p.name}
-                </span>
-              )}
+          /* One title treatment, not four.
+             There used to be a marquee, a wordmark, an extruded and a
+             sprite variant, which meant five cards in a row answered the
+             question "what is a title here" five different ways — and
+             the marquee band cut a solid stripe straight across its own
+             artwork. Stacked lines, size doing the separating, weight
+             once per card, sliced by the same pixel mask as the picture
+             under it. */
+          <span class="relative z-10 mt-auto w-full">
+            <span class="phosphor-type pixel-type card-title block" style={`color:${p.ink};`}>
+              {p.lines.map((l) => (
+                <span class={l.cls}>{l.text}</span>
+              ))}
             </span>
-          ) : p.title === 'marquee' ? (
-            <span
-              class="label-marquee relative z-10 w-full rounded-sm py-1"
-              style={`background:${p.labelBg}; color:${p.labelInk};`}
-            >
-              <span class="font-mono text-[11px] font-semibold">
-                {`${p.name}\u00a0\u00a0·\u00a0\u00a0`.repeat(4)}
-              </span>
-            </span>
-          ) : p.title === 'extruded' ? (
-            <span
-              class="text-extruded relative z-10 text-center font-mono text-[13px] font-bold"
-              style={`color:${p.ink};`}
-            >
-              {p.name}
-            </span>
-          ) : p.title === 'wordmark' ? (
-            <span
-              class="sprite-text relative z-10 text-center font-mono text-[13px] font-bold"
-              style={`color:${p.ink};`}
-            >
-              {p.name}
-            </span>
-          ) : (
-            <span class="sprite-text relative z-10 text-center font-mono text-[11px]" style={`color:${p.ink};`}>
-              {p.name}
-            </span>
-          )
+          </span>
         }
       </a>
     ))

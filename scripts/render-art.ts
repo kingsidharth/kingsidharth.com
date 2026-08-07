@@ -40,6 +40,24 @@ interface Art {
    * across it, and lets the treatment setting reach it too.
    */
   cover?: boolean;
+  /**
+   * Emit only the tone grid, not the two card SVGs.
+   *
+   * For artwork that exists to be a full-bleed hero and never appears on
+   * a card — there is no point rendering a 3:4 thumbnail of a 2:1
+   * painting nothing will ever show.
+   */
+  gridOnly?: boolean;
+  /**
+   * Override the cover resolution.
+   *
+   * 200 columns is right for a plate a few hundred pixels wide. Stretched
+   * across a full-bleed hero it puts a seven-pixel cell on screen, and
+   * seven-pixel cells cannot carry filament structure — the detail that
+   * made the source worth commissioning turns to mush, which reads as a
+   * blurry image rather than as a coarse one.
+   */
+  coverCols?: number;
 }
 
 const ART: Art[] = [
@@ -57,11 +75,39 @@ const ART: Art[] = [
   // hover — the layers are the obvious thing, the operators inside them
   // are what you only see when you look closer.
   { name: 'transformer-scroll', ink: '#dfe9ff', floor: 0.1, gamma: 0.8, cover: true },
-  // Deep AI. The floor matters more than usual: the void has to stay
-  // absolutely empty, because an event horizon rendered with a few stray
-  // glyphs in it is just a dark circle.
-  { name: 'deep-space', ink: '#e6ecff', floor: 0.15, gamma: 0.85 },
-  { name: 'fun-ufo', ink: '#ffe9c4', floor: 0.12, gamma: 0.78 },
+  /* The notes hero: an endless flowering jungle with a cat in it.
+     Four layers that each run off both side edges so they can tile, and
+     drift at different speeds — which is what makes it endless rather
+     than merely wide. The cat is its own layer so it can be hidden and
+     found without the flowers knowing anything about it. */
+  { name: 'jungle-far', ink: '#ffffff', floor: 0.04, gamma: 0.8, cover: true, gridOnly: true, coverCols: 560 },
+  { name: 'jungle-mid', ink: '#ffffff', floor: 0.05, gamma: 0.8, cover: true, gridOnly: true, coverCols: 480 },
+  { name: 'jungle-near', ink: '#ffffff', floor: 0.06, gamma: 0.8, cover: true, gridOnly: true, coverCols: 420 },
+  { name: 'jungle-alt1', ink: '#ffffff', floor: 0.05, gamma: 0.8, cover: true, gridOnly: true, coverCols: 480 },
+  { name: 'jungle-alt2', ink: '#ffffff', floor: 0.05, gamma: 0.8, cover: true, gridOnly: true, coverCols: 440 },
+  { name: 'jungle-cat', ink: '#ffffff', floor: 0.03, gamma: 0.9, cover: true, gridOnly: true, coverCols: 260 },
+  /* The guides hero, from a supplied painting rather than a generated
+     one — a lone figure on a glowing path walking toward a vast sun.
+     Rendered as one grid for now; see JourneyHero for why layers are
+     still wanted. 16:9 rather than 2:1, so the hero box follows it. */
+  { name: 'guide-portal', ink: '#ffffff', floor: 0.2, gamma: 0.8, cover: true, gridOnly: true, coverCols: 440 },
+  /* The journey, for the guides hero: a traveller on a winding path
+     through engraved dune terrain toward a distant light. Three layers,
+     each generated alone on black so they composite.
+
+     The near layer is the highest-resolution grid in the project. Its
+     contour hatching IS the picture — the dunes are drawn as fine
+     parallel lines following the land — and at anything coarser those
+     lines alias into moire instead of terrain. */
+  { name: 'journey-near', ink: '#ffffff', floor: 0.06, gamma: 0.85, cover: true, gridOnly: true, coverCols: 460 },
+  { name: 'journey-far', ink: '#ffffff', floor: 0.03, gamma: 0.75, cover: true, gridOnly: true, coverCols: 300 },
+  { name: 'journey-light', ink: '#ffffff', floor: 0.02, gamma: 0.9, cover: true, gridOnly: true, coverCols: 180 },
+  /* Fun AI. The cat has to survive the reduction, and at 64 columns its
+     head is about eight cells across — so the things carrying it are the
+     two white eyes and the two ear points, not the fur. A low floor
+     keeps the dome's faint edge, which is what separates the cat from
+     the black behind it. */
+  { name: 'cat-ufo', ink: '#ffe9c4', floor: 0.08, gamma: 0.7 },
   { name: 'freshcast', ink: '#d8ffe4', floor: 0.16, gamma: 0.8 },
   { name: 'designers', ink: '#dff2ff', floor: 0.07, gamma: 0.6 },
   // The only one of these where the subject IS the light source: the lit
@@ -106,14 +152,21 @@ if (only.length && queue.length !== only.length) {
 }
 
 for (const art of queue) {
-  for (const [suffix, res] of [
-    ['', FINE],
-    ['-low', COARSE],
-  ] as const) {
+  for (const [suffix, res] of (art.gridOnly
+    ? []
+    : ([
+        ['', FINE],
+        ['-low', COARSE],
+      ] as const)) as ReadonlyArray<readonly [string, { cols: number; cell: number }]>) {
     await $`bun scripts/asciify.ts art-src/${art.name}.png -o static/art/${art.name}${suffix}.svg --cols ${res.cols} --cell ${res.cell} --ink ${art.ink} --bg transparent --floor ${art.floor} --gamma ${art.gamma}`.quiet();
   }
   if (art.cover) {
-    await $`bun scripts/asciify.ts art-src/${art.name}.png -o static/art/${art.name}-grid.json --cols ${COVER_COLS} --cell ${(FINE.cols * FINE.cell) / COVER_COLS} --bg transparent --ramp shade --no-shape --floor 0.03 --gamma ${art.gamma}`.quiet();
+    const cols = art.coverCols ?? COVER_COLS;
+    await $`bun scripts/asciify.ts art-src/${art.name}.png -o static/art/${art.name}-grid.json --cols ${cols} --cell ${(FINE.cols * FINE.cell) / cols} --bg transparent --ramp shade --no-shape --floor 0.03 --gamma ${art.gamma}`.quiet();
   }
-  console.log(`${art.name}  ${FINE.cols}c + ${COARSE.cols}c${art.cover ? ` + ${COVER_COLS}c grid` : ''}`);
+  console.log(
+    art.gridOnly
+      ? `${art.name}  ${art.coverCols ?? COVER_COLS}c grid only`
+      : `${art.name}  ${FINE.cols}c + ${COARSE.cols}c${art.cover ? ` + ${COVER_COLS}c grid` : ''}`,
+  );
 }

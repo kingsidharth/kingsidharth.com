@@ -1,0 +1,73 @@
+---
+/**
+ * A guide as one of the banner cards from the homepage rail.
+ *
+ * Same shape, same ground, same resolve-on-hover artwork — because a
+ * guide IS one of the things in that rail, and having the index invent
+ * its own card would be the site disagreeing with itself about what a
+ * guide looks like.
+ *
+ * Gradient stops come from a small palette picked by index rather than
+ * from frontmatter. A guide author should not have to choose three
+ * oklch values to publish, and the row only reads as a set if nobody
+ * picks colours freely.
+ */
+import CardArt from '@/components/CardArt.astro';
+import { posterGround } from '@/lib/poster';
+
+interface Props {
+  href: string;
+  title: string;
+  /** Basename in `static/art`. Falls back to a plain card without it. */
+  art?: string;
+  /** "6 parts", or whatever the index wants to stamp on it. */
+  meta?: string;
+  /** Position in the list — drives which palette this card gets. */
+  index?: number;
+}
+
+const { href, title, art, meta, index = 0 } = Astro.props;
+
+const PALETTES = [
+  { seed: 12, from: 'oklch(0.36 0.17 342)', via: 'oklch(0.25 0.13 322)', to: 'oklch(0.42 0.16 12)' },
+  { seed: 19, from: 'oklch(0.3 0.1 202)', via: 'oklch(0.22 0.07 192)', to: 'oklch(0.36 0.11 162)' },
+  { seed: 5, from: 'oklch(0.32 0.13 285)', via: 'oklch(0.24 0.1 262)', to: 'oklch(0.4 0.11 208)' },
+  { seed: 33, from: 'oklch(0.38 0.14 42)', via: 'oklch(0.27 0.11 28)', to: 'oklch(0.44 0.15 72)' },
+  { seed: 26, from: 'oklch(0.33 0.11 158)', via: 'oklch(0.23 0.09 168)', to: 'oklch(0.4 0.13 132)' },
+];
+
+const palette = PALETTES[index % PALETTES.length];
+const ground = posterGround(palette.seed, palette);
+---
+
+<a
+  href={href}
+  class="group screen-raised grain relative flex aspect-[3/4] cursor-pointer flex-col items-start justify-between px-4 py-4 text-left saturate-[0.6] transition-[filter] duration-300 hover:saturate-100 focus-visible:saturate-100"
+  style={[
+    `--card-base:${palette.via}`,
+    `--sprite-shadow:oklch(0.14 0.03 280)`,
+    /* Period and phase for the resting breath, so a row of these reads
+       as separate things idling rather than one animation. */
+    `--breathe-dur:${7 + (index % 3) * 2}s`,
+    `--breathe-delay:-${(index % 5) * 1.4}s`,
+  ].join(';')}
+>
+  <span
+    class="card-ground pointer-events-none absolute inset-0"
+    style={`background:${ground}`}
+    aria-hidden="true"
+  />
+
+  {art && <CardArt name={art} />}
+
+  <span class="relative z-10 mt-auto w-full">
+    {/* Same recipe as the programme and collection cards: size separates
+        the title from its qualifier, weight appears once, and the whole
+        block is sliced by the pixel mask so lettering is made of the
+        same material as the drawing behind it. */}
+    <span class="phosphor-type pixel-type card-title block text-[oklch(0.97_0.02_280)]">
+      <span class="block text-[22px] leading-[0.98]">{title}</span>
+      {meta && <span class="mt-1.5 block text-[14px] leading-none opacity-65">{meta}</span>}
+    </span>
+  </span>
+</a>

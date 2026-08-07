@@ -11,7 +11,7 @@
  * geometric shapes render everywhere, where the prettier half-filled
  * shade variants drop to tofu on a plain Linux stack.
  */
-export type Treatment = 'blocks' | 'diagonal' | 'lines' | 'diamond' | 'disco';
+export type Treatment = 'blocks' | 'diagonal' | 'lines' | 'diamond' | 'cross' | 'disco';
 
 /*
  * Every ramp now opens on a faint mark rather than a shade block.
@@ -28,6 +28,10 @@ export const TREATMENT_RAMPS: Record<Treatment, string> = {
   diagonal: ' ·╱╳▓█',
   lines: ' ·╎│┃█',
   diamond: ' ·◇◈◆',
+  // Crosses. Denser than diagonal at the same coverage because each
+  // glyph puts ink on both axes, which is what makes it read as a woven
+  // screen rather than as hatching.
+  cross: ' ·+✕✖█',
   // Same coverage steps as blocks; what makes it a mirror ball is the
   // specular hit applied per cell in the renderer, not the characters.
   disco: ' ·░▒▓█',

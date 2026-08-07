@@ -3,6 +3,7 @@ import type { GetStaticPaths } from 'astro';
 import { getCollection, render } from 'astro:content';
 import Base from '@/layouts/Base.astro';
 import GuideCover from '@/components/GuideCover.astro';
+import ChatExchange from '@/components/ChatExchange.astro';
 import { chapterNeighbours, getGuides, splitId } from '@/lib/content';
 import { LOCALES, formatDate, localeParam, localePath, useTranslations } from '@/lib/i18n';
 import type { Locale } from '@/lib/i18n';
@@ -43,6 +44,9 @@ const chapterHref = (e: Props['entry']) =>
 
 const isRoot = entry.data.part === 0;
 const sequence = [guide.root, ...guide.chapters];
+/* A one-part guide has no siblings to navigate between — the rail
+   would list the page you are already on and nothing else. */
+const showRail = sequence.length > 1;
 ---
 
 <Base
@@ -58,6 +62,8 @@ const sequence = [guide.root, ...guide.chapters];
     isRoot && entry.data.art && (
       <GuideCover
         art={entry.data.art}
+        artFocus={entry.data.artFocus}
+        artMotion={entry.data.artMotion}
         title={entry.data.title}
         subtitle={entry.data.subtitle ?? entry.data.description}
         benefits={entry.data.benefits}
@@ -75,43 +81,50 @@ const sequence = [guide.root, ...guide.chapters];
           part: chapter.data.part,
           label: chapter.data.navLabel ?? chapter.data.title,
         }))}
-      />
+      >
+        {entry.data.exchange && <ChatExchange slot="exchange" />}
+      </GuideCover>
     )
   }
 
   <div
-    class="mx-auto grid max-w-6xl gap-10 px-(--spacing-gutter) py-14 lg:grid-cols-[15rem_minmax(0,1fr)]"
+    class:list={[
+      'mx-auto grid max-w-6xl gap-10 px-(--spacing-gutter) py-14',
+      showRail && 'lg:grid-cols-[15rem_minmax(0,1fr)]',
+    ]}
   >
     <!-- ── Chapter rail ─────────────────────────────────────── -->
-    <nav class="lg:sticky lg:top-24 lg:self-start" aria-label={t('guides.contents')}>
-      <p class="nameplate mb-3">{t('guides.contents')}</p>
+    {
+      showRail && (
+        <nav class="lg:sticky lg:top-24 lg:self-start" aria-label={t('guides.contents')}>
+          <p class="nameplate mb-3">{t('guides.contents')}</p>
 
-      <ol class="space-y-1.5 border-s border-rule ps-3 font-mono text-xs">
-        {
-          sequence.map((chapter) => {
-            const current = chapter.id === entry.id;
-            return (
-              <li>
-                <a
-                  href={chapterHref(chapter)}
-                  aria-current={current ? 'page' : undefined}
-                  class:list={[
-                    'block transition-colors hover:text-primary',
-                    current ? 'text-primary' : 'text-muted-foreground',
-                  ]}
-                >
-                  <span class="opacity-60">{String(chapter.data.part).padStart(2, '0')}</span>{' '}
-                  {chapter.data.navLabel ?? chapter.data.title}
-                </a>
-              </li>
-            );
-          })
-        }
-      </ol>
-    </nav>
+          <ol class="space-y-1.5 border-s border-rule ps-3 font-mono text-xs">
+            {sequence.map((chapter) => {
+              const current = chapter.id === entry.id;
+              return (
+                <li>
+                  <a
+                    href={chapterHref(chapter)}
+                    aria-current={current ? 'page' : undefined}
+                    class:list={[
+                      'block transition-colors hover:text-primary',
+                      current ? 'text-primary' : 'text-muted-foreground',
+                    ]}
+                  >
+                    <span class="opacity-60">{String(chapter.data.part).padStart(2, '0')}</span>{' '}
+                    {chapter.data.navLabel ?? chapter.data.title}
+                  </a>
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+      )
+    }
 
     <!-- ── Chapter body ─────────────────────────────────────── -->
-    <article class="min-w-0">
+    <article class:list={['min-w-0', !showRail && 'mx-auto w-full max-w-3xl']}>
       {
         /* Chapters keep the plain header. A guide's ROOT has its cover
            above this whole layout, full-bleed, so nothing here. */

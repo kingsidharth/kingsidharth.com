@@ -1,0 +1,95 @@
+---
+/**
+ * The cover exchange: one question in, one answer out, then the two
+ * questions this guide exists to answer. Bubbles rise and settle in
+ * turn on entry; reduced motion shows them settled.
+ *
+ * Blueprint inks rather than the accent setting — cyan is the human,
+ * blue the machine, same as the drawing beside it and the engine below.
+ */
+---
+
+<div class="mt-8 flex max-w-[56ch] flex-col items-start gap-3">
+  <p class="ex ex-user" style="--d:0.2s">What is the capital of France?</p>
+  <p class="ex ex-model" style="--d:1s">Paris</p>
+  <p class="ex ex-q ex-q-first" style="--d:2.1s">How did it answer?</p>
+  <p class="ex ex-q" style="--d:2.6s">How did it understand what we mean?</p>
+</div>
+
+<style>
+  .ex {
+    width: fit-content;
+    margin: 0;
+    animation: ex-rise 0.65s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+    animation-delay: var(--d, 0s);
+  }
+
+  .ex-user {
+    align-self: flex-end;
+    padding: 0.55rem 0.95rem;
+    border: 1px solid color-mix(in oklab, #3d8fc4 55%, transparent);
+    border-radius: 1rem 1rem 0.2rem;
+    background: color-mix(in oklab, #3d8fc4 10%, transparent);
+    color: #2a6f9d;
+    font-size: 0.9rem;
+  }
+
+  :global(.dark) .ex-user {
+    border-color: color-mix(in oklab, #79d2f2 45%, transparent);
+    background: color-mix(in oklab, #79d2f2 9%, transparent);
+    color: #79d2f2;
+  }
+
+  .ex-model {
+    padding: 0.55rem 0.95rem;
+    border: 1px solid color-mix(in oklab, #4d84e6 55%, transparent);
+    border-radius: 1rem 1rem 1rem 0.2rem;
+    background: color-mix(in oklab, #4d84e6 10%, transparent);
+    color: #3a63b8;
+    font-size: 0.9rem;
+  }
+
+  :global(.dark) .ex-model {
+    border-color: color-mix(in oklab, #a3c2ff 45%, transparent);
+    background: color-mix(in oklab, #a3c2ff 9%, transparent);
+    color: #a3c2ff;
+  }
+
+  .ex-q {
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  .ex-q-first {
+    margin-top: 1.25rem;
+  }
+
+  .ex-q::before {
+    content: '→  ';
+    color: #4d84e6;
+  }
+
+  :global(.dark) .ex-q::before {
+    color: #a3c2ff;
+  }
+
+  @keyframes ex-rise {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ex {
+      animation: none;
+    }
+  }
+</style>

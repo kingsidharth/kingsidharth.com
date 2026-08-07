@@ -11,76 +11,21 @@ const { series } = Astro.props;
 ---
 
 <!--
-  The programme banners and the video collections in one rail,
-  interleaved rather than segregated. They are the same kind of offer —
-  a thing to go and watch or read — so splitting them into two grids
-  made the page argue with itself.
+  Programmes and video collections in one grid, interleaved rather than
+  segregated. They are the same kind of offer — a thing to go and watch
+  or read — so splitting them into two grids made the page argue with
+  itself.
 
-  A moving rail rather than a grid. There are more cards than fit a row
-  at a size worth looking at, and a grid answers that by shrinking every
-  card or clipping the overflow. A rail shows all of them at full size,
-  in turn, and stops the moment you reach for one.
+  A grid, not the marquee this used to be. A moving rail made every card
+  a target that slides away from the cursor; pausing on hover only
+  papered over that, because you still had to catch one first. Holding
+  still also lets the cards be big enough to look at.
 
-  The whole set is rendered twice. The animation translates the track by
-  exactly -50%, which lands on the start of the second pass, so the loop
-  has no seam to disguise. The second pass is hidden from assistive tech
-  and from the tab order — visually it is the same rail continuing, but
-  as content it is a duplicate of every link on it.
-
-  Programmes renders with `variant="lineup"`, which drops its own grid
-  and emits bare portrait cards through `display: contents`, so both card
-  types land as direct children of the track and take its sizing.
+  Programmes renders with `variant="lineup"`, which drops its own
+  container and emits bare portrait cards through `display: contents`, so
+  both card types land as direct children here and share its tracks.
 -->
-<div data-rail class="group/rail relative -mx-(--spacing-gutter) overflow-hidden">
-  <div class="rail-track flex gap-4 px-(--spacing-gutter)">
-    <Programmes variant="lineup" />
-    {series.map((entry) => <SeriesCard entry={entry} />)}
-
-    <div class="contents" data-rail-clone aria-hidden="true" inert>
-      <Programmes variant="lineup" />
-      {series.map((entry) => <SeriesCard entry={entry} />)}
-    </div>
-  </div>
-
-  <!-- The rail runs edge to edge, so its ends are cut by the viewport
-       rather than finished. Fading them says "this continues" instead of
-       "this is broken". -->
-  <div
-    class="pointer-events-none absolute inset-y-0 left-0 w-(--spacing-gutter) bg-linear-to-r from-background to-transparent"
-    aria-hidden="true"
-  >
-  </div>
-  <div
-    class="pointer-events-none absolute inset-y-0 right-0 w-(--spacing-gutter) bg-linear-to-l from-background to-transparent"
-    aria-hidden="true"
-  >
-  </div>
+<div class="card-grid">
+  <Programmes variant="lineup" />
+  {series.map((entry) => <SeriesCard entry={entry} />)}
 </div>
-
-<script>
-  /* Tap to pause, tap again to resume.
-   *
-   * Hover already pauses in CSS, but a touch screen has no hover: the
-   * `:hover` rule either never fires or sticks after the finger lifts,
-   * depending on the browser. An explicit toggle is the only thing that
-   * behaves the same on both.
-   *
-   * `pointerdown` rather than `click`, so it pauses on contact rather
-   * than after the tap resolves — otherwise the card you were aiming at
-   * has already moved.
-   */
-  for (const rail of document.querySelectorAll<HTMLElement>('[data-rail]')) {
-    rail.addEventListener('pointerdown', (event: PointerEvent) => {
-      if (event.pointerType === 'mouse') return;
-      rail.toggleAttribute('data-paused');
-    });
-
-    // A tap anywhere else lets it go again, so a paused rail is never
-    // something you have to find your way back to.
-    document.addEventListener('pointerdown', (event: PointerEvent) => {
-      if (event.pointerType === 'mouse') return;
-      if (rail.contains(event.target as Node)) return;
-      rail.removeAttribute('data-paused');
-    });
-  }
-</script>

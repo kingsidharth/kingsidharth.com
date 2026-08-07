@@ -1,15 +1,5 @@
 [
   {
-    "id": "temperature-visualiser",
-    "name": "Temperature visualiser",
-    "blurb": "Three prompts, one knob. Arithmetic breaks as poetry gets interesting.",
-    "status": "live",
-    "version": "0.9",
-    "screen": "distribution",
-    "href": "/tinkering/temperature-visualiser",
-    "figure": 1
-  },
-  {
     "id": "agents-md-generator",
     "name": "AGENTS.md generator",
     "blurb": "Reads the repo, asks four questions, writes the file your agent actually obeys.",

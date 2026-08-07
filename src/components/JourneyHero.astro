@@ -1,0 +1,390 @@
+---
+/**
+ * The guides hero: a traveller on a winding path through engraved dune
+ * terrain, walking toward a distant light.
+ *
+ * This replaced a black hole, and the swap was the right call for a
+ * reason worth recording. A black hole is a hole — a thing that takes
+ * you apart and lets nothing back out. A guide is the opposite promise.
+ * The picture and the page were arguing, and no amount of tuning the
+ * picture was going to settle it.
+ *
+ * It is also a subject this renderer is unusually good at. The dunes are
+ * drawn as fine parallel contour lines following the land, which is
+ * already line work at the scale a glyph grid can carry — where a nebula
+ * asked the pipeline to render soft volume, which is the thing it cannot
+ * do.
+ *
+ * Three layers, each generated alone on black so they composite:
+ *
+ *   light  a soft glow on the horizon, coarsest grain, warm
+ *   far    distant ridgelines, fine grain, cool and faint
+ *   near   the dunes, the path and the figure — finest grain of anything
+ *          in the project, because the contour hatching IS the picture
+ *
+ * Nothing drifts. Terrain does not blow past you, and a moving landscape
+ * would read as a camera rather than as a place. What moves instead is
+ * light: a slow band travelling down the frame, so illumination comes
+ * along the path toward the viewer. That is the one motion the subject
+ * actually supports, and it happens to be the right metaphor.
+ *
+ * The pointer interaction is kept from the version before — it was the
+ * part that worked.
+ */
+interface Props {
+  class?: string;
+}
+
+const { class: extra = '' } = Astro.props;
+
+/* Legibility comes from masking, not from a scrim: a scrim has to be a
+   colour and the one that works on near-black is wrong on cream. The
+   ellipse sits over the copy block in the lower left. */
+const copyMask =
+  'radial-gradient(52% 40% at 26% 22%,rgb(0 0 0 / 0.2) 0%,rgb(0 0 0 / 0.6) 56%,#000 100%)';
+/* Fades on all four sides. Left and right alone left a hard horizontal
+   cut where the artwork stopped — the homepage hero dissolves on every
+   edge and this has to as well, or the sky reads as a pasted rectangle. */
+const edgeMask =
+  'linear-gradient(90deg,transparent 0%,#000 16%,#000 84%,transparent 100%)';
+const vertMask = 'linear-gradient(180deg,transparent 0%,#000 8%,#000 78%,transparent 100%)';
+
+const layerStyle = [
+  `-webkit-mask-image:${copyMask},${edgeMask},${vertMask}`,
+  `mask-image:${copyMask},${edgeMask},${vertMask}`,
+  '-webkit-mask-composite:source-in',
+  'mask-composite:intersect',
+].join(';');
+---
+
+<div
+  class:list={['pointer-events-none absolute inset-0 overflow-hidden', extra]}
+  aria-hidden="true"
+>
+  {/* Paint order is DOM order — no z-index on any of them — so the far
+      bank sits behind the hole and the near bank passes in front of it. */}
+  <canvas data-space="scene" style={layerStyle} class="absolute inset-0 size-full opacity-0 transition-opacity duration-[900ms]"></canvas>
+
+  {/* No colour overlay here, deliberately. A screen blend has to blend
+      with SOMETHING, and inside a full-bleed hero that something is the
+      page background — so it lifted the empty black and the hero became
+      a blue rectangle with a visible edge. The blue hour lives in the
+      layer inks instead, where it only touches drawn cells. */}
+  <div
+    class="absolute inset-0 bg-[radial-gradient(120%_95%_at_50%_46%,transparent_40%,rgb(0_0_0/0.6)_100%)]"
+  >
+  </div>
+</div>
+
+<script>
+  interface Grid {
+    cols: number;
+    rows: number;
+    lum: string;
+  }
+
+  interface Layer {
+    /** Grid basename in `static/art`. */
+    art: string;
+    /** Glyph set. Grain is the whole point — see the component note. */
+    ramp: string;
+    ink: readonly [number, number, number];
+    /** Highlight the brightest cells travel toward. */
+    hot: readonly [number, number, number];
+    /** The same pair for light mode, where the ramp runs the other way. */
+    lightInk: readonly [number, number, number];
+    lightHot: readonly [number, number, number];
+    alpha: number;
+    /** Cells per second. 0 pins the layer in place. */
+    speed: number;
+    /** Starting position along the loop, as a fraction of it. */
+    phase: number;
+    /** Vertical placement, as a fraction of the frame. */
+    top: number;
+    /** Height, as a fraction of the frame. */
+    height: number;
+    /** Cells below this are dropped. */
+    cut: number;
+  }
+
+  const LAYERS: Record<string, Layer> = {
+    /* One layer, from a supplied painting.
+     *
+     * It is a better picture than anything the three generated layers
+     * added up to, so it goes in as-is rather than waiting. What it
+     * cannot do yet is move in parts: the sun cannot breathe on its own,
+     * the rings cannot turn, and light cannot travel along the path
+     * independently of the ground it crosses — all of which need the
+     * scene split into separate images. Until then the whole frame takes
+     * one slow pulse and the pointer.
+     *
+     * Tone does the colour work. The painting is warm in the sky and
+     * cold on the ground, and the ramp maps that straight onto the
+     * palette: the accent lives where the sun is, the contrast hue where
+     * the terrain is, which is the rationing rule the rest of the site
+     * follows anyway.
+     */
+    scene: {
+      art: 'guide-portal',
+      phase: 0,
+      ramp: ' ·░▒▓█',
+      /* The sphere takes the accent. The painting's own sun is orange,
+         which is nobody's colour here — mapping it onto the pink the
+         rest of the site already uses is what makes the hero belong to
+         the page rather than sit on it. Cold blue holds the ground, so
+         the two hues are doing distance as well as identity. */
+      ink: [78, 104, 142],
+      hot: [252, 138, 190],
+      lightInk: [148, 158, 178],
+      lightHot: [198, 62, 122],
+      alpha: 1,
+      speed: 0,
+      top: 0,
+      height: 1,
+      /* High, and it has to be. The grid export deliberately bakes
+         almost no floor so the renderer can cut with a jitter — which
+         means for a painting with a lot of dark-but-not-black ground,
+         96% of cells arrive above the threshold and the whole frame
+         fills in. The night has to be cut back here or there is no night. */
+      cut: 0.22,
+    },
+  };
+
+  const root = document.querySelector<HTMLElement>('[data-space="scene"]')?.parentElement;
+  if (root) {
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+
+    interface Loaded extends Layer {
+      canvas: HTMLCanvasElement;
+      ctx: CanvasRenderingContext2D;
+      cols: number;
+      rows: number;
+      lum: Uint8Array;
+    }
+
+    const loaded: Loaded[] = [];
+    let raf = 0;
+    let dark = document.documentElement.classList.contains('dark');
+    /** Pointer position in fractions of the hero, or -1 when away. */
+    let px = -1;
+    let py = -1;
+
+    /** Centre of the sphere, in fractions of the frame. */
+    const SUN: readonly [number, number] = [0.5, 0.34];
+
+    /** Hermite ease between two edges — no discontinuity to pop across. */
+    function smoothstep(a: number, b: number, v: number): number {
+      const t2 = Math.min(1, Math.max(0, (v - a) / (b - a)));
+      return t2 * t2 * (3 - 2 * t2);
+    }
+
+    /** Stable per-cell jitter, so the cut is ragged and stays put. */
+    function hash01(x: number, y: number): number {
+      return ((((x * 374761393) ^ (y * 668265263)) >>> 0) % 1024) / 1024;
+    }
+
+    function paint(l: Loaded, t: number): void {
+      const rect = l.canvas.getBoundingClientRect();
+      if (rect.width === 0) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (l.canvas.width !== Math.round(rect.width * dpr)) {
+        l.canvas.width = Math.round(rect.width * dpr);
+        l.canvas.height = Math.round(rect.height * dpr);
+      }
+      l.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      l.ctx.clearRect(0, 0, rect.width, rect.height);
+
+      // Each layer sizes its own cells from the band it occupies, which
+      // is what lets the hole be fine-grained and the clouds coarse in
+      // the same frame.
+      const bandH = rect.height * l.height;
+      const chh = bandH / l.rows;
+      const cw = chh / 2;
+      const oy = rect.height * l.top;
+
+      l.ctx.font = `${(chh * 0.98).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+      l.ctx.textAlign = 'center';
+      l.ctx.textBaseline = 'middle';
+
+      const spanW = l.cols * cw;
+      // A pinned layer centres; a drifting one wraps across the frame.
+      /* Phase offsets matter more than they look. Without them every
+         bank starts at the same point on its loop, which is off the left
+         edge — so a visitor arriving at second zero sees an empty sky and
+         has to wait a minute for weather. */
+      const loop = rect.width + spanW;
+      const originX =
+        l.speed === 0
+          ? (rect.width - spanW) / 2
+          : (((l.phase * loop + l.speed * t * cw) % loop) + loop) % loop - spanW;
+
+      for (let y = 0; y < l.rows; y += 1) {
+        for (let x = 0; x < l.cols; x += 1) {
+          const base = (l.lum[y * l.cols + x] ?? 0) / 255;
+          if (base < l.cut + (hash01(x, y) - 0.5) * 0.06) continue;
+
+          /* Light coming along the path.
+             A band travelling DOWN the frame, so illumination arrives
+             from the horizon toward the viewer. Nothing in the picture
+             moves — terrain does not drift past you, and making it drift
+             would read as a camera rather than as a place — so the one
+             thing that travels is the light, which is also the only
+             honest motion for a picture about walking somewhere. */
+          let lit = base;
+          if (l.art === 'guide-portal') {
+            /* The rise and fall, smoothed.
+               It used to switch on at `base > 0.55`, and a hard threshold
+               inside an animation is a popping edge: cells sitting right
+               on the boundary flick in and out of the cycle every frame,
+               which is what read as jitter. A smooth weight means the
+               pulse fades in across a tonal range and nothing crosses a
+               line. Slower, too — 0.26 rather than 0.4. */
+            const w = smoothstep(0.34, 0.82, base);
+            const swell = 1 + 0.16 * Math.sin(t * 0.26);
+
+            /* And a second motion, circular, because the picture already
+               is: the sun sits inside concentric arcs, so light travelling
+               AROUND them is the one movement the drawing asks for. It is
+               weighted to the annulus, so the ring turns and the disc and
+               the ground stay still. */
+            const fx = x / l.cols - SUN[0];
+            const fy = ((y / l.rows - SUN[1]) * l.rows * 2) / l.cols;
+            const rad = Math.sqrt(fx * fx + fy * fy);
+            const band = Math.exp(-((rad - 0.185) ** 2) / 0.004);
+            const spin = 0.5 + 0.5 * Math.sin(Math.atan2(fy, fx) * 2 - t * 0.42);
+
+            /* And the disc itself gets lifted.
+               The painting's sun is orange, and orange is only about half
+               as luminous as it looks — it converts to a mid grey, so it
+               was arriving in the middle of the ramp and rendering as a
+               mauve shape rather than as a light. Nothing in the tone
+               curve could fix that, because the tone was never there.
+               Lifting inside the known radius puts it at the top of the
+               ramp, where the core blows to white. */
+            const disc = 1 - smoothstep(0.1, 0.17, rad);
+
+            lit = Math.min(
+              1,
+              base * (1 + w * (swell - 1)) + band * spin * base * 0.5 + disc * 0.38,
+            );
+          } else if (l.art === 'journey-near') {
+            const band = ((t * 0.09) % 1.5) - 0.25;
+            const d = Math.abs(y / l.rows - band);
+            if (d < 0.22) lit = Math.min(1, base * (1 + (1 - d / 0.22) ** 2 * 0.5));
+          } else if (l.art === 'journey-light') {
+            // The glow breathes, slowly and barely.
+            lit = Math.min(1, base * (0.9 + 0.14 * Math.sin(t * 0.5)));
+          }
+
+          /* The pointer lifts whatever it is over, on every layer, so
+             reaching into the sky brightens gas and disc alike. */
+          if (px >= 0) {
+            const dx = x / l.cols - px;
+            const dy = (y / l.rows - py) * 0.5;
+            const d = Math.sqrt(dx * dx + dy * dy);
+            if (d < 0.18) lit = Math.min(1, lit + (1 - d / 0.18) ** 2 * 0.45);
+          }
+
+          const glyph = l.ramp[Math.min(l.ramp.length - 1, Math.floor(lit * l.ramp.length))];
+          if (!glyph || glyph === ' ') continue;
+
+          // Toward the layer's highlight only where it is already hot, so
+          // the accent stays rationed rather than tinting the whole bank.
+          const h = Math.max(0, (lit - 0.55) / 0.45);
+          const ink = dark ? l.ink : l.lightInk;
+          const hot = dark ? l.hot : l.lightHot;
+          /* Accent through the midtones, white at the very top. A hue
+             held all the way to maximum reads as a coloured shape; letting
+             the core blow out is what makes it read as a light source
+             that happens to be pink. */
+          const core = smoothstep(0.84, 1, lit) * (dark ? 0.85 : 0.35);
+          const r = Math.round((ink[0] + (hot[0] - ink[0]) * h) * (1 - core) + 255 * core);
+          const g = Math.round((ink[1] + (hot[1] - ink[1]) * h) * (1 - core) + 246 * core);
+          const b = Math.round((ink[2] + (hot[2] - ink[2]) * h) * (1 - core) + 250 * core);
+
+          // Was `0.35 + base * 0.75`, which capped even a pure-white cell at
+          // well under full strength once the layer alpha was applied. The
+          // brightest cells now reach the layer's alpha exactly.
+          const a = Math.min(1, l.alpha * (0.3 + lit * 1.05));
+          l.ctx.fillStyle = `rgba(${r},${g},${b},${a.toFixed(3)})`;
+          l.ctx.fillText(glyph, originX + x * cw + cw / 2, oy + y * chh + chh / 2);
+        }
+      }
+    }
+
+    function frame(now: number): void {
+      const t = now / 1000;
+      for (const l of loaded) paint(l, t);
+      raf = requestAnimationFrame(frame);
+    }
+
+    void Promise.all(
+      Object.entries(LAYERS).map(async ([key, layer]) => {
+        const canvas = root.querySelector<HTMLCanvasElement>(`[data-space="${key}"]`);
+        const ctx = canvas?.getContext('2d');
+        if (!canvas || !ctx) return;
+
+        const res = await fetch(`/art/${layer.art}-grid.json`);
+        const g = (await res.json()) as Grid;
+        loaded.push({
+          ...layer,
+          canvas,
+          ctx,
+          cols: g.cols,
+          rows: g.rows,
+          lum: Uint8Array.from(atob(g.lum), (c) => c.charCodeAt(0)),
+        });
+      }),
+    ).then(() => {
+      // Back to front, so a slow layer never paints over a fast one.
+      loaded.sort((a, b) => a.speed - b.speed);
+      const now = performance.now() / 1000;
+      for (const l of loaded) {
+        paint(l, now);
+        l.canvas.classList.remove('opacity-0');
+      }
+
+      /* Pointer, theme, and the loop. The host is the header, not the
+         canvas stack — the stack is `pointer-events-none` so it never
+         eats a click meant for the page. */
+      const host = root.parentElement ?? root;
+      if (matchMedia('(hover: hover)').matches) {
+        host.addEventListener('pointermove', (e: PointerEvent) => {
+          const r = root.getBoundingClientRect();
+          px = (e.clientX - r.left) / r.width;
+          py = (e.clientY - r.top) / r.height;
+        });
+        host.addEventListener('pointerleave', () => {
+          px = -1;
+          py = -1;
+        });
+      }
+
+      new MutationObserver(() => {
+        const next = document.documentElement.classList.contains('dark');
+        if (next === dark) return;
+        dark = next;
+        const now2 = performance.now() / 1000;
+        for (const l of loaded) paint(l, now2);
+      }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+      new ResizeObserver(() => {
+        const t = performance.now() / 1000;
+        for (const l of loaded) paint(l, t);
+      }).observe(root);
+
+      // Only the drifting banks need a loop; the hole is painted once.
+      if (reduce.matches) return;
+      new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting && !raf) raf = requestAnimationFrame(frame);
+          else if (!e.isIntersecting && raf) {
+            cancelAnimationFrame(raf);
+            raf = 0;
+          }
+        }
+      }).observe(root);
+    });
+  }
+</script>

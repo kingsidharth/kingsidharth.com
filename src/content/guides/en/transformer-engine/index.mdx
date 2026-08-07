@@ -3,13 +3,13 @@ title: Transformer, Attention, & Engine
 description: A large language model is one machine with one moving part, repeated. Take it apart, look inside, put it back together.
 pubDate: 2026-08-03
 part: 0
-subtitle: A large language model is one machine with one moving part, repeated. Take it apart, look inside, and put it back together.
-benefits:
-  - Say what attention actually does without hand-waving at "it looks at other words"
-  - Know which part of the stack to blame when the output goes wrong
-  - Read a model card and know what the numbers change
-  - Follow a paper past the abstract
+subtitle: How does modern AI work? Let's look under the hood.
+exchange: true
 art: transformer-scroll
+# The waist of the spiral, where the sheet folds back on itself and the
+# descent turns over.
+artFocus: [0.53, 0.5]
+artMotion: stream
 navLabel: Overview
 tags: [ai, transformers, attention, llm]
 ---
@@ -17,7 +17,8 @@ tags: [ai, transformers, attention, llm]
 import TransformerEngine from '@/components/instruments/TransformerEngine';
 
 Every large language model — GPT, Claude, Llama, all of them — is the same
-machine. Text goes in the bottom as numbers, something comes out the top as a
+machine. Text goes in at the top as numbers, something comes out the bottom
+as a
 distribution over what comes next. Everything in between is one block, copied
 and stacked.
 
@@ -25,9 +26,9 @@ This is the machine, exploded. It stays on screen; scroll, and it takes itself
 apart for you.
 
 <div className="relative left-1/2 w-screen -translate-x-1/2 px-(--spacing-gutter)" data-engine-story>
-  <div className="lg:grid lg:grid-cols-[1.15fr_1fr] lg:gap-12">
+  <div className="lg:grid lg:grid-cols-[1.7fr_minmax(0,34rem)] lg:gap-12">
 
-    <div className="sticky top-14 z-10 -mx-2 h-[48svh] bg-background/85 backdrop-blur-sm lg:top-0 lg:mx-0 lg:h-svh lg:bg-transparent lg:backdrop-blur-none">
+    <div className="sticky top-14 z-10 -mx-2 h-[56svh] bg-background/85 backdrop-blur-sm lg:top-0 lg:mx-0 lg:h-svh lg:bg-transparent lg:backdrop-blur-none">
       <TransformerEngine client:load story initialLevel="overview" />
     </div>
 
@@ -35,14 +36,16 @@ apart for you.
       <section id="overview" data-engine-level="overview" className="flex min-h-[80svh] flex-col justify-center py-16">
         <h2>The machine, whole</h2>
         <p>
-          Bottom to top: raw text becomes token ids, ids become vectors, vectors
-          ride a conveyor belt through a stack of identical blocks, and at the
-          top the last vector is read against every word the model knows. One
+          Top to bottom: raw text becomes token ids, ids become vectors,
+          vectors ride a conveyor belt down through a stack of identical
+          blocks, and at the bottom the last vector is read against every
+          word the model knows. One
           distribution over what comes next. That's the whole trick.
         </p>
         <p>
-          The phosphor dots climbing the middle are the data flow — the engine
-          idling. Drag to orbit, scroll to travel downward into the parts, tap
+          The phosphor dots sinking through the middle are the data flow — the
+          engine idling. Drag to orbit, scroll to travel downward into the
+          parts, tap
           anything with a pulsing outline to dive inside it.
         </p>
       </section>
@@ -94,7 +97,7 @@ apart for you.
           After training, the geometry is not arbitrary: tokens used similarly
           land near each other. The table is where "France" first becomes
           something the machine can compute with. Not a definition of the
-          word — a starting position the blocks above will rewrite beyond
+          word — a starting position the blocks below will rewrite beyond
           recognition.
         </p>
         <h3>Position is added, not inherent</h3>
@@ -108,7 +111,7 @@ apart for you.
         <h3>The residual stream begins</h3>
         <p>
           These position-tagged vectors are the first state of a conveyor
-          belt: one vector per position, flowing upward through every block.
+          belt: one vector per position, flowing down through every block.
           Each block reads the belt, computes something, and <em>adds</em> its
           contribution back — it never overwrites. That one choice is why a
           96-layer model can be trained at all: the blocks don't replace the
@@ -232,6 +235,24 @@ y = h · W↓             # narrow back: 4 × d_model → d_model</code></pre>
         </p>
       </section>
 
+      <section id="deep" data-engine-level="deep" className="flex min-h-[90svh] flex-col justify-center py-16">
+        <h2>The deep stack</h2>
+        <p>
+          One block is the idea; the depth is the brute force. GPT-2 stacks 12
+          of these slabs, GPT-3 stacks 96, and the drawing still can't show
+          them all — the column continues past the bottom of the frame. Each
+          pass refines the same vectors a little further: syntax early on,
+          facts and relations deeper down.
+        </p>
+        <p>
+          The rust line running the full height is the residual stream — the
+          spine every block reads from and adds to, but never overwrites. It
+          is what makes 96 repetitions trainable: the signal always has a
+          direct path from the embeddings to the answer, and each block is a
+          small annotation on top, not a rewrite.
+        </p>
+      </section>
+
       <section id="output" data-engine-level="output" className="flex min-h-[90svh] flex-col justify-center py-16">
         <h2>The full stack</h2>
         <p>
@@ -263,6 +284,20 @@ prompt + token₁ + token₂ → [engine] → token₃</code></pre>
           block with a communication channel and a per-position function, the
           table read backwards, and a sampler. The engine is simple. What it
           learns to be is not.
+        </p>
+      </section>
+
+      <section id="packed" data-engine-level="packed" className="flex min-h-[80svh] flex-col justify-center py-16">
+        <h2>Pack it back</h2>
+        <p>
+          And then the whole thing folds back into its box — tokenizer,
+          embeddings, ninety-six identical slabs, the read-out — one dense
+          little machine that sits there humming. You have seen every part of
+          it now. There is no magic left inside, only scale.
+        </p>
+        <p>
+          Text goes in at the top as numbers, something comes out the bottom
+          as a distribution over what comes next. Ask it anything.
         </p>
       </section>
     </div>
