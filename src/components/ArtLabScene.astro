@@ -105,6 +105,8 @@ const layerStyle = [
 </div>
 
 <script>
+  import { paperTone, pickGlyph } from '@/lib/treatments';
+
   interface Grid {
     cols: number;
     rows: number;
@@ -119,6 +121,11 @@ const layerStyle = [
     cut: number;
     par: number;
     focus?: boolean;
+    ink?: RGB;
+    lightInk?: RGB;
+    feather?: boolean;
+    sway?: number;
+    mono?: boolean;
   }
   interface Palette {
     ink: RGB;
@@ -130,6 +137,7 @@ const layerStyle = [
     famALight?: RGB[];
     famBLight?: RGB[];
     mix?: number;
+    crisp?: boolean;
   }
   interface Drifter {
     art: string;
@@ -168,7 +176,9 @@ const layerStyle = [
   const DRIFT_X = 0.3;
   const DRIFT_Y = 0.22;
   const FOCUS_R = 210;
-  const SHIFT = 34;
+  /* Full pointer travel moves the nearest plate about half of this —
+     at 34 the depth was theoretically there and nobody could feel it. */
+  const SHIFT = 68;
 
   function smoothstep(a: number, b: number, v: number): number {
     const u = Math.min(1, Math.max(0, (v - a) / (b - a)));
@@ -233,6 +243,17 @@ const layerStyle = [
       const a = dark ? pal.famA : pal.famALight;
       const b = dark ? pal.famB : pal.famBLight;
       if (!a || !b) return null;
+      if (pal.crisp) {
+        /* Bloom-scale patches, each a SINGLE solid member of a single
+           family. The slow field blends everything into one wash — the
+           frequencies here put a whole patch at flower size, the picks
+           are floored rather than interpolated, and the family split is
+           a hard threshold. Edges stay organic because they are level
+           sets of the sine field, not grid blocks. */
+        const fam = field(x, y, 0.21, 0.3) > 0.56 ? a : b;
+        const pick = fam[Math.min(fam.length - 1, Math.floor(field(x, y, 0.44, 0.62) * fam.length))];
+        return pick ?? null;
+      }
       const ca = rampPick(a, field(x, y, 0.055, 0.083));
       const cb = rampPick(b, field(x, y, 0.071, 0.11));
       const w = smoothstep(0.48, 0.7, field(x, y, 0.048, 0.075));
@@ -277,8 +298,12 @@ const layerStyle = [
       l.ctx.textAlign = 'center';
       l.ctx.textBaseline = 'middle';
 
-      const ink = dark ? pal.ink : pal.lightInk;
-      const hot = dark ? pal.hot : pal.lightHot;
+      /* A plate with its own ink is a silhouette: flat colour, no ramp
+         to hot, no colour families. Ramping a solid subject paints a
+         gradient across it, which reads as lighting it has not got. */
+      const flat = l.ink ? (dark ? l.ink : (l.lightInk ?? l.ink)) : null;
+      const ink = flat ?? (dark ? pal.ink : pal.lightInk);
+      const hot = flat ?? (dark ? pal.hot : pal.lightHot);
       const mix = pal.mix ?? 0.6;
 
       const live = !!l.focus && drifting;
@@ -317,8 +342,12 @@ const layerStyle = [
 
           if (lit < l.cut + (hash01(x, y) - 0.5) * 0.05) continue;
 
-          const gi = Math.min(RAMP.length - 1, Math.max(0, Math.floor(lit * RAMP.length + step)));
-          const glyph = RAMP[gi];
+          /* The paper inversion is for scenery — a bright sky should be
+             nearly empty marks on cream. A flat-ink silhouette is the
+             opposite: it must stay DENSE in both themes, or the subject
+             evaporates in light mode. */
+          const tone = paperTone(lit, 0, flat ? false : !dark);
+          const glyph = pickGlyph(RAMP, tone, step);
           if (!glyph || glyph === ' ') continue;
 
           let near = 0;
@@ -337,13 +366,17 @@ const layerStyle = [
           let g = ink[1] + (hot[1] - ink[1]) * h;
           let b = ink[2] + (hot[2] - ink[2]) * h;
 
-          const hue = tint(x, y);
+          const hue = flat || l.mono ? null : tint(x, y);
           if (hue) {
             /* Attention shows up as SATURATION, not as light. Lifting
                opacity drives the full-block marks opaque and paints a
                bright rectangle around the cursor — a selection box, not
                a glow. Colour has nowhere to blow out to. */
-            const w = Math.min(0.95, mix * (0.45 + lit * 0.55) * (1 + near * 0.6));
+            /* In crisp mode the very brightest cells hand the colour
+               back to the ramp's hot end — petals catch WHITE light,
+               and a highlight that stays pink is part of the wash. */
+            const white = pal.crisp ? smoothstep(0.78, 0.94, lit) : 0;
+            const w = Math.min(0.95, mix * (0.45 + lit * 0.55) * (1 + near * 0.6) * (1 - white));
             r += (hue[0] - r) * w;
             g += (hue[1] - g) * w;
             b += (hue[2] - b) * w;
@@ -357,16 +390,20 @@ const layerStyle = [
              line, which reads as a pasted rectangle. Fading by position
              within the grid catches both cases and costs two
              smoothsteps. */
-          const fx = Math.min(
-            smoothstep(0, 0.055, x / l.cols),
-            smoothstep(0, 0.055, 1 - x / l.cols),
-          );
-          const fy = Math.min(
-            smoothstep(0, 0.045, y / l.rows),
-            smoothstep(0, 0.045, 1 - y / l.rows),
-          );
+          /* …unless the plate opts out: a subject that runs off the
+             bottom of the frame on purpose (the cat) must not fade
+             where it should simply continue. */
+          const fxy =
+            l.feather === false
+              ? 1
+              : Math.min(
+                  smoothstep(0, 0.055, x / l.cols),
+                  smoothstep(0, 0.055, 1 - x / l.cols),
+                  smoothstep(0, 0.045, y / l.rows),
+                  smoothstep(0, 0.045, 1 - y / l.rows),
+                );
 
-          const a = Math.min(1, l.alpha * fx * fy * (0.3 + lit * 1.05) * (1 + near * 0.28));
+          const a = Math.min(1, l.alpha * fxy * (0.3 + tone * 1.05) * (1 + near * 0.28));
           if (a < 0.015) continue;
           l.ctx.fillStyle = `rgba(${r | 0},${g | 0},${b | 0},${a.toFixed(3)})`;
           l.ctx.fillText(glyph, gx + cw / 2, gy + chh / 2);
@@ -400,18 +437,21 @@ const layerStyle = [
         for (let x = 0; x < g.cols; x += 1) {
           const lit = (lum[y * g.cols + x] ?? 0) / 255;
           if (lit < 0.16) continue;
-          const glyph = RAMP[Math.min(RAMP.length - 1, Math.floor(lit * RAMP.length))];
+          const tone = paperTone(lit, 0, !dark);
+          const glyph = pickGlyph(RAMP, tone);
           if (!glyph || glyph === ' ') continue;
-          ctx.fillStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${Math.min(1, 0.35 + lit).toFixed(2)})`;
+          ctx.fillStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${Math.min(1, 0.35 + tone).toFixed(2)})`;
           ctx.fillText(glyph, x * cw + cw / 2, y * chh + chh / 2);
         }
       }
     }
 
-    /* Stars, painted once. A night sky that is genuinely empty reads as
-       a missing layer rather than as night. Deterministic, so it does
-       not reshuffle on every resize. */
-    function paintStars(canvas: HTMLCanvasElement): void {
+    /* Stars. A night sky that is genuinely empty reads as a missing
+       layer rather than as night. Deterministic positions, so nothing
+       reshuffles on resize — but about half of them BLINK: repainted on
+       the slow tick with a per-star phase, which is the cheapest
+       possible way to make the far background feel alive. */
+    function paintStars(canvas: HTMLCanvasElement, t = 0): void {
       const ctx = canvas.getContext('2d');
       const rect = canvas.getBoundingClientRect();
       if (!ctx || rect.width === 0) return;
@@ -426,8 +466,13 @@ const layerStyle = [
       for (let i = 0; i < 320; i += 1) {
         const x = hash01(i, 7) * rect.width;
         const y = hash01(i, 13) * rect.height * 0.72;
-        const a = 0.12 + hash01(i, 29) * 0.5;
-        ctx.fillStyle = dark ? `rgba(226,232,255,${a})` : `rgba(60,66,92,${a * 0.5})`;
+        let a = 0.12 + hash01(i, 29) * 0.5;
+        if (t > 0 && hash01(i, 53) > 0.55) {
+          const ph = hash01(i, 71) * 6.28;
+          const sp = 0.5 + hash01(i, 61) * 1.4;
+          a *= 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * sp + ph));
+        }
+        ctx.fillStyle = dark ? `rgba(226,232,255,${a.toFixed(3)})` : `rgba(60,66,92,${(a * 0.5).toFixed(3)})`;
         ctx.fillText(hash01(i, 41) > 0.75 ? '+' : '·', x, y);
       }
     }
@@ -450,6 +495,9 @@ const layerStyle = [
         driftGrid = { g, lum: decode(g) };
       })(),
     ]).then(() => {
+      /* The theme may have flipped while the grids were in flight; the
+         observer below only catches changes AFTER this point. */
+      dark = document.documentElement.classList.contains('dark');
       const d = cfg.drifter;
       if (d && driftCanvas && driftGrid) {
         const ratio = driftGrid.g.rows / (driftGrid.g.cols / 2);
@@ -487,31 +535,76 @@ const layerStyle = [
       }
 
       /* Parallax as a transform, not as a repaint — the plates are
-         painted once and moved by the compositor. And it STAYS where you
-         leave it: springing back on pointer-leave throws the whole scene
-         sideways every time the cursor crosses an edge, which is a
-         bigger movement than any you made on purpose. */
-      let queued = false;
+         painted once and moved by the compositor. The pointer sets a
+         TARGET and the plates glide toward it over a few hundred ms:
+         applying the offset the frame after every pointer event moves
+         the whole stack in lockstep with the cursor, which reads as the
+         scene skewing under the hand rather than as looking past things.
+         And it STAYS where you leave it: springing back on pointer-leave
+         throws the whole scene sideways every time the cursor crosses an
+         edge, which is a bigger movement than any you made on purpose.
+
+         The same loop carries the sway: plates that asked for it bob a
+         few pixels on a ~half-minute period. Slow and small is the
+         point — a background that drifts barely and constantly reads as
+         far away and alive; fast or far reads as broken. */
       let mx = 0;
       let my = 0;
-      const apply = () => {
-        queued = false;
-        for (const l of loaded) {
-          l.canvas.style.transform = `translate3d(${(-mx * SHIFT * l.par).toFixed(1)}px,${(-my * SHIFT * 0.5 * l.par).toFixed(1)}px,0)`;
+      let cx = 0;
+      let cy = 0;
+      let motionRaf = 0;
+      const hover = matchMedia('(hover: hover)').matches;
+      const hasSway = loaded.some((l) => l.sway);
+
+      const motionTick = (t: number) => {
+        /* Reduced motion: the offset still applies (losing depth is not
+           what was asked for) but it lands in ONE frame — no glide, and
+           the settle check below then parks the loop immediately. */
+        if (reduce.matches) {
+          cx = mx;
+          cy = my;
+        } else {
+          cx += (mx - cx) * 0.055;
+          cy += (my - cy) * 0.055;
         }
+        for (let i = 0; i < loaded.length; i += 1) {
+          const l = loaded[i];
+          if (!l) continue;
+          let tx = -cx * SHIFT * l.par;
+          let ty = -cy * SHIFT * 0.5 * l.par;
+          if (l.sway && !reduce.matches) {
+            tx += Math.sin(t * 0.00023 + i * 2.1) * l.sway;
+            ty += Math.cos(t * 0.00016 + i * 1.7) * l.sway * 0.35;
+          }
+          l.canvas.style.transform = `translate3d(${tx.toFixed(2)}px,${ty.toFixed(2)}px,0)`;
+        }
+        /* The loop idles itself: once the glide has converged and no
+           plate sways, there is nothing left to animate, so it stops
+           rescheduling rather than burning a frame budget on a still
+           image. pointermove wakes it back up. */
+        const settling = Math.abs(mx - cx) > 5e-4 || Math.abs(my - cy) > 5e-4;
+        const swaying = hasSway && !reduce.matches;
+        motionRaf = settling || swaying ? requestAnimationFrame(motionTick) : 0;
+      };
+      const startMotion = () => {
+        if (motionRaf || !(hasSway || hover)) return;
+        motionRaf = requestAnimationFrame(motionTick);
+      };
+      const stopMotion = () => {
+        if (!motionRaf) return;
+        cancelAnimationFrame(motionRaf);
+        motionRaf = 0;
       };
 
       const host = root.parentElement ?? root;
-      if (matchMedia('(hover: hover)').matches) {
+      if (hover) {
         host.addEventListener('pointermove', (e: PointerEvent) => {
           const r = root.getBoundingClientRect();
           px = (e.clientX - r.left) / r.width;
           py = (e.clientY - r.top) / r.height;
           mx = px - 0.5;
           my = py - 0.5;
-          if (queued) return;
-          queued = true;
-          requestAnimationFrame(apply);
+          if (inView) startMotion();
         });
         host.addEventListener('pointerleave', () => {
           px = -1;
@@ -528,9 +621,10 @@ const layerStyle = [
         if (t - last < FRAME_MS) return;
         last = t;
         if (focus) paint(focus, t / 1000);
+        if (starCanvas) paintStars(starCanvas, t / 1000);
       };
       const start = () => {
-        if (raf || !focus || reduce.matches || !inView) return;
+        if (raf || (!focus && !starCanvas) || reduce.matches || !inView) return;
         drifting = true;
         raf = requestAnimationFrame(tick);
       };
@@ -547,14 +641,26 @@ const layerStyle = [
       new IntersectionObserver(
         (entries) => {
           inView = entries.some((e) => e.isIntersecting);
-          if (inView) start();
-          else stop();
+          if (inView) {
+            start();
+            startMotion();
+          } else {
+            stop();
+            stopMotion();
+          }
         },
         { rootMargin: '80px' },
       ).observe(root);
 
-      reduce.addEventListener('change', () => (reduce.matches ? stop() : start()));
+      reduce.addEventListener('change', () => {
+        if (reduce.matches) stop();
+        else {
+          start();
+          startMotion();
+        }
+      });
       start();
+      startMotion();
 
       const repaint = () => {
         const t = performance.now() / 1000;

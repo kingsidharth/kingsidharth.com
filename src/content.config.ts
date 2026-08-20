@@ -106,6 +106,11 @@ const guides = defineCollection({
      * guides whose pitch is a conversation, not a checklist.
      */
     exchange: z.boolean().default(false),
+    /**
+     * Hide the chapter Contents rail for this guide — for a single long
+     * essay whose chapters are navigated with prev/next, not a map.
+     */
+    hideContents: z.boolean().default(false),
     instruments: z.array(reference('instruments')).default([]),
   }),
 });

@@ -187,7 +187,7 @@ function TokensScreen() {
         <span
           key={`${index}-${i}`}
           lang={isDevanagari ? 'hi' : undefined}
-          className="rounded-[2px] border border-border bg-muted px-1 py-0.5 font-mono text-2xs text-screen-fg"
+          className="rounded-[2px] border border-screen-plain/25 px-1 py-0.5 font-mono text-2xs text-screen-fg"
         >
           {tok}
         </span>
@@ -217,7 +217,7 @@ function PlayerScreen({ label }: { label?: string }) {
 
   return (
     <div className="flex h-full w-full items-center gap-2 bg-screen p-1.5">
-      <DitherThumb motif="orb" seed={11} width={28} aspect="square" className="shrink-0" />
+      <DitherThumb motif="orb" seed={11} width={28} aspect="square" ink="--screen-plain" className="shrink-0" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="overflow-hidden whitespace-nowrap">
           <div

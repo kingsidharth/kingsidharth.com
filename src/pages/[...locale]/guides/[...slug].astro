@@ -45,8 +45,9 @@ const chapterHref = (e: Props['entry']) =>
 const isRoot = entry.data.part === 0;
 const sequence = [guide.root, ...guide.chapters];
 /* A one-part guide has no siblings to navigate between — the rail
-   would list the page you are already on and nothing else. */
-const showRail = sequence.length > 1;
+   would list the page you are already on and nothing else. Nor when a
+   guide opts out (`hideContents`) and shows the map only via prev/next. */
+const showRail = sequence.length > 1 && !guide.root.data.hideContents;
 ---
 
 <Base

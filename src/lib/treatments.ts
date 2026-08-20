@@ -61,3 +61,31 @@ export function readTreatment(root: HTMLElement): Treatment {
 export function readFringeOffset(root: HTMLElement): number {
   return FRINGE_OFFSET[root.getAttribute('data-fringe') ?? 'off'] ?? 0;
 }
+
+/**
+ * Coverage for the ramp.
+ *
+ * On a dark field, tone climbs with the source: highlights are full
+ * blocks, shadows are thin. On paper the ramp runs the other way —
+ * ink sits in the shadows, highlights stay the page — which is how
+ * an engraving carries light. `lift` (a pointer, a heat) still
+ * climbs after that, so reaching into the picture never thins it.
+ */
+export function paperTone(base: number, lift = 0, invert = false): number {
+  const core = invert ? 1 - base : base;
+  const t = core + lift;
+  if (t < 0) return 0;
+  if (t > 1) return 1;
+  return t;
+}
+
+/**
+ * Glyph at a tone. `lit` is 0..1 after any invert. `step` is a
+ * fractional offset used by plates that dissolve between rungs.
+ */
+export function pickGlyph(ramp: string, lit: number, step = 0): string {
+  const last = ramp.length - 1;
+  if (last < 0) return ' ';
+  const i = Math.min(last, Math.max(0, Math.floor(lit * ramp.length + step)));
+  return ramp[i] ?? ' ';
+}

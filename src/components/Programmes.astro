@@ -29,8 +29,8 @@ const programmes = [
     labelBg: 'oklch(0.78 0.13 190)',
     labelInk: 'oklch(0.22 0.07 220)',
     lines: [
-      { text: 'Steal the', cls: 'block text-[14px] leading-none opacity-65' },
-      { text: 'Secret Prompts', cls: 'mt-0.5 block text-[25px] leading-[0.95]' },
+      { text: 'Steal the', cls: 'block text-[15px] leading-none opacity-70' },
+      { text: 'Secret Prompts', cls: 'mt-1 block text-[28px] leading-[0.95]' },
     ],
     frames: {
       idle: ['┬┴┬┴┤ω・)', '┬┴┬┴┤・ω・)'],
@@ -53,7 +53,7 @@ const programmes = [
     ink: 'oklch(0.98 0 0)',
     shadow: 'oklch(0.19 0.1 340)',
     lines: [
-      { text: 'Vibe Coding', cls: 'block text-[26px] leading-[0.95]' },
+      { text: 'Vibe Coding', cls: 'block text-[28px] leading-[0.95]' },
       { text: '101', cls: 'mt-1 block text-[15px] leading-none opacity-70' },
     ],
     frames: {
@@ -78,8 +78,8 @@ const programmes = [
     ink: 'oklch(0.9 0.17 140)',
     shadow: 'oklch(0.17 0.07 155)',
     lines: [
-      { text: 'Freshcast', cls: 'block text-[26px] leading-[0.95]' },
-      { text: 'AI in five minutes', cls: 'mt-1 block text-[14px] leading-none opacity-70' },
+      { text: 'Freshcast', cls: 'block text-[28px] leading-[0.95]' },
+      { text: 'AI in five minutes', cls: 'mt-1 block text-[15px] leading-none opacity-70' },
     ],
     frames: {
       idle: ['( ⌐■_■)🎧', '( ⌐■_■)♫'],
@@ -180,7 +180,7 @@ const { variant = 'panel' } = Astro.props;
              once per card, sliced by the same pixel mask as the picture
              under it. */
           <span class="relative z-10 mt-auto w-full">
-            <span class="phosphor-type pixel-type card-title block" style={`color:${p.ink};`}>
+            <span class="phosphor-type pixel-type card-title block text-[oklch(0.97_0.03_190)]">
               {p.lines.map((l) => (
                 <span class={l.cls}>{l.text}</span>
               ))}

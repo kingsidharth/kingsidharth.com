@@ -233,7 +233,7 @@ const {
         startHref && (
           <a
             href={startHref}
-            class="cap inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors hover:text-primary"
+            class="cap inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-[filter] hover:brightness-110"
           >
             Start reading <span aria-hidden="true">→</span>
           </a>
@@ -297,24 +297,42 @@ const {
 </header>
 
 <script>
-  import { TREATMENT_RAMPS, readTreatment } from '@/lib/treatments';
+  import { TREATMENT_RAMPS, paperTone, pickGlyph, readTreatment } from '@/lib/treatments';
 
   /** Cutoff and its per-cell wobble, as in the hero: a single flat
       threshold draws a clean contour, which inked art never has. */
   const CUT = 0.11;
   const JITTER = 0.06;
 
-  type RGB = readonly [number, number, number];
-  /** The two charges — blueprint inks. Sky arrives from the near side,
-      cyan from the far one; which is which is arbitrary, but it has to
-      be consistent or the seam changes colour when the drawing does.
-      Kept in step with COLORS in lib/transformer-engine.ts. */
-  const PINK: RGB = [163, 194, 255];
-  const TEAL: RGB = [121, 210, 242];
-  /** The seam itself runs hotter than either charge — that is the point
-      of a collision — so it lifts toward white rather than blending to
-      a muddy midpoint. */
-  const SEAM: RGB = [240, 247, 255];
+  /* The two charges — blueprint inks. Sky arrives from the near side,
+     cyan from the far one; which is which is arbitrary, but it has to
+     be consistent or the seam changes colour when the drawing does.
+     Kept in step with COLORS in lib/transformer-engine.ts.
+
+     Two palettes, because the glass the plate sits behind inverts with
+     the chassis: a dark page mounts the plate on PAPER-WHITE glass,
+     where the pale blueprint inks wash out to nothing — so the white
+     glass gets deep inks, and a seam that darkens toward ink instead
+     of blowing out to white. Bleeding covers have no glass at all and
+     stay page-bound. */
+  interface Palette {
+    pink: [number, number, number];
+    teal: [number, number, number];
+    seam: [number, number, number];
+    ink: [number, number, number];
+  }
+  const DARK_GLASS: Palette = {
+    pink: [163, 194, 255],
+    teal: [121, 210, 242],
+    seam: [240, 247, 255],
+    ink: [226, 236, 255],
+  };
+  const LIGHT_GLASS: Palette = {
+    pink: [58, 96, 200],
+    teal: [22, 106, 146],
+    seam: [16, 22, 36],
+    ink: [46, 52, 68],
+  };
 
   /** Seconds for one full breath of the charges in and out. */
   const BREATH = 11;
@@ -335,9 +353,16 @@ const {
   const TICKS = 24;
   const RING = 0.13;
 
-  function inkFor(dark: boolean): [number, number, number] {
-    return dark ? [226, 236, 255] : [46, 52, 68];
-  }
+  const pageDark = () => document.documentElement.classList.contains('dark');
+  /* Which device the instruments are is a setting, decoupled from the
+     page theme: contrast (the default) opposes the page, matched pairs
+     with it. The mounted plate sits behind the device's glass, so it
+     answers to the device; a bleeding cover answers to the page. */
+  const deviceDark = () => {
+    const matched = document.documentElement.getAttribute('data-instrument') === 'matched';
+    const dark = pageDark();
+    return matched ? dark : !dark;
+  };
 
 
   function hash01(x: number, y: number): number {
@@ -372,7 +397,10 @@ const {
         the plate is cropping. */
     let ox = 0;
     let oy = 0;
-    let ink = inkFor(document.documentElement.classList.contains('dark'));
+    /* The mounted plate sits behind glass whose theme is the device
+       setting; a bleeding cover sits on the page itself. */
+    const mounted = !canvas.dataset.fit;
+    let pal = (mounted ? deviceDark() : pageDark()) ? DARK_GLASS : LIGHT_GLASS;
     let ramp = TREATMENT_RAMPS[readTreatment(document.documentElement)];
     let raf = 0;
     /** Plate size in CSS pixels. Cached because the draw loop needs it
@@ -453,7 +481,7 @@ const {
         ctx.beginPath();
         ctx.moveTo(cxp + Math.cos(a) * inner, cyp + Math.sin(a) * inner);
         ctx.lineTo(cxp + Math.cos(a) * outer, cyp + Math.sin(a) * outer);
-        ctx.strokeStyle = `rgba(${SEAM.map(Math.round).join(',')},${(on * 0.85).toFixed(3)})`;
+        ctx.strokeStyle = `rgba(${pal.seam.map(Math.round).join(',')},${(on * 0.85).toFixed(3)})`;
         ctx.stroke();
       }
       ctx.restore();
@@ -491,7 +519,7 @@ const {
     ];
 
     function duotone(lit: number): [number, number, number] {
-      if (canvas.dataset.fit !== 'cover') return ink;
+      if (canvas.dataset.fit !== 'cover') return pal.ink;
       const last = TONE_STOPS.length - 1;
       /* Square-rooted, and the darkest stop is still a saturated blue
          rather than near-black. Both for the same reason: tone in these
@@ -627,23 +655,29 @@ const {
           /* Same reason the field is only a third of the brightness the
              pointer is: it may shade what is drawn, never flatten it. */
           const lit = Math.min(1, base + finger * 0.35 + field * 0.12);
-          const glyph = ramp[Math.min(ramp.length - 1, Math.floor(lit * ramp.length))];
+          /* On light glass the ramp runs the other way: highlights go
+             thin, shadows take the ink. Finger lift still climbs after
+             that, so reaching for a cell never thins it. */
+          const invert = pal === LIGHT_GLASS;
+          const tone = paperTone(base, finger * 0.35 + field * 0.12, invert);
+          const glyph = pickGlyph(ramp, tone);
           if (!glyph || glyph === ' ') continue;
 
-          /* Territory picks the hue, proximity to the seam lifts it
-             toward white, and heat decides how far from plain ink the
-             cell travels at all. Three lerps, unrolled per channel. */
+          /* Territory picks the hue, proximity to the seam pulls it
+             toward the seam colour — white on dark glass, ink on white
+             glass — and heat decides how far from plain ink the cell
+             travels at all. Three lerps, unrolled per channel. */
           const tHue = (bias + 1) / 2;
           const tSeam = Math.min(1, seam * seam * 1.1);
           const tHeat = Math.min(1, heat * 1.5);
 
-          const cr = TEAL[0] + (PINK[0] - TEAL[0]) * tHue;
-          const cg = TEAL[1] + (PINK[1] - TEAL[1]) * tHue;
-          const cb = TEAL[2] + (PINK[2] - TEAL[2]) * tHue;
+          const cr = pal.teal[0] + (pal.pink[0] - pal.teal[0]) * tHue;
+          const cg = pal.teal[1] + (pal.pink[1] - pal.teal[1]) * tHue;
+          const cb = pal.teal[2] + (pal.pink[2] - pal.teal[2]) * tHue;
 
-          const hr = cr + (SEAM[0] - cr) * tSeam;
-          const hg = cg + (SEAM[1] - cg) * tSeam;
-          const hb = cb + (SEAM[2] - cb) * tSeam;
+          const hr = cr + (pal.seam[0] - cr) * tSeam;
+          const hg = cg + (pal.seam[1] - cg) * tSeam;
+          const hb = cb + (pal.seam[2] - cb) * tSeam;
 
           /* Two colour models, one per frame type.
            *
@@ -660,16 +694,16 @@ const {
            * pointer still reads without the field repainting the sky. */
           const base3 = duotone(lit);
           const toned = canvas.dataset.fit === 'cover';
-          const tr = toned ? SEAM[0] : hr;
-          const tg2 = toned ? SEAM[1] : hg;
-          const tb = toned ? SEAM[2] : hb;
+          const tr = toned ? pal.seam[0] : hr;
+          const tg2 = toned ? pal.seam[1] : hg;
+          const tb = toned ? pal.seam[2] : hb;
           const amount = toned ? Math.min(1, finger * 1.5) : tHeat;
 
           const r = (base3[0] + (tr - base3[0]) * amount) | 0;
           const g = (base3[1] + (tg2 - base3[1]) * amount) | 0;
           const b = (base3[2] + (tb - base3[2]) * amount) | 0;
 
-          const alpha = Math.min(1, 0.35 + lit * 0.7) * edgeFade(x, y);
+          const alpha = Math.min(1, 0.35 + tone * 0.7) * edgeFade(x, y);
           if (alpha < 0.02) continue;
           ctx.fillStyle = `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
           ctx.fillText(glyph, ox + x * cw + cw / 2, oy + y * chh + chh / 2);
@@ -787,7 +821,7 @@ const {
         }
 
         const headY = ((seconds * d.speed + d.phase) % 1.5 - 0.25) * rows;
-        const tint = d.pink ? PINK : TEAL;
+        const tint = d.pink ? pal.pink : pal.teal;
 
         /* Spacing scales with the glyph so the near plane does not draw
            big characters at small-character pitch — but never below one
@@ -883,12 +917,12 @@ const {
         }).observe(canvas);
 
         new MutationObserver(() => {
-          ink = inkFor(document.documentElement.classList.contains('dark'));
+          pal = (mounted ? deviceDark() : pageDark()) ? DARK_GLASS : LIGHT_GLASS;
           ramp = TREATMENT_RAMPS[readTreatment(document.documentElement)];
           draw();
         }).observe(document.documentElement, {
           attributes: true,
-          attributeFilter: ['class', 'data-treatment'],
+          attributeFilter: ['class', 'data-treatment', 'data-instrument'],
         });
 
         /* Hover and tap both reach it. `pointermove` covers a mouse; a

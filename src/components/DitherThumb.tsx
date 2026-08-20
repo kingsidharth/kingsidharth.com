@@ -8,6 +8,10 @@ interface DitherThumbProps {
   seed: number;
   width?: number;
   aspect?: 'video' | 'square';
+  /** Token the mask is flooded with. Page thumbs take the page ink;
+      anything behind glass must ask for a screen token, because the
+      glass and the page are no longer the same theme. */
+  ink?: string;
   className?: string;
 }
 
@@ -108,6 +112,7 @@ export default function DitherThumb({
   seed,
   width = 96,
   aspect = 'square',
+  ink = '--foreground',
   className,
 }: DitherThumbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -165,7 +170,7 @@ export default function DitherThumb({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.globalCompositeOperation = 'source-over';
       ctx.clearRect(0, 0, logicalW * upscale, logicalH * upscale);
-      ctx.fillStyle = resolveToken('--foreground');
+      ctx.fillStyle = resolveToken(ink);
       ctx.fillRect(0, 0, logicalW * upscale, logicalH * upscale);
 
       ctx.globalCompositeOperation = 'destination-in';
@@ -177,10 +182,13 @@ export default function DitherThumb({
     paint();
 
     const observer = new MutationObserver(paint);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'data-instrument'],
+    });
 
     return () => observer.disconnect();
-  }, [motif, seed, width, aspect]);
+  }, [motif, seed, width, aspect, ink]);
 
   return (
     <canvas

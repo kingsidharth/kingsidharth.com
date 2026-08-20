@@ -22,6 +22,21 @@ export interface LabPlate {
   par: number;
   /** The one plate that answers the pointer and carries the drift. */
   focus?: boolean;
+  /** Per-plate ink override, per theme. A plate with its own ink is
+      painted FLAT in that colour — no tone ramp to hot, no colour
+      families — which is what a solid silhouette subject needs. */
+  ink?: LabRGB;
+  lightInk?: LabRGB;
+  /** Set false for a subject that runs off the frame edge on purpose:
+      the in-grid edge feather would fade it out where it should simply
+      continue. */
+  feather?: boolean;
+  /** Slow horizontal bob, in pixels. A background that moves a little,
+      slowly, reads as distant and alive; zero (the default) is still. */
+  sway?: number;
+  /** Keep the tone ramp but take no colour families — for clouds and
+      other things that should stay faint and white. */
+  mono?: boolean;
 }
 
 export interface LabPalette {
@@ -38,6 +53,11 @@ export interface LabPalette {
   famBLight?: LabRGB[];
   /** How much of the mark the colour takes, 0-1. */
   mix?: number;
+  /** Discrete colour patches at bloom scale instead of the slow
+      positional wash: each patch takes ONE member of ONE family, edges
+      are hard, and the brightest cells give the colour back to the hot
+      end of the ramp so highlights read white. */
+  crisp?: boolean;
 }
 
 export interface LabDrifter {

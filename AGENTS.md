@@ -29,3 +29,10 @@ Also a design / taste tatement / digital art-piece sort of thing.
 - "The 3D canvas is black" is almost never the scene code — read the
   checklist in `src/components/instruments/TransformerEngine.tsx`'s
   header before touching anything.
+- Instrument chrome (chassis/screen/screws) is themed by DEVICE, not by
+  page: `data-instrument` on `<html>` picks `contrast` (default, device
+  opposes the page) or `matched`. Never branch hardware styling on
+  `.dark` alone — use the selector pairs documented in the "INSTRUMENT
+  HARDWARE" block of `src/styles/global.css`. Text on a chassis is safe
+  because `.chassis` re-scopes `--foreground`/`--muted-foreground`/
+  `--primary` to the panel.

@@ -59,11 +59,11 @@
      point: it reads as contrast precisely because it is rationed. */
   --contrast: oklch(0.52 0.11 195);
 
-  /* Green means correct / live / running. On cream paper a vivid green
-     fails contrast, so light mode gets a darker, denser one and dark
-     mode gets the vivid phosphor version. Same hue family either way. */
+  /* Green means correct / live / running. On the page it follows the
+     paper: cream gets a darker, denser green, the dark bench gets the
+     vivid phosphor version. The screen version lives with the device
+     tokens below — the glass inverts independently of the page. */
   --success: oklch(0.5 0.14 152);
-  --success-screen: oklch(0.52 0.15 152);
 
   /* -- semantic (light is the default document) -------------------- */
   --background: var(--paper-50);
@@ -87,41 +87,12 @@
   --ring: var(--hue-600);
   --radius: 0.25rem;
 
-  /* -- instrument hardware -----------------------------------------
-     Light is a cream-and-graphite bench instrument: anodised panel,
-     engraved lettering, a paper-white readout under glass. */
-  --chassis-hi: oklch(0.945 0.011 85);
-  --chassis-lo: oklch(0.885 0.015 82);
-  --chassis-edge: oklch(0.76 0.018 78);
-
-  /* Bevels. `light` is the lit top edge, `dark` the shaded bottom one.
-     Every raised or recessed part is built from this pair. */
-  --bevel-light: rgb(255 255 255 / 0.9);
-  --bevel-dark: rgb(90 74 52 / 0.28);
-  --bevel-deep: rgb(70 56 38 / 0.42);
-
-  --screw-hi: oklch(0.9 0.012 85);
-  --screw-lo: oklch(0.68 0.016 78);
-  --screw-slot: oklch(0.6 0.018 76);
-
-  /* The recessed well a screen or a fader track sits inside. */
-  --well: oklch(0.855 0.016 82);
-
-  --screen-bg: oklch(0.965 0.012 88);
-  --screen-fg: var(--hue-700);
-  --screen-dim: oklch(0.7 0.085 70);
-  /* A second, colourless phosphor. On a panel whose job is to be *read*
-     — a token list, a table of figures — amber-on-amber leaves nothing
-     for a signal to stand out against, because everything is already
-     wearing the accent. These two carry the data; the saturated tokens
-     above are then free to mean something. */
-  --screen-plain: oklch(0.32 0.008 80);
-  --screen-plain-dim: oklch(0.56 0.01 80);
-  --screen-glow: 0 0 0 rgb(0 0 0 / 0);
-  --screen-scanline: rgb(90 70 40 / 0.05);
-  --screen-vignette: rgb(120 96 60 / 0.16);
-
   --rule: oklch(0.88 0.014 82);
+
+  /* Card hairlines follow the PAGE, not the device. The chassis edge
+     inverts with the instrument setting, and cards wearing it ended
+     up with a light outline on the dark bench. */
+  --card-edge: oklch(0.78 0.016 80);
 
   /* One tile of fractal noise, stamped into a data URI rather than
      applied as `filter: url(#…)` on the element itself. As a filter the
@@ -155,10 +126,47 @@
   --input: oklch(0.28 0.01 62);
   --ring: var(--hue-500);
 
+  --rule: oklch(0.26 0.01 62);
+
+  --card-edge: oklch(0.3 0.012 65);
+
+  --contrast: oklch(0.82 0.13 190);
+
+  /* Vivid on the dark bench; this is the "it works" colour. The screen
+     version lives with the device tokens below. */
+  --success: oklch(0.82 0.2 148);
+
+  color-scheme: dark;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   INSTRUMENT HARDWARE
+
+   Two devices, and which one shows up is a CHOICE, not a consequence
+   of the page theme. Default is `contrast`: the device opposes the
+   page — graphite on cream, cream on the bench at night.
+   `data-instrument='matched'` pairs them: cream in the light, graphite
+   in the dark.
+
+   The CHROME (chassis, screws, well, panel) and the SCREEN (the glass
+   and phosphor inside it) are decoupled. Chrome keys on
+   `data-instrument`; the screen keys on `data-screen`, so a graphite
+   bench can hold cream glass, or a cream bench a dark readout. Every
+   hardware rule is therefore keyed on the relevant DEVICE's theme via
+   these selector pairs, never on the page's `.dark`.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ═─ CHROME ─════════════════════════════════════════════════════════ */
+
+/* The dark bench: graphite panel. */
+:root:not(.dark):not([data-instrument='matched']),
+.dark[data-instrument='matched'] {
   --chassis-hi: oklch(0.295 0.011 68);
   --chassis-lo: oklch(0.185 0.008 62);
   --chassis-edge: oklch(0.105 0.005 55);
 
+  /* Bevels. `light` is the lit top edge, `dark` the shaded bottom one.
+     Every raised or recessed part is built from this pair. */
   --bevel-light: rgb(255 255 255 / 0.14);
   --bevel-dark: rgb(0 0 0 / 0.65);
   --bevel-deep: rgb(0 0 0 / 0.85);
@@ -167,11 +175,41 @@
   --screw-lo: oklch(0.22 0.008 60);
   --screw-slot: oklch(0.11 0.005 55);
 
+  /* The recessed well a screen or a fader track sits inside. */
   --well: oklch(0.14 0.006 58);
+}
 
-  --screen-bg: oklch(0.135 0.01 120);
+/* The cream bench: anodised panel. */
+.dark:not([data-instrument='matched']),
+:root:not(.dark)[data-instrument='matched'] {
+  --chassis-hi: oklch(0.945 0.011 85);
+  --chassis-lo: oklch(0.885 0.015 82);
+  --chassis-edge: oklch(0.76 0.018 78);
+
+  --bevel-light: rgb(255 255 255 / 0.9);
+  --bevel-dark: rgb(90 74 52 / 0.28);
+  --bevel-deep: rgb(70 56 38 / 0.42);
+
+  --screw-hi: oklch(0.9 0.012 85);
+  --screw-lo: oklch(0.68 0.016 78);
+  --screw-slot: oklch(0.6 0.018 76);
+
+  --well: oklch(0.855 0.016 82);
+}
+
+/* ═─ SCREEN ─══════════════════════════════════════════════════════ */
+
+/* The dark glass: graphite, phosphor readout. */
+:root:not(.dark):not([data-screen='matched']),
+.dark[data-screen='matched'] {
+  --screen-bg: oklch(0.06 0.008 120);
   --screen-fg: var(--hue-phosphor);
   --screen-dim: oklch(0.53 0.085 72);
+  /* A second, colourless phosphor. On a panel whose job is to be *read*
+     — a token list, a table of figures — amber-on-amber leaves nothing
+     for a signal to stand out against, because everything is already
+     wearing the accent. These two carry the data; the saturated tokens
+     above are then free to mean something. */
   --screen-plain: oklch(0.965 0.003 90);
   --screen-plain-dim: oklch(0.7 0.006 85);
   /* The aperture does not glow — only the phosphor text does. A
@@ -180,15 +218,26 @@
   --screen-scanline: rgb(0 0 0 / 0.3);
   --screen-vignette: rgb(0 0 0 / 0.62);
 
-  --rule: oklch(0.26 0.01 62);
-
-  --contrast: oklch(0.82 0.13 190);
-
-  /* Vivid on the dark bench; this is the "it works" colour. */
-  --success: oklch(0.82 0.2 148);
   --success-screen: oklch(0.86 0.21 148);
+}
 
-  color-scheme: dark;
+/* The cream glass: anodised readout under glass. The glass is a warm
+   OFF-white, not paper-white — at full paper the scanlines, the vignette
+   and the sheen all vanished into the page. */
+.dark:not([data-screen='matched']),
+:root:not(.dark)[data-screen='matched'] {
+  --screen-bg: oklch(0.93 0.013 86);
+  --screen-fg: var(--hue-700);
+  /* Deeper than the dark glass's dim: pale amber on off-white was
+     washing out to nothing (the dial's 1.00 being the case in point). */
+  --screen-dim: oklch(0.58 0.09 68);
+  --screen-plain: oklch(0.32 0.008 80);
+  --screen-plain-dim: oklch(0.56 0.01 80);
+  --screen-glow: 0 0 0 rgb(0 0 0 / 0);
+  --screen-scanline: rgb(90 70 40 / 0.12);
+  --screen-vignette: rgb(120 96 60 / 0.26);
+
+  --success-screen: oklch(0.52 0.15 152);
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -216,6 +265,7 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-rule: var(--rule);
+  --color-card-edge: var(--card-edge);
 
   --color-chassis-hi: var(--chassis-hi);
   --color-chassis-lo: var(--chassis-lo);
@@ -411,7 +461,9 @@
   }
 
 
-  /* A turned metal cap — the top of a knob, or the slug of a switch. */
+  /* A turned metal cap — the top of a knob, or the slug of a switch.
+     Like the plaque, it owns its ink: the metal inverts with the
+     chassis, so the lettering on it has to invert too. */
   .cap {
     background: radial-gradient(
       circle at 34% 27%,
@@ -425,10 +477,26 @@
       0 1px 3px var(--bevel-dark);
   }
 
+  :root:not(.dark):not([data-instrument='matched']) .cap,
+  .dark[data-instrument='matched'] .cap {
+    color: var(--hue-500);
+  }
+
+  .dark:not([data-instrument='matched']) .cap,
+  :root:not(.dark)[data-instrument='matched'] .cap {
+    color: var(--hue-700);
+  }
+
   /* ── chassis ─────────────────────────────────────────────────────
      A milled panel. The repeating gradient is a brushed-metal grain,
      kept far below the threshold of conscious notice — it exists to
-     stop the large flat area from banding. */
+     stop the large flat area from banding.
+
+     Which device the panel IS is decoupled from the page theme (see
+     the hardware tokens), so the lighting and the re-scoped text
+     tokens below are keyed on the device, not on `.dark`. The text
+     re-scope is what keeps `text-foreground` readable: inside a
+     chassis it resolves to the PANEL's foreground, not the page's. */
   .chassis {
     position: relative;
     border-radius: 6px;
@@ -440,22 +508,35 @@
       ),
       linear-gradient(180deg, var(--color-chassis-hi) 0%, var(--color-chassis-lo) 100%);
     border: 1px solid var(--color-chassis-edge);
-    box-shadow:
-      inset 0 1px 0 var(--bevel-light),
-      inset 1px 0 0 rgb(255 255 255 / 0.05),
-      inset -1px 0 0 var(--bevel-dark),
-      inset 0 -1px 0 var(--bevel-dark),
-      0 1px 1px rgb(0 0 0 / 0.18),
-      0 8px 22px -6px rgb(0 0 0 / 0.3),
-      0 26px 60px -18px rgb(0 0 0 / 0.35);
   }
 
-  .dark .chassis {
+  :root:not(.dark):not([data-instrument='matched']) .chassis,
+  .dark[data-instrument='matched'] .chassis {
+    --foreground: oklch(0.93 0.012 85);
+    --muted-foreground: oklch(0.64 0.014 75);
+    --primary: var(--hue-500);
+
     box-shadow:
       inset 0 1px 0 var(--bevel-light),
       inset 1px 0 0 rgb(255 255 255 / 0.045),
       inset -1px 0 0 var(--bevel-dark),
       inset 0 -1px 0 var(--bevel-deep),
+      0 1px 1px rgb(0 0 0 / 0.18),
+      0 8px 22px -6px rgb(0 0 0 / 0.3),
+      0 26px 60px -18px rgb(0 0 0 / 0.35);
+  }
+
+  .dark:not([data-instrument='matched']) .chassis,
+  :root:not(.dark)[data-instrument='matched'] .chassis {
+    --foreground: oklch(0.22 0.014 60);
+    --muted-foreground: oklch(0.52 0.012 65);
+    --primary: var(--hue-700);
+
+    box-shadow:
+      inset 0 1px 0 var(--bevel-light),
+      inset 1px 0 0 rgb(255 255 255 / 0.05),
+      inset -1px 0 0 var(--bevel-dark),
+      inset 0 -1px 0 var(--bevel-dark),
       0 1px 1px rgb(0 0 0 / 0.5),
       0 10px 26px -6px rgb(0 0 0 / 0.6),
       0 30px 70px -20px rgb(0 0 0 / 0.75);
@@ -476,7 +557,10 @@
 
   /* ── raised nameplate ────────────────────────────────────────────
      A metal plaque screwed onto the panel face. Raised, so it is lit
-     on top and drops a shadow onto the chassis beneath. */
+     on top and drops a shadow onto the chassis beneath. The lettering
+     colour is owned here, not by the page: the plate inverts with the
+     chassis, so its ink has to invert with it — bright on the dark
+     plate, dark on the light one. */
   .plaque {
     display: inline-flex;
     align-items: center;
@@ -484,19 +568,26 @@
     padding: 0.4rem 0.85rem;
     border-radius: 3px;
     border: 1px solid var(--color-chassis-edge);
-    background: linear-gradient(
-      180deg,
-      color-mix(in oklch, var(--color-chassis-hi) 82%, white) 0%,
-      var(--color-chassis-lo) 100%
-    );
     box-shadow:
       inset 0 1px 0 var(--bevel-light),
       inset 0 -1px 0 var(--bevel-dark),
       0 1px 2px var(--bevel-dark);
   }
 
-  .dark .plaque {
+  :root:not(.dark):not([data-instrument='matched']) .plaque,
+  .dark[data-instrument='matched'] .plaque {
+    color: var(--hue-500);
     background: linear-gradient(180deg, oklch(0.36 0.012 70) 0%, oklch(0.21 0.009 62) 100%);
+  }
+
+  .dark:not([data-instrument='matched']) .plaque,
+  :root:not(.dark)[data-instrument='matched'] .plaque {
+    color: var(--hue-700);
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--color-chassis-hi) 82%, white) 0%,
+      var(--color-chassis-lo) 100%
+    );
   }
 
   /* ── indicator lamp ──────────────────────────────────────────────
@@ -508,7 +599,10 @@
     height: 8px;
     flex: none;
     border-radius: 50%;
-    background: var(--color-muted-foreground);
+    /* Raw token, not the --color-* alias: aliases resolve once at
+       :root, so they cannot see the chassis re-scope. Anything printed
+       on a panel references the panel's tokens directly. */
+    background: var(--muted-foreground);
     box-shadow:
       inset 0 -1px 1px rgb(0 0 0 / 0.5),
       inset 0 1px 1px rgb(255 255 255 / 0.25),
@@ -531,17 +625,22 @@
   .groove {
     background: linear-gradient(180deg, var(--color-well) 0%, color-mix(in oklch, var(--color-well) 84%, white) 100%);
     border-radius: 999px;
-    box-shadow:
-      inset 0 2px 4px rgb(0 0 0 / 0.45),
-      inset 0 -1px 0 var(--bevel-light),
-      0 1px 0 var(--bevel-light);
   }
 
-  .dark .groove {
+  :root:not(.dark):not([data-instrument='matched']) .groove,
+  .dark[data-instrument='matched'] .groove {
     box-shadow:
       inset 0 2px 5px rgb(0 0 0 / 0.9),
       inset 0 -1px 0 rgb(255 255 255 / 0.06),
       0 1px 0 rgb(255 255 255 / 0.05);
+  }
+
+  .dark:not([data-instrument='matched']) .groove,
+  :root:not(.dark)[data-instrument='matched'] .groove {
+    box-shadow:
+      inset 0 2px 4px rgb(0 0 0 / 0.45),
+      inset 0 -1px 0 var(--bevel-light),
+      0 1px 0 var(--bevel-light);
   }
 
   /* ── knurled metal ───────────────────────────────────────────────
@@ -572,41 +671,49 @@
     overflow: hidden;
     border-radius: 8px;
     background: var(--color-screen);
-    box-shadow:
-      /* 1 — bezel band and its inner lip */
-      inset 0 0 0 5px var(--color-chassis-lo),
-      inset 0 0 0 6px var(--color-chassis-edge),
-      /* 2 — the aperture shadow falling onto the glass */
-      inset 0 8px 12px -4px rgb(0 0 0 / 0.5),
-      /* 3 — vignette */
-      inset 0 0 34px 6px var(--screen-vignette),
-      inset 1.5px 0 0 0 oklch(0.62 0.2 25 / 0.22),
-      inset -1.5px 0 0 0 oklch(0.6 0.14 200 / 0.22),
-      /* outer: the panel cutout */
-      0 0 0 1px var(--color-chassis-edge),
-      0 1px 0 var(--bevel-light),
-      var(--screen-glow);
   }
 
-  .dark .crt {
+  :root:not(.dark):not([data-screen='matched']) .crt,
+  .dark[data-screen='matched'] .crt {
     box-shadow:
+      /* 1 — bezel band and its inner lip */
       inset 0 0 0 5px oklch(0.155 0.007 58),
       inset 0 0 0 6px oklch(0.09 0.004 55),
+      /* 2 — the aperture shadow falling onto the glass */
       inset 0 8px 16px -4px rgb(0 0 0 / 0.9),
+      /* 3 — vignette */
       inset 0 0 40px 8px var(--screen-vignette),
       /* Chromatic fringe: red and cyan misconverging on opposite edges */
       inset 1.5px 0 0 0 oklch(0.62 0.2 25 / 0.4),
       inset -1.5px 0 0 0 oklch(0.75 0.14 200 / 0.4),
+      /* outer: the panel cutout */
       0 0 0 1px oklch(0.09 0.004 55),
+      0 1px 0 var(--bevel-light),
+      var(--screen-glow);
+  }
+
+  .dark:not([data-screen='matched']) .crt,
+  :root:not(.dark)[data-screen='matched'] .crt {
+    box-shadow:
+      inset 0 0 0 5px var(--color-chassis-lo),
+      inset 0 0 0 6px var(--color-chassis-edge),
+      inset 0 8px 12px -4px rgb(0 0 0 / 0.5),
+      inset 0 0 34px 6px var(--screen-vignette),
+      inset 1.5px 0 0 0 oklch(0.62 0.2 25 / 0.22),
+      inset -1.5px 0 0 0 oklch(0.6 0.14 200 / 0.22),
+      0 0 0 1px var(--color-chassis-edge),
       0 1px 0 var(--bevel-light),
       var(--screen-glow);
   }
 
   /* Phosphor bloom. text-shadow inherits, and `currentColor` resolves
      per element, so amber readouts glow amber and green ones glow
-     green without any per-element wiring. Dark only — on the light
-     readout a glow just reads as blur. */
-  .dark .crt {
+     green without any per-element wiring. Dark glass only — on the
+     paper-white readout a glow just reads as blur. Which theme has
+     which glass is the SCREEN choice, so this keys on `data-screen`,
+     not the chrome. */
+  :root:not(.dark):not([data-screen='matched']) .crt,
+  .dark[data-screen='matched'] .crt {
     text-shadow:
       0 0 0.5px color-mix(in oklch, currentColor 85%, transparent),
       0 0 3px color-mix(in oklch, currentColor 55%, transparent),
@@ -647,11 +754,13 @@
 
   /* ── the navigation bar ──────────────────────────────────────────
      A control strip floating above the bench rather than a browser
-     chrome bar welded to the viewport edge. */
+     chrome bar welded to the viewport edge. Bound to the PAGE tokens,
+     not the chassis ones: the chassis inverts against the page, and a
+     navbar that followed it would put dark text on a dark pill. */
   .navbar {
     border-radius: 999px;
-    border: 1px solid color-mix(in oklch, var(--color-chassis-edge) 70%, transparent);
-    background: color-mix(in oklch, var(--color-chassis-hi) 55%, transparent);
+    border: 1px solid color-mix(in oklch, var(--color-border) 70%, transparent);
+    background: color-mix(in oklch, var(--color-card) 55%, transparent);
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     box-shadow:
@@ -678,7 +787,7 @@
 
   .dark .navbar {
     border: 1px solid rgb(255 255 255 / 0.08);
-    background: color-mix(in oklch, var(--color-chassis-hi) 42%, transparent);
+    background: color-mix(in oklch, var(--color-card) 42%, transparent);
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.14),
       inset 0 -1px 0 rgb(0 0 0 / 0.5),
@@ -705,7 +814,7 @@
     font-weight: 600;
     font-size: 0.8125rem;
     line-height: 1.2;
-    color: var(--color-muted-foreground);
+    color: var(--muted-foreground);
   }
 
   /* Chromatic aberration on screen type. The red/cyan pair sits under
@@ -736,7 +845,7 @@
     line-height: 0.95;
     letter-spacing: -0.035em;
     font-variant-numeric: tabular-nums;
-    color: var(--color-foreground);
+    color: var(--foreground);
   }
 
   .gauge-value {
@@ -746,7 +855,7 @@
     line-height: 1.05;
     letter-spacing: -0.025em;
     font-variant-numeric: tabular-nums;
-    color: var(--color-foreground);
+    color: var(--foreground);
   }
 
   .gauge-label {
@@ -755,7 +864,7 @@
     font-family: var(--font-condensed);
     font-weight: 500;
     font-size: 0.6875rem;
-    color: var(--color-muted-foreground);
+    color: var(--muted-foreground);
   }
 
 /* ── Ticker ──────────────────────────────────────────────────────
@@ -814,7 +923,7 @@
     position: relative;
     overflow: hidden;
     border-radius: var(--radius-lg);
-    border: 1px solid var(--color-chassis-edge);
+    border: 1px solid var(--color-card-edge);
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.22),
       inset 0 -2px 3px rgb(0 0 0 / 0.35),
@@ -900,15 +1009,20 @@
     z-index: 0;
     pointer-events: none;
     border-radius: inherit;
-    opacity: 0.3;
-    mix-blend-mode: overlay;
     background-image: var(--noise-tile);
     background-size: 160px 160px;
   }
 
-  .dark .chassis::after {
-    mix-blend-mode: soft-light;
+  :root:not(.dark):not([data-instrument='matched']) .chassis::after,
+  .dark[data-instrument='matched'] .chassis::after {
     opacity: 0.45;
+    mix-blend-mode: soft-light;
+  }
+
+  .dark:not([data-instrument='matched']) .chassis::after,
+  :root:not(.dark)[data-instrument='matched'] .chassis::after {
+    opacity: 0.3;
+    mix-blend-mode: overlay;
   }
 
   @media (prefers-reduced-transparency: reduce) {
@@ -1206,16 +1320,12 @@
 }
 
 /* The cool palettes want a cooler bench and paper too, or the warm
-   greys underneath fight the accent. */
+   greys underneath fight the accent. Page tokens follow the page;
+   device tokens follow the device, as everywhere else. */
 :root:not([data-accent='amber']) {
   --background: oklch(0.98 0.005 265);
   --muted: oklch(0.94 0.008 265);
   --card: oklch(0.965 0.006 265);
-  --chassis-hi: oklch(0.95 0.006 265);
-  --chassis-lo: oklch(0.895 0.009 265);
-  --chassis-edge: oklch(0.78 0.012 265);
-  --well: oklch(0.87 0.01 265);
-  --screen-bg: oklch(0.97 0.006 265);
   --rule: oklch(0.89 0.008 265);
   --border: oklch(0.87 0.008 265);
 }
@@ -1224,14 +1334,27 @@
   --background: oklch(0.16 0.012 275);
   --muted: oklch(0.23 0.014 275);
   --card: oklch(0.19 0.013 275);
+  --rule: oklch(0.27 0.014 275);
+  --border: oklch(0.29 0.014 275);
+  --screen-glow: 0 0 0 rgb(0 0 0 / 0);
+}
+
+:root:not(.dark):not([data-instrument='matched']):not([data-accent='amber']),
+.dark[data-instrument='matched']:not([data-accent='amber']) {
   --chassis-hi: oklch(0.3 0.016 275);
   --chassis-lo: oklch(0.19 0.012 275);
   --chassis-edge: oklch(0.11 0.008 275);
   --well: oklch(0.14 0.01 275);
-  --screen-bg: oklch(0.14 0.014 278);
-  --rule: oklch(0.27 0.014 275);
-  --border: oklch(0.29 0.014 275);
-  --screen-glow: 0 0 0 rgb(0 0 0 / 0);
+  --screen-bg: oklch(0.06 0.012 280);
+}
+
+.dark:not([data-instrument='matched']):not([data-accent='amber']),
+:root:not(.dark)[data-instrument='matched']:not([data-accent='amber']) {
+  --chassis-hi: oklch(0.95 0.006 265);
+  --chassis-lo: oklch(0.895 0.009 265);
+  --chassis-edge: oklch(0.78 0.012 265);
+  --well: oklch(0.87 0.01 265);
+  --screen-bg: oklch(0.935 0.008 265);
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -1573,7 +1696,19 @@
  * colour, driven dark and saturated. A neutral black shadow greys the
  * card; this one deepens it. */
 .card-title {
-  font-family: var(--font-condensed);
+  /* The active app font when one is picked in Settings, falling back to
+     the condensed face when none is. `:root[data-font] h1–h4` already
+     applies the app font to titles marked as real headings, but most
+     card titles are `<span>`s that never match it — so every card title
+     follows the chosen font here, uniformly. */
+  font-family:
+    var(
+      --font-sans-active,
+      'IBM Plex Sans Condensed',
+      'IBM Plex Sans Variable',
+      ui-sans-serif,
+      sans-serif
+    );
   font-weight: 700;
   text-shadow:
     0 1px 0 color-mix(in oklch, var(--card-base, black) 45%, black),

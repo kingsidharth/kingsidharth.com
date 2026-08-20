@@ -107,6 +107,13 @@ interface Options {
   bg: string;
   alt: string;
   invert: boolean;
+  /**
+   * Reverse the ramp after the floor, not the source. Highlights that
+   * landed on a full block become thin, shadows become full — the paper
+   * invert. Distinct from `--invert`, which flips luminance before the
+   * floor and fills the empty sky.
+   */
+  invertRamp: boolean;
   shape: boolean;
   /** Cells below this normalised luminance render blank. */
   floor: number;
@@ -132,6 +139,7 @@ function parseArgs(argv: string[]): Options {
     bg: '#000000',
     alt: 'ASCII rendering',
     invert: false,
+    invertRamp: false,
     shape: true,
     floor: 0,
     gamma: 1,
@@ -153,6 +161,7 @@ function parseArgs(argv: string[]): Options {
     else if (a === '--floor') opts.floor = Number(next());
     else if (a === '--gamma') opts.gamma = Number(next());
     else if (a === '--invert') opts.invert = true;
+    else if (a === '--invert-ramp') opts.invertRamp = true;
     else if (a === '--no-shape') opts.shape = false;
     else if (a === '-h' || a === '--help') {
       console.log(
@@ -163,7 +172,7 @@ function parseArgs(argv: string[]): Options {
           '  --floor n   drop cells darker than n (0-1) to blank — this is what\n' +
           '              isolates a subject and gives the image depth\n' +
           '  --gamma n   <1 lifts midtones, >1 crushes them\n' +
-          '  --bg <css>  --alt <text>  --invert  --no-shape',
+          '  --bg <css>  --alt <text>  --invert  --invert-ramp  --no-shape',
       );
       process.exit(0);
     } else rest.push(a);
@@ -299,16 +308,26 @@ async function build(o: Options): Promise<string> {
         ch = ramp[Math.min(ramp.length - 1, Math.floor(lum * ramp.length))];
       }
 
+      if (o.invertRamp) {
+        const idx = ramp.indexOf(ch);
+        if (idx >= 0) ch = ramp[ramp.length - 1 - idx] ?? ch;
+        if (ch === ' ') {
+          row.push({ ch: ' ', lum: 0, colour: [0, 0, 0], alpha: 0 });
+          continue;
+        }
+      }
+
       const avg: RGB = [
         Math.round(quads.reduce((a, p) => a + p[0], 0) / 4),
         Math.round(quads.reduce((a, p) => a + p[1], 0) / 4),
         Math.round(quads.reduce((a, p) => a + p[2], 0) / 4),
       ];
+      const mark = o.invertRamp ? 1 - lum : lum;
       row.push({
         ch,
         lum,
         colour: quantise(avg, palette, lum),
-        alpha: o.ink ? Math.min(1, 0.4 + lum * 0.7) : 1,
+        alpha: o.ink ? Math.min(1, 0.4 + mark * 0.7) : 1,
       });
     }
     grid.push(row);

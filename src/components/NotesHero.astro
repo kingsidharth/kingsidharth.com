@@ -92,6 +92,8 @@ const layerStyle = [
 </div>
 
 <script>
+  import { paperTone, pickGlyph } from '@/lib/treatments';
+
   interface Grid {
     cols: number;
     rows: number;
@@ -491,13 +493,14 @@ const layerStyle = [
           const lit = base;
           if (lit < cut + (hash01(x, y) - 0.5) * 0.05) continue;
 
-          const top = l.ramp.length - 1;
           /* floor, not round. Rounding shifts every mark on every plate
              up half a step of the ramp, which quietly thickened the whole
              scene — `step` is 0 on the four plates that do not drift, and
-             the arithmetic has to be identical for them. */
-          const gi = Math.min(top, Math.max(0, Math.floor(lit * l.ramp.length + step)));
-          const glyph = l.ramp[gi];
+             the arithmetic has to be identical for them. On paper the
+             ramp runs the other way, so the same floor still lands on
+             the inverted rung. */
+          const tone = paperTone(base, 0, !dark);
+          const glyph = pickGlyph(l.ramp, tone, step);
           if (!glyph || glyph === ' ') continue;
 
           /* Attention, as a falloff. Squared distance and a squared
@@ -557,7 +560,7 @@ const layerStyle = [
           }
 
 
-          const a = Math.min(1, l.alpha * fade * (0.3 + lit * 1.05) * (1 + near * 0.28));
+          const a = Math.min(1, l.alpha * fade * (0.3 + tone * 1.05) * (1 + near * 0.28));
           if (a < 0.015) continue;
           l.ctx.fillStyle = `rgba(${r | 0},${g | 0},${b | 0},${a.toFixed(3)})`;
           l.ctx.fillText(glyph, gx + cw / 2, gy + chh / 2);

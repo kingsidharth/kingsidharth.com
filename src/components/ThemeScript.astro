@@ -37,6 +37,14 @@
       if (treatment) root.setAttribute('data-treatment', treatment);
       var fringe = localStorage.getItem('design:fringe');
       if (fringe) root.setAttribute('data-fringe', fringe);
+      // Which device the instruments are (cream vs graphite) is decoupled
+      // from the page theme — the CSS keys on this attribute.
+      var instrument = localStorage.getItem('design:instrument');
+      if (instrument) root.setAttribute('data-instrument', instrument);
+      // The screen (the glass and phosphor inside the chrome) is its own
+      // choice, independent of the instrument chrome above.
+      var screen = localStorage.getItem('design:screen');
+      if (screen) root.setAttribute('data-screen', screen);
     } catch (e) {
       /* private mode: fall through to the CSS defaults */
     }

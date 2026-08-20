@@ -84,7 +84,10 @@ function LampButton({
       <span
         className={cn(
           'font-condensed text-[13px] leading-none',
-          on ? 'font-semibold text-foreground' : 'text-muted-foreground',
+          /* No colour of its own — the plaque owns its ink, and it
+             inverts with the chassis. On/off reads as weight and
+             opacity instead. */
+          on ? 'font-semibold' : 'opacity-55',
         )}
       >
         {label}

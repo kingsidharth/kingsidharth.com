@@ -20,9 +20,13 @@ type Scale = 'default' | 's' | 'l';
 type Headline = 'auto' | 'light' | 'regular' | 'bold';
 type Ligatures = 'default' | 'on' | 'off';
 type ThemeMode = 'light' | 'dark';
+/** Which chrome the instruments are, relative to the page theme. */
+type Instrument = 'contrast' | 'matched';
+/** Which glass the screens are, independent of the chrome. */
+type Screen = 'contrast' | 'matched';
 /** Channel separation stacked on top of whatever treatment is chosen. */
 type Fringe = 'off' | 'subtle' | 'strong';
-type Tab = 'typesetting' | 'theme' | 'artwork';
+type Tab = 'typesetting' | 'theme' | 'instrument' | 'artwork';
 
 const ACCENT_KEY = 'design:accent';
 const TYPESET_KEY = 'design:typeset';
@@ -32,6 +36,8 @@ const HEADLINE_KEY = 'design:headline';
 const LIGATURES_KEY = 'design:ligatures';
 const TREATMENT_KEY = 'design:treatment';
 const FRINGE_KEY = 'design:fringe';
+const INSTRUMENT_KEY = 'design:instrument';
+const SCREEN_KEY = 'design:screen';
 const THEME_KEY = 'theme';
 
 /* The only hardcoded colours in this file — swatch previews for palettes
@@ -99,6 +105,32 @@ const FRINGE_OPTIONS: { value: Fringe; label: string }[] = [
   { value: 'off', label: 'Off' },
   { value: 'subtle', label: 'Subtle' },
   { value: 'strong', label: 'Strong' },
+];
+
+const INSTRUMENT_OPTIONS: { value: Instrument; label: string; description: string }[] = [
+  {
+    value: 'contrast',
+    label: 'Contrast (default)',
+    description: 'Graphite bench on the light page, cream bench on the dark one',
+  },
+  {
+    value: 'matched',
+    label: 'Match page',
+    description: 'Cream bench in the light, graphite bench in the dark',
+  },
+];
+
+const SCREEN_OPTIONS: { value: Screen; label: string; description: string }[] = [
+  {
+    value: 'contrast',
+    label: 'Contrast (default)',
+    description: 'Dark glass on the light page, cream glass on the dark one',
+  },
+  {
+    value: 'matched',
+    label: 'Match site',
+    description: 'Cream glass follows the light site, graphite glass the dark one',
+  },
 ];
 
 const HEADLINE_OPTIONS: { value: Headline; label: string }[] = [
@@ -301,6 +333,26 @@ function readFringe(): Fringe {
   return 'off';
 }
 
+function readInstrument(): Instrument {
+  try {
+    const stored = localStorage.getItem(INSTRUMENT_KEY);
+    if (stored === 'matched') return stored;
+  } catch {
+    /* private mode: fall back to the default */
+  }
+  return 'contrast';
+}
+
+function readScreen(): Screen {
+  try {
+    const stored = localStorage.getItem(SCREEN_KEY);
+    if (stored === 'matched') return stored;
+  } catch {
+    /* private mode: fall back to the default */
+  }
+  return 'contrast';
+}
+
 /* Both of these land as attributes on <html> like every other setting
    here, rather than being pushed at the canvas directly. The canvas is
    one consumer today; the attribute is the contract, and anything else
@@ -339,8 +391,45 @@ function applyFringe(fringe: Fringe) {
   }
 }
 
-function applyTheme(mode: ThemeMode) {
-  const dark = mode === 'dark';
+/* Lands as an attribute on <html> like every other setting here — the
+   hardware CSS keys on it, so no canvas or island needs telling. */
+function applyInstrument(instrument: Instrument) {
+  if (instrument === 'contrast') {
+    document.documentElement.removeAttribute('data-instrument');
+  } else {
+    document.documentElement.setAttribute('data-instrument', instrument);
+  }
+  try {
+    if (instrument === 'contrast') {
+      localStorage.removeItem(INSTRUMENT_KEY);
+    } else {
+      localStorage.setItem(INSTRUMENT_KEY, instrument);
+    }
+  } catch {
+    /* private mode: the choice just will not persist */
+  }
+}
+
+/* Lands as an attribute on <html> like the chrome — the screen CSS keys
+   on it independently, so the glass can differ from the chassis. */
+function applyScreen(screen: Screen) {
+  if (screen === 'contrast') {
+    document.documentElement.removeAttribute('data-screen');
+  } else {
+    document.documentElement.setAttribute('data-screen', screen);
+  }
+  try {
+    if (screen === 'contrast') {
+      localStorage.removeItem(SCREEN_KEY);
+    } else {
+      localStorage.setItem(SCREEN_KEY, screen);
+    }
+  } catch {
+    /* private mode: the choice just will not persist */
+  }
+}
+
+function applyTheme(mode: ThemeMode) {  const dark = mode === 'dark';
   document.documentElement.classList.toggle('dark', dark);
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
   for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]')) {
@@ -400,6 +489,7 @@ function CloseGlyph({ className }: { className?: string }) {
 const TABS: { id: Tab; label: string }[] = [
   { id: 'typesetting', label: 'Typesetting' },
   { id: 'theme', label: 'Theme colour' },
+  { id: 'instrument', label: 'Instrument' },
   { id: 'artwork', label: 'Artwork' },
 ];
 
@@ -414,6 +504,8 @@ export default function DesignSettings() {
   const [ligatures, setLigatures] = useState<Ligatures>('default');
   const [treatment, setTreatment] = useState<Treatment>('blocks');
   const [fringe, setFringe] = useState<Fringe>('off');
+  const [instrument, setInstrument] = useState<Instrument>('contrast');
+  const [screen, setScreen] = useState<Screen>('contrast');
   const [themeMode, setThemeMode] = useState<ThemeMode>('light');
   const [mounted, setMounted] = useState(false);
 
@@ -432,6 +524,8 @@ export default function DesignSettings() {
     setLigatures(readLigatures());
     setTreatment(readTreatment());
     setFringe(readFringe());
+    setInstrument(readInstrument());
+    setScreen(readScreen());
     setThemeMode(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
     setMounted(true);
   }, []);
@@ -557,6 +651,16 @@ export default function DesignSettings() {
   const handleAccentSelect = useCallback((value: Accent) => {
     setAccent(value);
     applyAccent(value);
+  }, []);
+
+  const handleInstrumentSelect = useCallback((value: Instrument) => {
+    setInstrument(value);
+    applyInstrument(value);
+  }, []);
+
+  const handleScreenSelect = useCallback((value: Screen) => {
+    setScreen(value);
+    applyScreen(value);
   }, []);
 
   const handleThemeSelect = useCallback((mode: ThemeMode) => {
@@ -832,6 +936,67 @@ export default function DesignSettings() {
                   Dark
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* Instrument panel */}
+          <div
+            role="tabpanel"
+            id={`${panelId}-panel-instrument`}
+            aria-labelledby={`${panelId}-tab-instrument`}
+            hidden={tab !== 'instrument'}
+            className="flex flex-col gap-4 p-4"
+          >
+            <div className="flex flex-col gap-2">
+              <span className="nameplate block">Chrome</span>
+              {INSTRUMENT_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleInstrumentSelect(option.value)}
+                  aria-pressed={instrument === option.value}
+                  className={cn(
+                    'groove flex flex-col items-start gap-0.5 rounded-md px-3 py-2 text-left transition-colors',
+                    instrument === option.value ? 'ring-2 ring-accent' : '',
+                  )}
+                >
+                  <span className="text-sm font-medium text-foreground">{option.label}</span>
+                  <span className="text-xs text-muted-foreground">{option.description}</span>
+                </button>
+              ))}
+              <span className="text-xs text-muted-foreground">
+                The bench itself — chassis, screws and panel — against the page.
+              </span>
+            </div>
+
+            <div className="panel-divider-h flex flex-col gap-2 pt-3">
+              <span className="nameplate block">Screen</span>
+              {SCREEN_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleScreenSelect(option.value)}
+                  aria-pressed={screen === option.value}
+                  className={cn(
+                    'groove flex flex-col items-start gap-0.5 rounded-md px-3 py-2 text-left transition-colors',
+                    screen === option.value ? 'ring-2 ring-accent' : '',
+                  )}
+                >
+                  <span className="text-sm font-medium text-foreground">{option.label}</span>
+                  <span className="text-xs text-muted-foreground">{option.description}</span>
+                </button>
+              ))}
+              <span className="text-xs text-muted-foreground">
+                The glass and phosphor inside — set apart from the chrome, so a graphite
+                bench can hold cream glass or the reverse.
+              </span>
+            </div>
+
+            {/* A miniature of the current bench, so the choice is visible
+                without closing the panel. */}
+            <div className="crt mt-2 p-3">
+              <p className="readout text-screen-dim">Sample readout</p>
+              <p className="gauge-value font-semibold text-screen-fg">1M+</p>
             </div>
           </div>
 

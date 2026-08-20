@@ -34,7 +34,7 @@ const layouts: Record<string, { text: string; cls: string }[]> = {
   ],
 };
 const lines = layouts[entry.data.id] ?? [
-  { text: title, cls: 'block text-[24px] leading-[0.95]' },
+  { text: title, cls: 'block text-[28px] leading-[0.95]' },
 ];
 
 /* Portrait, because that is the shape a series cover actually is.
@@ -57,7 +57,7 @@ const ground = posterGround(seed, { from, via, to });
   style={`--breathe-dur:${7 + (seed % 3) * 2}s; --breathe-delay:-${(seed % 7) * 0.9}s; --card-base:${via}`}
 >
   <article
-    class="grain relative flex size-full flex-col overflow-hidden rounded-lg border border-chassis-edge saturate-[0.6] transition-[filter] duration-300 group-hover:saturate-100 group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:saturate-100"
+    class="grain relative flex size-full flex-col overflow-hidden rounded-lg border border-card-edge saturate-[0.6] transition-[filter] duration-300 group-hover:saturate-100 group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:saturate-100"
   >
     <div class="card-ground absolute inset-0" style={`background:${ground};`} aria-hidden="true"></div>
 

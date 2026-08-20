@@ -53,8 +53,8 @@ const SVG_COLS = 120;
  * painting this replaced, it has no reason to be dark-mode-only.
  */
 const INKS = [
-  { suffix: '', ink: '#f2e3c4' },
-  { suffix: '-light', ink: '#3a2f22' },
+  { suffix: '', ink: '#f2e3c4', invertRamp: false },
+  { suffix: '-light', ink: '#3a2f22', invertRamp: true },
 ] as const;
 
 const sharp = (await import('sharp')).default;
@@ -69,7 +69,7 @@ await sharp(SOURCE)
   .png()
   .toFile(PREPPED);
 
-for (const { suffix, ink } of INKS) {
+for (const { suffix, ink, invertRamp } of INKS) {
   const out = `static/art/hero-thangka${suffix}.svg`;
   // `--no-shape`: quadrant matching earns its keep on a face at 92 cols,
   // but across broad smooth gradients it finds edges in its own dither
@@ -78,8 +78,11 @@ for (const { suffix, ink } of INKS) {
   // but a dimmer one — its dots separate as they enlarge and the form
   // dissolves into speckle. Shade blocks hold the mass, and against a
   // modelled source they hold its volume with it.
+  // `--invert-ramp` on the paper ink: highlights go thin, shadows go
+  // full — the same invert the canvas applies in light mode.
+  const flip = invertRamp ? '--invert-ramp' : '';
   await Bun
-    .$`bun scripts/asciify.ts ${PREPPED} -o ${out} --cols ${SVG_COLS} --cell ${WIDTH / SVG_COLS} --ink ${ink} --bg transparent --ramp shade --no-shape --floor 0.07 --gamma 0.68`.quiet();
+    .$`bun scripts/asciify.ts ${PREPPED} -o ${out} --cols ${SVG_COLS} --cell ${WIDTH / SVG_COLS} --ink ${ink} --bg transparent --ramp shade --no-shape --floor 0.07 --gamma 0.68 ${flip}`.quiet();
 
   const svg = await Bun.file(out).text();
   console.log(`${out}  ${SVG_COLS} cols, ${svg.split('<text').length - 1} glyphs`);

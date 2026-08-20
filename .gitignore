@@ -53,6 +53,10 @@ Gemfile.lock
 !src/**/*.css
 !static/
 !static/**
+# `!static/**` un-ignores everything under static/, including the OS
+# junk the rules at the top of this file exist to keep out. Re-ignore it
+# here, after the negation, or every Finder visit offers a .DS_Store.
+static/**/.DS_Store
 
 .astro/
 .vercel/
@@ -63,3 +67,9 @@ static/fonts
 # Source art for the ascii pipeline — generated, large, and only needed
 # to re-render. The SVG output in static/art is what ships.
 art-src/
+
+# Python helpers under scripts/ (layer splitting for the ascii pipeline)
+scripts/__pycache__/
+# Intermediate plate PNGs the splitter writes next to itself; the JSON
+# grids in static/art are the shipped artefact.
+scripts/layer-*.png

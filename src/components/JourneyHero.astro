@@ -70,13 +70,18 @@ const layerStyle = [
       page background — so it lifted the empty black and the hero became
       a blue rectangle with a visible edge. The blue hour lives in the
       layer inks instead, where it only touches drawn cells. */}
+  {/* The dark vignette belongs to the night version only. On cream it
+      is a grey stain around the artwork; the masks already dissolve
+      the edges, so light mode gets nothing. */}
   <div
-    class="absolute inset-0 bg-[radial-gradient(120%_95%_at_50%_46%,transparent_40%,rgb(0_0_0/0.6)_100%)]"
+    class="absolute inset-0 hidden bg-[radial-gradient(120%_95%_at_50%_46%,transparent_40%,rgb(0_0_0/0.6)_100%)] dark:block"
   >
   </div>
 </div>
 
 <script>
+  import { paperTone, pickGlyph } from '@/lib/treatments';
+
   interface Grid {
     cols: number;
     rows: number;
@@ -94,6 +99,11 @@ const layerStyle = [
     /** The same pair for light mode, where the ramp runs the other way. */
     lightInk: readonly [number, number, number];
     lightHot: readonly [number, number, number];
+    /** Cells below this are dropped. In light mode the floor sits
+        higher — faint cells are depth on black, haze on paper. */
+    cut: number;
+    /** Light-mode floor. Falls back to `cut` when absent. */
+    lightCut?: number;
     alpha: number;
     /** Cells per second. 0 pins the layer in place. */
     speed: number;
@@ -103,8 +113,6 @@ const layerStyle = [
     top: number;
     /** Height, as a fraction of the frame. */
     height: number;
-    /** Cells below this are dropped. */
-    cut: number;
   }
 
   const LAYERS: Record<string, Layer> = {
@@ -135,8 +143,11 @@ const layerStyle = [
          the two hues are doing distance as well as identity. */
       ink: [78, 104, 142],
       hot: [252, 138, 190],
-      lightInk: [148, 158, 178],
-      lightHot: [198, 62, 122],
+      /* On paper the terrain is drawn, not glowing: a slate line dark
+         enough to read on cream, and a sun that stays an accent rather
+         than flooding the frame. */
+      lightInk: [96, 102, 126],
+      lightHot: [176, 44, 104],
       alpha: 1,
       speed: 0,
       top: 0,
@@ -147,6 +158,7 @@ const layerStyle = [
          96% of cells arrive above the threshold and the whole frame
          fills in. The night has to be cut back here or there is no night. */
       cut: 0.22,
+      lightCut: 0.32,
     },
   };
 
@@ -208,6 +220,9 @@ const layerStyle = [
       l.ctx.textBaseline = 'middle';
 
       const spanW = l.cols * cw;
+      /* The floor the night is cut to. On paper it sits higher — faint
+         cells are depth on black, haze on cream. */
+      const cut = dark ? l.cut : (l.lightCut ?? l.cut);
       // A pinned layer centres; a drifting one wraps across the frame.
       /* Phase offsets matter more than they look. Without them every
          bank starts at the same point on its loop, which is off the left
@@ -222,7 +237,7 @@ const layerStyle = [
       for (let y = 0; y < l.rows; y += 1) {
         for (let x = 0; x < l.cols; x += 1) {
           const base = (l.lum[y * l.cols + x] ?? 0) / 255;
-          if (base < l.cut + (hash01(x, y) - 0.5) * 0.06) continue;
+          if (base < cut + (hash01(x, y) - 0.5) * 0.06) continue;
 
           /* Light coming along the path.
              A band travelling DOWN the frame, so illumination arrives
@@ -254,19 +269,25 @@ const layerStyle = [
             const band = Math.exp(-((rad - 0.185) ** 2) / 0.004);
             const spin = 0.5 + 0.5 * Math.sin(Math.atan2(fy, fx) * 2 - t * 0.42);
 
-            /* And the disc itself gets lifted.
-               The painting's sun is orange, and orange is only about half
-               as luminous as it looks — it converts to a mid grey, so it
-               was arriving in the middle of the ramp and rendering as a
-               mauve shape rather than as a light. Nothing in the tone
-               curve could fix that, because the tone was never there.
-               Lifting inside the known radius puts it at the top of the
-               ramp, where the core blows to white. */
+            /* And the disc itself.
+               Dark mode lifts it: the painting's orange sun converts to
+               a mid grey, arriving in the middle of the ramp as a mauve
+               shape rather than a light, and no tone curve can fix that
+               because the tone was never there — lifting inside the
+               known radius puts it at the top of the ramp, where the
+               core blows to white.
+               Light mode does the opposite, and this is the part that
+               is not an inversion of colour but of MATERIAL: on paper
+               the sun is the one place the page shows through. Pulling
+               the disc DOWN drops its cells under the cut, so the sun
+               reads as a clean circle of paper held inside its drawn
+               rim — the way an engraving leaves the light source blank
+               and draws everything around it. */
             const disc = 1 - smoothstep(0.1, 0.17, rad);
 
             lit = Math.min(
               1,
-              base * (1 + w * (swell - 1)) + band * spin * base * 0.5 + disc * 0.38,
+              base * (1 + w * (swell - 1)) + band * spin * base * 0.5 + disc * (dark ? 0.38 : -0.24),
             );
           } else if (l.art === 'journey-near') {
             const band = ((t * 0.09) % 1.5) - 0.25;
@@ -278,27 +299,36 @@ const layerStyle = [
           }
 
           /* The pointer lifts whatever it is over, on every layer, so
-             reaching into the sky brightens gas and disc alike. */
+             reaching into the sky brightens gas and disc alike. Kept
+             off `lit` so the paper invert can flip the picture without
+             flipping the reach. */
+          let pointer = 0;
           if (px >= 0) {
             const dx = x / l.cols - px;
             const dy = (y / l.rows - py) * 0.5;
             const d = Math.sqrt(dx * dx + dy * dy);
-            if (d < 0.18) lit = Math.min(1, lit + (1 - d / 0.18) ** 2 * 0.45);
+            if (d < 0.18) pointer = (1 - d / 0.18) ** 2 * 0.45;
           }
 
-          const glyph = l.ramp[Math.min(l.ramp.length - 1, Math.floor(lit * l.ramp.length))];
+          const invert = !dark;
+          const tone = paperTone(invert ? 1 - lit : lit, pointer, false);
+          const glyph = pickGlyph(l.ramp, tone);
           if (!glyph || glyph === ' ') continue;
+          lit = Math.min(1, lit + pointer);
 
           // Toward the layer's highlight only where it is already hot, so
           // the accent stays rationed rather than tinting the whole bank.
-          const h = Math.max(0, (lit - 0.55) / 0.45);
+          // On paper it is rationed harder: at full pull the sun is one
+          // flat pink disc, which is precisely the light-mode failure
+          // this tuning exists to fix.
+          const h = Math.max(0, (lit - 0.55) / 0.45) * (dark ? 1 : 0.55);
           const ink = dark ? l.ink : l.lightInk;
           const hot = dark ? l.hot : l.lightHot;
           /* Accent through the midtones, white at the very top. A hue
              held all the way to maximum reads as a coloured shape; letting
              the core blow out is what makes it read as a light source
              that happens to be pink. */
-          const core = smoothstep(0.84, 1, lit) * (dark ? 0.85 : 0.35);
+          const core = smoothstep(0.84, 1, lit) * (dark ? 0.85 : 0.2);
           const r = Math.round((ink[0] + (hot[0] - ink[0]) * h) * (1 - core) + 255 * core);
           const g = Math.round((ink[1] + (hot[1] - ink[1]) * h) * (1 - core) + 246 * core);
           const b = Math.round((ink[2] + (hot[2] - ink[2]) * h) * (1 - core) + 250 * core);
@@ -306,7 +336,7 @@ const layerStyle = [
           // Was `0.35 + base * 0.75`, which capped even a pure-white cell at
           // well under full strength once the layer alpha was applied. The
           // brightest cells now reach the layer's alpha exactly.
-          const a = Math.min(1, l.alpha * (0.3 + lit * 1.05));
+          const a = Math.min(1, l.alpha * (0.3 + tone * 1.05));
           l.ctx.fillStyle = `rgba(${r},${g},${b},${a.toFixed(3)})`;
           l.ctx.fillText(glyph, originX + x * cw + cw / 2, oy + y * chh + chh / 2);
         }
