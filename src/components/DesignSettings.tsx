@@ -511,7 +511,24 @@ export default function DesignSettings() {
 
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Partial<Record<Tab, HTMLButtonElement | null>>>({});
+
+  /* The chassis is ONE box that changes size, not a button with a panel
+     parked above it. That is the whole point of this component: it
+     used to be two chassis rectangles on screen at once, a round one
+     and a tall one, and they read as two objects rather than one thing
+     opening. So the size is state, and the content is measured. */
+  const [natural, setNatural] = useState(0);
+  /* Spring for open and close, a short ease for content-driven resizes.
+     Switching tabs changes the height too, and a spring on every tab
+     press bounces the whole panel for no reason — the user asked for
+     one thing to open, not for the furniture to wobble. */
+  const [resize, setResize] = useState<'spring' | 'close' | 'smooth'>('spring');
+  /* The open size is capped against the viewport, so the viewport has to
+     be state too — otherwise rotating a phone leaves the panel sized for
+     the orientation it opened in. */
+  const [viewport, setViewport] = useState({ w: 1024, h: 768 });
 
   const panelId = `design-settings-panel-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
 
@@ -531,12 +548,42 @@ export default function DesignSettings() {
   }, []);
 
   const closePanel = useCallback(() => {
+    setResize('close');
     setOpen(false);
     triggerRef.current?.focus();
   }, []);
 
   const toggleOpen = useCallback(() => {
-    setOpen((prev) => !prev);
+    setOpen((prev) => {
+      setResize(prev ? 'close' : 'spring');
+      return !prev;
+    });
+  }, []);
+
+  /* Measure the content, and keep measuring: the four tabs are
+     different heights, and so is the typeface list once a face loads. */
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    // The previous measurement lives in a ref, not in the setState
+    // updater: only a change AFTER the first measure is content-driven,
+    // and the jump from 0 must not steal the opening spring.
+    const seen = { h: 0 };
+    const observer = new ResizeObserver(([entry]) => {
+      const h = entry.contentRect.height;
+      if (seen.h > 0 && h !== seen.h) setResize('smooth');
+      seen.h = h;
+      setNatural(h);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [mounted]);
+
+  useEffect(() => {
+    const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   // Escape + outside click.
@@ -568,7 +615,7 @@ export default function DesignSettings() {
   // Basic focus trap: keep Tab navigation inside the panel while open.
   useEffect(() => {
     if (!open) return;
-    const panel = panelRef.current;
+    const panel = contentRef.current;
     if (!panel) return;
 
     // Move initial focus into the panel.
@@ -670,8 +717,42 @@ export default function DesignSettings() {
 
   if (!mounted) return null;
 
+  /* The collapsed face is the 44px round button; open, the same box is
+     320 wide, as tall as its content will allow, and milled square at
+     the 6px the chassis uses everywhere else. Everything between those
+     two states is interpolation. */
+  const COLLAPSED = 44;
+  const OPEN_W = 320;
+  const capW = Math.min(OPEN_W, viewport.w - 32);
+  const capH = Math.min(natural, viewport.h - 96);
+
+  const spring = 'cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+  /* Asymmetric on purpose. Overshoot on the way open reads as the thing
+     springing out; the same overshoot on the way closed reads as it
+     failing to shut. Closing is shorter and lands flat. */
+  const morph =
+    resize === 'smooth'
+      ? `width 0.4s ${spring}, height 0.15s ease-out, border-radius 0.4s ${spring}`
+      : resize === 'close'
+        ? 'width 0.3s ease-out, height 0.3s ease-out, border-radius 0.3s ease-out'
+        : `width 0.4s ${spring}, height 0.4s ${spring}, border-radius 0.4s ${spring}`;
+
   return (
-    <>
+    <div
+      ref={panelRef}
+      role={open ? 'dialog' : undefined}
+      aria-label={open ? 'Design settings' : undefined}
+      style={{
+        width: open ? capW : COLLAPSED,
+        height: open ? Math.max(capH, COLLAPSED) : COLLAPSED,
+        borderRadius: open ? 6 : COLLAPSED / 2,
+        transition: morph,
+      }}
+      className={cn(
+        'chassis fixed bottom-4 left-4 z-50 overflow-hidden sm:bottom-6 sm:left-6',
+        'motion-reduce:transition-none',
+      )}
+    >
       <button
         ref={triggerRef}
         type="button"
@@ -679,9 +760,11 @@ export default function DesignSettings() {
         aria-label="Design settings"
         aria-expanded={open}
         aria-controls={panelId}
+        inert={open}
         className={cn(
-          'chassis fixed bottom-4 left-4 z-40 flex size-11 items-center justify-center rounded-full sm:bottom-6 sm:left-6',
-          'text-foreground transition-transform duration-150 ease-out hover:scale-105 active:scale-95',
+          'absolute bottom-0 left-0 flex size-11 items-center justify-center text-foreground',
+          'transition-[opacity,transform] duration-200 ease-out',
+          open ? 'scale-90 opacity-0' : 'scale-100 opacity-100',
         )}
       >
         <Screw className="left-1 top-1" />
@@ -689,17 +772,20 @@ export default function DesignSettings() {
         <SlidersGlyph className="size-5" />
       </button>
 
-      {open && (
-        <div
-          ref={panelRef}
-          id={panelId}
-          role="dialog"
-          aria-label="Design settings"
-          className={cn(
-            'chassis fixed bottom-[4.75rem] left-4 z-50 flex max-h-[calc(100vh-6rem)] w-[320px] max-w-[calc(100vw-2rem)] flex-col overflow-y-auto sm:bottom-[5.5rem] sm:left-6',
-            'transition-opacity duration-150 ease-out',
-          )}
-        >
+      {/* The panel is always mounted — a box cannot animate to the size
+          of content that does not exist yet — so `inert` is what keeps
+          its controls out of the tab order while it is shut. */}
+      <div
+        id={panelId}
+        inert={!open}
+        style={{ width: capW, maxHeight: 'calc(100vh - 6rem)' }}
+        className={cn(
+          'absolute bottom-0 left-0 flex flex-col overflow-y-auto',
+          'transition-opacity duration-200 ease-out',
+          open ? 'opacity-100 delay-100' : 'opacity-0',
+        )}
+      >
+        <div ref={contentRef} className="flex flex-col">
           <Screw className="left-2.5 top-2.5" />
           <Screw className="right-2.5 top-2.5" />
 
@@ -1063,7 +1149,7 @@ export default function DesignSettings() {
             </div>
           </div>
         </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 }

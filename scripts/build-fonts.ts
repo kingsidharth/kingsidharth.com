@@ -28,17 +28,29 @@ import { $ } from 'bun';
 const ROOT = `${process.env.HOME}/Sites/fonts`;
 const OUT = 'static/fonts/generated';
 
+/**
+ * A pinned axis (`wdth: 100`) collapses to one value and leaves the
+ * file. A range (`wdth: [75, 100]`) survives as an axis the browser can
+ * still drive — which is the whole reason these faces were chosen. Anek
+ * and Zalando carry a real condensed half, and a condensed bold is a
+ * different drawing from a bold squeezed by the rasteriser.
+ */
+type AxisRange = number | readonly [min: number, max: number];
+
 interface Face {
   /** Output basename, and the id used on the command line. */
   name: string;
   /** Path under ~/Sites/fonts. */
   src: string;
-  /** Axes to pin, so only weight survives. */
-  pin?: Record<string, number>;
+  /** Axes to pin to one value, or clamp to a narrower range. */
+  pin?: Record<string, AxisRange>;
 }
 
 const FACES: Face[] = [
-  { name: 'AnekLatin-var', src: 'anek/AnekLatin/variable/AnekLatin[wdth,wght].ttf', pin: { wdth: 100 } },
+  /* wdth 75-100, not a pin at 100. The source runs 75-125; the expanded
+     half is dead weight nothing on the site sets, but the condensed half
+     is what card titles are for. */
+  { name: 'AnekLatin-var', src: 'anek/AnekLatin/variable/AnekLatin[wdth,wght].ttf', pin: { wdth: [75, 100] } },
   { name: 'FunnelDisplay-var', src: 'funnel_display/variable/FunnelDisplay[wght].ttf' },
   { name: 'Gabarito-var', src: 'gabarito/variable/Gabarito[wght].ttf' },
   { name: 'Matangi-var', src: 'matangi/Matangi[wght].ttf' },
@@ -47,9 +59,12 @@ const FACES: Face[] = [
   // list and throws — so its opsz and ital axes stay in the file and the
   // browser takes their defaults, which are the text drawing and upright.
   { name: 'MonaSans-var', src: 'mona_sans/MonaSansVF[wght,opsz,ital].ttf' },
-  { name: 'ZalandoSans-var', src: 'zalando_sans/variable/ZalandoSans[wdth,wght,slnt].ttf', pin: { wdth: 100, slnt: 0 } },
+  { name: 'ZalandoSans-var', src: 'zalando_sans/variable/ZalandoSans[wdth,wght,slnt].ttf', pin: { wdth: [75, 100], slnt: 0 } },
   { name: 'SplineSans-var', src: 'spline_sans/SplineSans[wght].ttf' },
   { name: 'SplineSansMono-var', src: 'spline_sans/mono/SplineSansMono[wght].ttf' },
+  /* Still pinned, and unlike the two above that costs nothing:
+     Strichpunkt's wdth runs 100-200, so it has no condensed to keep —
+     only an expanded range no rule on the site asks for. */
   { name: 'StrichpunktSans-var', src: 'strichpunkt_sans/variable/StrichpunktSans[wdth,wght].ttf', pin: { wdth: 100 } },
 ];
 
@@ -100,7 +115,7 @@ for (const face of queue) {
   let input = src;
   if (face.pin) {
     const pinned = `${tmp}/${face.name}.ttf`;
-    const args = Object.entries(face.pin).map(([axis, value]) => `${axis}=${value}`);
+    const args = Object.entries(face.pin).map(([axis, v]) => (Array.isArray(v) ? `${axis}=${v[0]}:${v[1]}` : `${axis}=${v}`));
     await $`fonttools varLib.instancer ${src} ${args} -o ${pinned}`.quiet();
     input = pinned;
   }

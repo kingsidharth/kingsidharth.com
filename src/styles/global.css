@@ -1418,10 +1418,16 @@
   font-display: swap;
 }
 
+/* `font-stretch` is not decoration here: without the descriptor the
+   browser treats a face as normal-width only and never touches the
+   `wdth` axis, however much of it the file still carries. Anek and
+   Zalando are subset to 75-100 — the condensed half kept, the expanded
+   half dropped. */
 @font-face {
   font-family: 'Anek Latin';
   src: url('/fonts/generated/AnekLatin-var.woff2') format('woff2-variations');
   font-weight: 100 800;
+  font-stretch: 75% 100%;
   font-display: swap;
 }
 
@@ -1457,6 +1463,7 @@
   font-family: 'Zalando Sans';
   src: url('/fonts/generated/ZalandoSans-var.woff2') format('woff2-variations');
   font-weight: 200 900;
+  font-stretch: 75% 100%;
   font-display: swap;
 }
 
@@ -1710,6 +1717,12 @@
       sans-serif
     );
   font-weight: 700;
+  /* Condensed where the chosen face has a real `wdth` axis, ignored
+     everywhere else — a face without the axis is left alone rather than
+     squeezed, because no browser synthesises width and the ones that
+     tried made it look like a bug. The fallback stack already leads with
+     a drawn condensed. */
+  font-stretch: 87.5%;
   text-shadow:
     0 1px 0 color-mix(in oklch, var(--card-base, black) 45%, black),
     0 2px 6px color-mix(in oklch, var(--card-base, black) 30%, black);
