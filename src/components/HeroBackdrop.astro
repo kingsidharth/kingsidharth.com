@@ -17,6 +17,13 @@
  * is the only way a cell can climb the ramp and change glyph under the
  * cursor — that is the interaction: the statue's own glyphs transform,
  * rather than something else moving over the top of it.
+ *
+ * On top of that base interaction sit two opt-in ambient fields,
+ * chosen in the design panel and landed as `data-field` on <html>:
+ * scatter (glyphs shoved aside spring home) and bloom (loose cells
+ * breathe up the ramp). Both run through the same heat buffer and
+ * dirty-rect repaint as the pointer's stamp — they are emitters, not
+ * separate pipelines — and both go quiet under prefers-reduced-motion.
  */
 interface Props {
   class?: string;
@@ -161,6 +168,7 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
     TREATMENT_RAMPS,
     paperTone,
     pickGlyph,
+    readField,
     readFringeOffset,
     readTreatment,
   } from '@/lib/treatments';
@@ -169,6 +177,28 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
   const REACH = 8;
   /** Per-frame heat decay: about two seconds of tail at 60fps. */
   const DECAY = 0.955;
+
+  /* ---- Ambient field constants (cells and seconds throughout) ---- */
+
+  /* Scatter: velocity per stamp event at the stamp's centre, the
+     tangential curl on it, and the spring the glyph homes with. The
+     impulse only lands while the pointer is MOVING — a held pointer
+     presses, a swept one drags the weave apart. */
+  const SCATTER_PUSH = 3;
+  const SCATTER_SWIRL = 0.6;
+  const SCATTER_SPRING = 130;
+  const SCATTER_DAMP = 6.5;
+  const MAX_DISP = 3;
+  /* Repaint slack around a dirty patch: a displaced glyph is drawn up
+     to MAX_DISP cells from its home, so the patch that could contain it
+     is grown by this much on every side before clearing. */
+  const DISP_MARGIN = 4;
+
+  /* Bloom: cadence and how many cells wake per step. Sparse on purpose —
+     roughly forty lit cells across 25,600 reads as dust in the light;
+     four hundred would read as static. */
+  const BLOOM_STEP_MS = 150;
+  const BLOOM_PER_STEP = 3;
 
   function inkFor(dark: boolean): [number, number, number] {
     return dark ? [242, 227, 196] : [48, 38, 27];
@@ -327,7 +357,34 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
     let treatment = readTreatment(document.documentElement);
     let cool = TREATMENT_RAMPS[treatment];
     let fringe = readFringeOffset(document.documentElement);
+    let field = readField(document.documentElement);
     let raf = 0;
+
+    /* Scatter state. Displacement and velocity live in cells (Y in cell
+       rows), so paint() just adds disp * currentCellSize to the pen —
+       the buffers survive resizes without rescaling. Allocated lazily;
+       an `off` page never pays a byte for them. */
+    let dispX = new Float32Array(0);
+    let dispY = new Float32Array(0);
+    let velX = new Float32Array(0);
+    let velY = new Float32Array(0);
+
+    /* Ambient emitters (bloom) share one timer, owned by manageAmbient();
+       it re-arms on every visibility or field change. */
+    let ambientTimer: ReturnType<typeof setInterval> | undefined;
+    let inView = true;
+    /** Last tick's timestamp, for dt; 0 means "first frame". */
+    let lastTick = 0;
+
+    const fieldActive = (): boolean => field !== 'off' && !reduce.matches;
+
+    function ensureScatter(): void {
+      if (cols === 0 || dispX.length === cols * rows) return;
+      dispX = new Float32Array(cols * rows);
+      dispY = new Float32Array(cols * rows);
+      velX = new Float32Array(cols * rows);
+      velY = new Float32Array(cols * rows);
+    }
 
     const ctxOf = (canvas: HTMLCanvasElement) => canvas.getContext('2d');
 
@@ -424,8 +481,12 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
             bb = Math.round(b + (255 - b) * 0.75);
           }
 
-          const px = x * cw + cw / 2;
-          const py = y * chh + chh / 2;
+          // A scattered glyph draws where the field has pushed it, not
+          // at its home cell; every other field leaves the pen alone.
+          const ox = dispX.length > 0 ? (dispX[i] ?? 0) * cw : 0;
+          const oy = dispY.length > 0 ? (dispY[i] ?? 0) * chh : 0;
+          const px = x * cw + cw / 2 + ox;
+          const py = y * chh + chh / 2 + oy;
 
           if (fringe === 0) {
             ctx.fillStyle = `rgba(${rr},${gg},${bb},${alpha})`;
@@ -636,27 +697,138 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
       drawClouds(performance.now() / 1000);
     }
 
-    function tick(): void {
+    /** Start (or resume) the physics loop. */
+    function wake(): void {
+      if (!raf) {
+        lastTick = 0;
+        raf = requestAnimationFrame(tick);
+      }
+    }
+
+    /**
+     * Bloom. A few cells wake, climb partway up the ramp and cool over
+     * the ordinary heat tail — the same two seconds the pointer leaves
+     * behind it, which keeps every field on one clock.
+     */
+    function bloomStep(): void {
+      if (document.hidden || !fieldActive()) return;
+      for (let k = 0; k < BLOOM_PER_STEP; k += 1) {
+        /* Bias onto the artwork: a bloom in empty sky reads as noise,
+           one on the print reads as the print breathing. */
+        for (let t = 0; t < 10; t += 1) {
+          const x = Math.floor(Math.random() * cols);
+          const y = Math.floor(Math.random() * rows);
+          const i = y * cols + x;
+          if ((lum[i] ?? 0) <= 60) continue;
+          heat[i] = Math.min(1, (heat[i] ?? 0) + 0.32 + Math.random() * 0.3);
+          widen(x, y);
+          break;
+        }
+      }
+      wake();
+    }
+
+    /** One timer for whichever ambient emitter the field wants; re-armed
+        on visibility and field changes, silent under reduced motion. */
+    function manageAmbient(): void {
+      if (ambientTimer) {
+        clearInterval(ambientTimer);
+        ambientTimer = undefined;
+      }
+      if (!fieldActive() || !inView) return;
+      if (field === 'bloom') {
+        ambientTimer = setInterval(bloomStep, BLOOM_STEP_MS);
+      }
+    }
+
+    function tick(now: number): void {
+      const dt =
+        lastTick > 0 ? Math.min((now - lastTick) / 1000, 1 / 30) : 1 / 60;
+      lastTick = now;
+
       const prev = { ...box };
       box = { x0: 0, y0: 0, x1: -1, y1: -1 };
 
       let alive = false;
+      const integrating = fieldActive() && dispX.length > 0;
+
       for (let y = prev.y0; y <= prev.y1; y += 1) {
         for (let x = prev.x0; x <= prev.x1; x += 1) {
           const i = y * cols + x;
           const h = (heat[i] ?? 0) * DECAY;
           heat[i] = h > 0.004 ? h : 0;
-          if (heat[i] > 0) {
+          let hot = heat[i] > 0;
+
+          if (integrating) {
+            const damp = Math.exp(-SCATTER_DAMP * dt);
+            let vx = (velX[i] ?? 0) * damp;
+            let vy = (velY[i] ?? 0) * damp;
+            vx -= (dispX[i] ?? 0) * SCATTER_SPRING * dt;
+            vy -= (dispY[i] ?? 0) * SCATTER_SPRING * dt;
+            let dxn = (dispX[i] ?? 0) + vx * dt;
+            let dyn = (dispY[i] ?? 0) + vy * dt;
+            const len = Math.hypot(dxn, dyn);
+            if (len > MAX_DISP) {
+              const k = MAX_DISP / len;
+              dxn *= k;
+              dyn *= k;
+            }
+            dispX[i] = dxn;
+            dispY[i] = dyn;
+            velX[i] = vx;
+            velY[i] = vy;
+            if (len > 0.02 || Math.hypot(vx, vy) > 0.08) {
+              hot = true;
+            } else {
+              // Settled: hard-zero so the buffers decay to true rest
+              // instead of idling forever on sub-pixel residue.
+              dispX[i] = 0;
+              dispY[i] = 0;
+              velX[i] = 0;
+              velY[i] = 0;
+            }
+          }
+
+          if (hot) {
             widen(x, y);
             alive = true;
           }
         }
       }
 
-      // Repaint the union of where heat was and where it still is, or
-      // cooled cells keep the colour they had when the loop stopped.
-      paintBoth(prev.x0, prev.y0, prev.x1, prev.y1);
+      // Repaint the union of last frame's patch and anything widened
+      // this one — a fresh ring front lands outside the old box, so
+      // painting prev alone would leave it half-drawn — grown by the
+      // scatter margin so a displaced glyph is always repainted along
+      // with the ground it slid across.
+      let px0 = prev.x0;
+      let py0 = prev.y0;
+      let px1 = prev.x1;
+      let py1 = prev.y1;
+      if (box.x1 >= box.x0) {
+        if (px1 < px0) {
+          px0 = box.x0;
+          py0 = box.y0;
+          px1 = box.x1;
+          py1 = box.y1;
+        } else {
+          px0 = Math.min(px0, box.x0);
+          py0 = Math.min(py0, box.y0);
+          px1 = Math.max(px1, box.x1);
+          py1 = Math.max(py1, box.y1);
+        }
+      }
+      const m = integrating ? DISP_MARGIN : 0;
+      px0 = Math.max(0, px0 - m);
+      py0 = Math.max(0, py0 - m);
+      px1 = Math.min(cols - 1, px1 + m);
+      py1 = Math.min(rows - 1, py1 + m);
+
+      if (px1 >= px0 && py1 >= py0) {
+        paintBoth(px0, py0, px1, py1);
+      }
       raf = alive ? requestAnimationFrame(tick) : 0;
+      if (!raf) lastTick = 0;
     }
 
     function stamp(clientX: number, clientY: number): void {
@@ -684,7 +856,32 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
         heat.fill(0);
         return;
       }
-      if (!raf) raf = requestAnimationFrame(tick);
+
+      // Scatter: on top of the heat, a swept pointer shoves glyphs
+      // radially away with a tangential curl — the curl is what turns a
+      // flee into a vortex, and it is why circling the cursor feels
+      // different from crossing with it.
+      if (field === 'scatter' && dispX.length > 0) {
+        for (let dy = -REACH; dy <= REACH; dy += 1) {
+          for (let dx = -REACH; dx <= REACH; dx += 1) {
+            const d = Math.hypot(dx, dy);
+            if (d > REACH || d < 1e-4) continue;
+            const x = cx + dx;
+            const y = cy + dy;
+            if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
+            const fall = 1 - d / REACH;
+            const imp = fall * fall * SCATTER_PUSH;
+            const ux = dx / d;
+            const uy = dy / d;
+            const i = y * cols + x;
+            velX[i] = (velX[i] ?? 0) + (ux - uy * SCATTER_SWIRL) * imp;
+            velY[i] = (velY[i] ?? 0) + (uy + ux * SCATTER_SWIRL) * imp;
+            widen(x, y);
+          }
+        }
+      }
+
+      wake();
     }
 
     fetch('/art/hero-grid.json')
@@ -695,6 +892,7 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
         split = Math.round(rows * NEAR_FROM);
         lum = Uint8Array.from(atob(grid.lum), (c) => c.charCodeAt(0));
         heat = new Float32Array(cols * rows);
+        ensureScatter();
 
         // The sky can arrive late without anything looking broken, so it
         // is not worth blocking the statue on.
@@ -718,15 +916,21 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
 
         new ResizeObserver(repaintAll).observe(far);
 
-        // Theme ink, treatment and fringing all arrive as attributes on
-        // <html>, and a canvas can inherit none of them.
+        // Theme ink, treatment, fringing and field all arrive as
+        // attributes on <html>, and a canvas can inherit none of them.
         new MutationObserver(() => {
           const root = document.documentElement;
           const nextDark = root.classList.contains('dark');
           const nextInk = inkFor(nextDark);
           const nextTreatment = readTreatment(root);
           const nextFringe = readFringeOffset(root);
-          if (nextInk[0] === ink[0] && nextTreatment === treatment && nextFringe === fringe) {
+          const nextField = readField(root);
+          if (
+            nextInk[0] === ink[0] &&
+            nextTreatment === treatment &&
+            nextFringe === fringe &&
+            nextField === field
+          ) {
             return;
           }
           dark = nextDark;
@@ -735,13 +939,24 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
           treatment = nextTreatment;
           cool = TREATMENT_RAMPS[treatment];
           fringe = nextFringe;
+
+          // Switching fields releases live state immediately: displaced
+          // glyphs snap home before the repaint.
+          field = nextField;
+          ensureScatter();
+          dispX.fill(0);
+          dispY.fill(0);
+          velX.fill(0);
+          velY.fill(0);
+          manageAmbient();
           repaintAll();
         }).observe(document.documentElement, {
           attributes: true,
-          attributeFilter: ['class', 'data-treatment', 'data-fringe'],
+          attributeFilter: ['class', 'data-treatment', 'data-fringe', 'data-field'],
         });
 
-        if (matchMedia('(hover: hover)').matches) {
+        host.dataset.tiltArtwork = '';
+      if (matchMedia('(hover: hover)').matches || matchMedia('(pointer: coarse)').matches) {
           host.addEventListener('pointermove', (event: PointerEvent) => {
             stamp(event.clientX, event.clientY);
           });
@@ -771,12 +986,16 @@ const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMa
           // Nothing off-screen has any business holding a rAF loop open.
           new IntersectionObserver((entries) => {
             for (const entry of entries) {
+              inView = entry.isIntersecting;
               if (entry.isIntersecting && !skyRaf) skyRaf = requestAnimationFrame(sky);
               else if (!entry.isIntersecting && skyRaf) {
                 cancelAnimationFrame(skyRaf);
                 skyRaf = 0;
               }
             }
+            // The ambient emitters answer to visibility too — a hero
+            // scrolled away has no business ticking bloom timers.
+            manageAmbient();
           }).observe(cloudFront);
         }
 

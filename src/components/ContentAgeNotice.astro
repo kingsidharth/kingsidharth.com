@@ -1,0 +1,12 @@
+---
+interface Props { date: Date; }
+const { date } = Astro.props;
+const now = new Date();
+let years = now.getUTCFullYear() - date.getUTCFullYear();
+if (now.getUTCMonth() < date.getUTCMonth() || (now.getUTCMonth() === date.getUTCMonth() && now.getUTCDate() < date.getUTCDate())) years--;
+const fifthAnniversary = new Date(date);
+fifthAnniversary.setUTCFullYear(date.getUTCFullYear() + 5);
+---
+{now > fifthAnniversary && <aside class="mb-8 rounded-lg border border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground" aria-label="Older content">
+  This was written {years} years ago. Take it with a pinch of salt.
+</aside>}

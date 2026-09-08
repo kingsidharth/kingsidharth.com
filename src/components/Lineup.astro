@@ -25,7 +25,7 @@ const { series } = Astro.props;
   container and emits bare portrait cards through `display: contents`, so
   both card types land as direct children here and share its tracks.
 -->
-<div class="card-grid">
+<div class="card-grid" data-count={String(3 + series.length)}>
   <Programmes variant="lineup" />
   {series.map((entry) => <SeriesCard entry={entry} />)}
 </div>

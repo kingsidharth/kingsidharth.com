@@ -13,6 +13,7 @@ const { locale } = Astro.props as { locale: Locale };
 const t = useTranslations(locale);
 
 const guides = await getGuides(locale);
+const parts = guides.reduce((n, g) => n + g.chapters.length + 1, 0);
 ---
 
 <Base
@@ -21,25 +22,33 @@ const guides = await getGuides(locale);
   description="Long explanations, read in order. The stuff too big for a note."
   path="guides"
 >
-  <!-- The index gets the same cover treatment as the guides themselves,
-       on the black hole. It is the one artwork in the set that is not
-       about a single subject — a bright field with a hole in it — which
-       suits a page that is a way in to several things rather than a
-       thing itself. -->
+  <!-- The journey: a walker on a path toward a distant light. The title
+       block sits low left, where the artwork leaves the dark, and the
+       cards start inside the hero's lower edge so the walker's path
+       runs down into them. -->
   <header
-    class="relative isolate flex min-h-[max(30rem,84svh)] flex-col justify-start overflow-hidden pt-32 pb-14"
+    class="guide-index-hero relative isolate flex min-h-[max(28rem,72svh)] flex-col justify-end overflow-hidden pt-32 pb-28 sm:pb-36"
   >
     <JourneyHero />
     <div class="relative mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)">
-      <h1 class="pixel-type text-3xl sm:text-4xl lg:text-5xl">{t('guides.title')}</h1>
+      <p class="nameplate mb-3 text-[var(--hue-500)]">
+        {guides.length} {t('guides.title').toLowerCase()} · {parts} {t('guides.parts')} · {t('guides.sub')}
+      </p>
+      <h1 class="pixel-type text-4xl sm:text-5xl">{t('guides.title')}</h1>
+      <p class="mt-4 max-w-[44ch] text-base text-white/70 sm:text-lg">
+        Long explanations, read in order. Each one is the thing too big for a note, with the
+        machine on screen while you read about it.
+      </p>
     </div>
   </header>
 
-  <div class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pb-20">
+  <!-- Pulled up over the hero's foot: the cards belong to the picture,
+       not to the page under it. -->
+  <div class="relative z-10 mx-auto -mt-20 max-w-(--container-wide) px-(--spacing-gutter) pb-20 sm:-mt-24">
     <ul class="card-grid">
       {
         guides.map((guide, i) => (
-          <li>
+          <li data-arrive style={`--arrive-i:${i}`}>
             <GuideCard
               href={localePath(locale, `guides/${guide.slug}`)}
               title={guide.root.data.title}
@@ -57,3 +66,10 @@ const guides = await getGuides(locale);
     </ul>
   </div>
 </Base>
+
+<style>
+  .guide-index-hero {
+    background: #101218;
+    color: #f3f1eb;
+  }
+</style>

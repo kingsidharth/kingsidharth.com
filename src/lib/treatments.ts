@@ -58,6 +58,20 @@ export function readTreatment(root: HTMLElement): Treatment {
   return value && value in TREATMENT_RAMPS ? (value as Treatment) : 'blocks';
 }
 
+/**
+ * Ambient field modes the artwork can run under, on top of the pointer's
+ * plain heat. Both are opt-in; `off` is the still print.
+ *
+ * - `scatter` sweeps shove the glyphs aside and they spring home
+ * - `bloom` sparse cells breathe up the ramp on their own
+ */
+export type FieldMode = 'off' | 'scatter' | 'bloom';
+
+export function readField(root: HTMLElement): FieldMode {
+  const value = root.getAttribute('data-field');
+  return value === 'scatter' || value === 'bloom' ? value : 'off';
+}
+
 export function readFringeOffset(root: HTMLElement): number {
   return FRINGE_OFFSET[root.getAttribute('data-fringe') ?? 'off'] ?? 0;
 }

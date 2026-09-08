@@ -37,6 +37,26 @@ export interface LabPlate {
   /** Keep the tone ramp but take no colour families — for clouds and
       other things that should stay faint and white. */
   mono?: boolean;
+  /** Which colour family leads on this plate. `b` biases the positional
+      blend toward the second family (the bloom colours), `a` toward the
+      first. Unset keeps the plain 50/50-by-position behaviour. */
+  fam?: 'a' | 'b';
+  /** Paint this plate as a hole in the scene: every cell filled flat
+      with the page background, no ramp, no hue. A subject that should
+      read as negative space — the flowers stop for it. */
+  void?: boolean;
+  /** Region of the grid this plate keeps or excludes, in fractions.
+      Two plates sharing one grid on opposite sides of a `crop` are how
+      a subject drawn inside a bigger plate becomes its own parallax
+      layer without new art. Edges feather over ~2% so the split never
+      shows as a rectangle. */
+  crop?: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    keep: 'inside' | 'outside';
+  };
 }
 
 export interface LabPalette {
@@ -53,11 +73,8 @@ export interface LabPalette {
   famBLight?: LabRGB[];
   /** How much of the mark the colour takes, 0-1. */
   mix?: number;
-  /** Discrete colour patches at bloom scale instead of the slow
-      positional wash: each patch takes ONE member of ONE family, edges
-      are hard, and the brightest cells give the colour back to the hot
-      end of the ramp so highlights read white. */
-  crisp?: boolean;
+  /** Light-theme mix, when the wash needs to sit lighter on paper. */
+  lightMix?: number;
 }
 
 export interface LabDrifter {

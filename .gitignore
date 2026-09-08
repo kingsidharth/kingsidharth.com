@@ -73,3 +73,8 @@ scripts/__pycache__/
 # Intermediate plate PNGs the splitter writes next to itself; the JSON
 # grids in static/art are the shipped artefact.
 scripts/layer-*.png
+
+# Version CI workflows despite the legacy hidden-directory ignore.
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml

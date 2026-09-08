@@ -18,6 +18,7 @@
  */
 import Base from '@/layouts/Base.astro';
 import ArtLabScene from '@/components/ArtLabScene.astro';
+import ParticleScene from '@/components/ParticleScene.astro';
 import HeroBackdrop from '@/components/HeroBackdrop.astro';
 import JourneyHero from '@/components/JourneyHero.astro';
 import NotesHero from '@/components/NotesHero.astro';
@@ -128,51 +129,50 @@ const JADE: LabPalette = {
   mix: 0.7,
 };
 
-/* Night field: pink and purple carry the blooms, teal is the body of
-   the plant mass between them — famB (the bright families' positional
-   patches) does the flowers, famA fills. The cat takes neither: it gets
-   its own flat ink on its plate, because a silhouette that picks up
-   passing hue stops being a silhouette. */
+/* Night field: the same flower treatment the notes hero ships with —
+   greens and teals for the foliage, waterlily and lotus colours for the
+   blooms, an octave down on paper. The mix is pushed high: the blooms
+   have to read as COLOUR, not as a tint on the ink ramp. The cat takes
+   neither — its plate is a void, the page itself in a cat silhouette. */
 const FIELD: LabPalette = {
-  ink: [96, 92, 122],
-  hot: [250, 250, 255],
-  lightInk: [140, 142, 160],
-  lightHot: [30, 26, 40],
-  /* crisp: every patch is ONE of these, solid — so the members are the
-     actual flowers, not ramp stops. famA is the plant mass: teal with
-     real darks in it. famB is the blooms: pink and purple that stay
-     pink and purple. White is not in either family — it arrives as the
-     highlight, when the brightest cells hand colour back to `hot`. */
+  ink: [112, 122, 140],
+  hot: [242, 246, 255],
+  lightInk: [140, 146, 158],
+  lightHot: [46, 52, 64],
+  /* famA is the plant mass: teal with real darks in it. famB is the
+     blooms: lotus pink, blush, rose, lily cream, hyacinth. White is not
+     in either family — it arrives as the hot end of the ramp. */
   famA: [
-    [52, 150, 144],
-    [26, 84, 92],
-    [18, 44, 52],
+    [86, 186, 172],
+    [70, 164, 128],
+    [124, 196, 116],
+    [52, 142, 152],
+    [150, 202, 138],
   ],
   famB: [
-    [236, 110, 180],
-    [158, 96, 232],
-    [190, 60, 130],
-    [120, 80, 190],
+    [248, 152, 196],
+    [252, 214, 228],
+    [244, 112, 148],
+    [250, 230, 182],
+    [212, 158, 240],
   ],
   famALight: [
-    [10, 92, 88],
-    [8, 60, 68],
-    [12, 30, 36],
+    [22, 106, 100],
+    [20, 96, 68],
+    [54, 112, 46],
+    [14, 82, 92],
+    [72, 110, 52],
   ],
   famBLight: [
-    [190, 40, 120],
-    [110, 50, 180],
-    [150, 20, 90],
-    [86, 44, 150],
+    [188, 54, 112],
+    [176, 88, 128],
+    [172, 32, 66],
+    [148, 104, 30],
+    [116, 60, 158],
   ],
-  mix: 0.72,
-  crisp: true,
+  mix: 0.78,
+  lightMix: 0.62,
 };
-
-/* The cat, in both themes: a black cat is dark on cream too — lifted
-   just far enough off the page background to have a body. */
-const CAT_INK: [number, number, number] = [30, 28, 46];
-const CAT_INK_LIGHT: [number, number, number] = [40, 34, 54];
 
 const BOAT: LabDrifter = {
   art: 'lab-boat',
@@ -283,7 +283,25 @@ const BOAT: LabDrifter = {
         fit="contain"
         anchorY={0.42}
         palette={MONO}
-        plates={[{ art: 'lab-dragon-ink', depth: 0, alpha: 0.92, cut: 0.08, par: 0.6, focus: true }]}
+        plates={[
+          {
+            art: 'lab-dragon-ink',
+            depth: 0,
+            alpha: 0.92,
+            cut: 0.08,
+            par: 0.6,
+            focus: true,
+            crop: { x: 0.34, y: 0.69, w: 0.33, h: 0.24, keep: 'outside' },
+          },
+          {
+            art: 'lab-dragon-ink',
+            depth: 0,
+            alpha: 0.92,
+            cut: 0.05,
+            par: 1.1,
+            crop: { x: 0.34, y: 0.69, w: 0.33, h: 0.24, keep: 'inside' },
+          },
+        ]}
       />
       <div class="relative mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)">
         <p class="nameplate text-muted-foreground">A · ink</p>
@@ -298,7 +316,9 @@ const BOAT: LabDrifter = {
         only two things in it. Empty sides are not a bug here; the reference is mostly empty.
       </p>
       <p class="text-muted-foreground mt-2">
-        Real art needs three plates generated separately on black, drawn 3:4 portrait:
+        The warrior already moves as its own layer here — a feathered crop of the same grid on a
+        faster parallax — which is the composition the real art has to earn properly. Real art
+        needs three plates generated separately on black, drawn 3:4 portrait:
         <code>dragon</code> — the mass, filling one diagonal of the frame, head turned down toward
         the figure; <code>mist</code> — the wash it dissolves into, so the body has somewhere to
         end; <code>figure</code> — the human <em>off to one side</em>, not centred beneath it.
@@ -320,7 +340,25 @@ const BOAT: LabDrifter = {
         fit="contain"
         anchorY={0.46}
         palette={EMBER}
-        plates={[{ art: 'lab-dragon-red', depth: 0, alpha: 0.92, cut: 0.09, par: 0.6, focus: true }]}
+        plates={[
+          {
+            art: 'lab-dragon-red',
+            depth: 0,
+            alpha: 0.92,
+            cut: 0.09,
+            par: 0.6,
+            focus: true,
+            crop: { x: 0.22, y: 0.66, w: 0.31, h: 0.24, keep: 'outside' },
+          },
+          {
+            art: 'lab-dragon-red',
+            depth: 0,
+            alpha: 0.92,
+            cut: 0.05,
+            par: 1.1,
+            crop: { x: 0.22, y: 0.66, w: 0.31, h: 0.24, keep: 'inside' },
+          },
+        ]}
       />
       <div class="relative mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)">
         <p class="nameplate text-muted-foreground">A · ember</p>
@@ -413,20 +451,20 @@ const BOAT: LabDrifter = {
         anchorY={0.62}
         palette={FIELD}
         stars
+        drift={0}
         plates={[
           { art: 'lab-field-sky-far', depth: 0, alpha: 0.68, cut: 0.06, par: 0.04, sway: 5, mono: true },
           { art: 'lab-field-sky', depth: 0.02, alpha: 0.8, cut: 0.06, par: 0.12, sway: 9, mono: true },
           { art: 'lab-field-far', depth: 0.03, alpha: 0.78, cut: 0.06, par: 0.28 },
-          { art: 'lab-field-mid', depth: 0.07, alpha: 0.85, cut: 0.08, par: 0.6, focus: true },
-          { art: 'lab-field-near', depth: 0.12, alpha: 0.9, cut: 0.12, par: 1.05 },
+          { art: 'lab-field-mid', depth: 0.07, alpha: 0.85, cut: 0.08, par: 0.6, focus: true, fam: 'b' },
+          { art: 'lab-field-near', depth: 0.12, alpha: 0.9, cut: 0.12, par: 1.05, fam: 'b' },
           {
             art: 'lab-field-cat',
             depth: 0.09,
-            alpha: 0.95,
-            cut: 0.3,
+            alpha: 0.96,
+            cut: 0.1,
             par: 1.5,
-            ink: CAT_INK,
-            lightInk: CAT_INK_LIGHT,
+            void: true,
             feather: false,
           },
         ]}
@@ -442,10 +480,11 @@ const BOAT: LabDrifter = {
         interleaved depths of bloom, and the cat nearest the reader with the most parallax travel.
         The layers were cut from the single traced grid: whole blooms assigned to a depth (a bloom
         split across plates tears when they move apart), the bed dithered between bands, and the
-        flower plates infilled with dimmed texture behind the cat so parallax never exposes a
-        cat-shaped hole. Pink and purple carry the blooms, teal fills the plant mass between them,
-        and the cat takes a flat ink of its own — a silhouette that picked up passing hue would
-        stop being a silhouette.
+        rectangle the trace left around the cat refilled with the bed's own texture so no seam
+        shows. The blooms lead with the flower family — lotus pink, blush, rose, cream, hyacinth
+        against the teals — and the cat is painted as the page itself: an opaque void in a cat
+        silhouette, the one shape the flowers stop for. Negative space, not a dark drawing of a
+        cat.
       </p>
       <p class="text-muted-foreground mt-2">
         Real art still needs each plate generated fresh on black: <code>sky</code> (clouds),
@@ -456,12 +495,42 @@ const BOAT: LabDrifter = {
     </div>
   </section>
 
+  {/* ------------------------------------------------------------------ */}
+  <section class="mb-4">
+    <header
+      class="relative isolate flex flex-col justify-end overflow-hidden pt-32 pb-12"
+      style="min-height:max(30rem,84svh)"
+    >
+      <ParticleScene id="d-particles" art="lab-dragon-ink" palette={MONO} />
+      <div class="relative mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)">
+        <p class="nameplate text-muted-foreground">D · particles</p>
+        <h2 class="pixel-type text-3xl sm:text-4xl lg:text-5xl">Notes</h2>
+      </div>
+    </header>
+    <div class="mx-auto max-w-2xl px-(--spacing-gutter) text-sm">
+      <p class="text-muted-foreground">
+        <strong class="text-foreground">The ink dragon, rebuilt as particles.</strong> A different
+        renderer entirely — no glyphs, no plates: the same grid becomes ~24,000 points on springs,
+        and the pointer pushes through them. Move the mouse into the drawing; the particles scatter
+        and settle back into the picture. The reference for this is an external tool (saved in
+        <code>tmp/</code>) that does it with 60,000 particles off any dropped image.
+      </p>
+      <p class="text-muted-foreground mt-2">
+        What this would settle, if it survives: a hero the reader can disturb is a different
+        register than one they only watch — the question is whether that is “alive” or “a toy” by
+        the time it sits behind the word <em>Notes</em> on every visit. Same concept-A dragon, same
+        monochrome palette, so the only variable against A · ink up the page is the renderer.
+      </p>
+    </div>
+  </section>
+
   <div class="mx-auto max-w-2xl px-(--spacing-gutter) pt-6 pb-20 text-sm">
     <p class="text-muted-foreground">
       Placeholder grids are traced from third-party reference images and are not licensed for
       release — whichever concept wins, its source has to be generated fresh before it ships.
       This page is a scratch surface: delete <code>src/pages/lab.astro</code>,
-      <code>src/components/ArtLabScene.astro</code> and <code>static/art/lab-*-grid.json</code>
+      <code>src/components/ArtLabScene.astro</code>,
+      <code>src/components/ParticleScene.astro</code> and <code>static/art/lab-*-grid.json</code>
       when it has done its job.
     </p>
   </div>

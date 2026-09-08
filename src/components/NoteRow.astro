@@ -26,7 +26,7 @@ const flag = entry.data.draft
      cursor. A left rule that fades in occupies space whether or not it
      is visible, so nothing moves. -->
 <a
-  href={localePath(locale, `blog/${slug}`)}
+  href={localePath(splitId(entry.id).locale, `notes/${slug}`)}
   class="group relative flex items-baseline gap-4 border-b border-rule py-3.5 ps-4 transition-colors hover:bg-primary/5"
 >
   <span
@@ -40,7 +40,7 @@ const flag = entry.data.draft
     {formatDate(entry.data.pubDate, locale, { year: undefined })}
   </time>
 
-  <span class="min-w-0 flex-1 transition-colors group-hover:text-primary">
+  <span class="min-w-0 flex-1 font-bold transition-colors group-hover:text-primary">
     {entry.data.title}
   </span>
 

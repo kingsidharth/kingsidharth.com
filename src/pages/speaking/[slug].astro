@@ -1,0 +1,32 @@
+---
+import VideoPreviews from "@/components/VideoPreviews.astro";
+import ContentAgeNotice from "@/components/ContentAgeNotice.astro";
+import { getCollection, render } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import { splitId } from '@/lib/content';
+import { formatDate } from '@/lib/i18n';
+export async function getStaticPaths() {
+  return (await getCollection('speaking', ({data}) => !data.draft)).map(entry => ({ params: { slug: splitId(entry.id).slug }, props: { entry } }));
+}
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const path = `speaking/${splitId(entry.id).slug}`;
+---
+<Base locale="en" title={entry.data.title} description={entry.data.description} path={path}>
+  <article class="mx-auto max-w-3xl px-(--spacing-gutter) py-14">
+    <a href="/speaking" class="nameplate text-primary">All talks</a>
+    <header class="my-8">
+      <p class="nameplate mb-4"><time datetime={entry.data.pubDate.toISOString()}>{formatDate(entry.data.pubDate, 'en')}</time></p>
+      <h1 class="text-4xl font-extrabold">{entry.data.title}</h1>
+      <p class="mt-3 text-lg text-muted-foreground">{entry.data.description}</p>
+    </header>
+    <ContentAgeNotice date={entry.data.pubDate} />
+    <VideoPreviews body={entry.body} title={entry.data.title} />
+    <div class="prose-bench"><Content /></div>
+  </article>
+</Base>
+
+<style>
+  .prose-bench :global(iframe), .prose-bench :global(video) { max-width: 100%; }
+  .prose-bench :global(img) { max-width: 100%; height: auto; }
+</style>

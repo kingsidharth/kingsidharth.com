@@ -57,14 +57,14 @@ const links = [
     <ul class:list={['grid grid-cols-5 gap-2', className]}>
       {links.map((l) => (
         <li>
-          {/* Each icon sits in its own recessed well, so the row reads as
-              a bank of switches on the panel rather than loose glyphs. */}
+          {/* A row of flat tiles, one hairline each. They used to be
+              recessed wells in a chassis; the hardware left with it. */}
           <a
             href={l.href}
             rel="me noopener"
             aria-label={l.label}
             title={l.label}
-            class="groove group flex aspect-square items-center justify-center text-muted-foreground transition-[color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:text-primary hover:shadow-[0_0_18px_-2px_var(--color-primary),inset_0_2px_4px_rgb(0_0_0/0.45)]"
+            class="group flex aspect-square min-h-11 items-center justify-center rounded-md border border-border text-muted-foreground transition-[color,border-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-primary hover:text-primary hover:shadow-[0_8px_20px_-10px_var(--color-primary)]"
           >
             <svg
               viewBox="0 0 24 24"

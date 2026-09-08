@@ -1,4 +1,5 @@
 import { useCallback, useId, useRef, useState } from 'react';
+import type React from 'react';
 import { cn } from '@/lib/utils';
 
 const QUESTION = "Temperature 0 will do what to an LLM's response?";
@@ -22,10 +23,6 @@ const OPTIONS: Option[] = [
  * these ids never enter a `url(#…)` reference, for consistency. */
 function sanitiseId(id: string): string {
   return id.replace(/[^a-zA-Z0-9]/g, '');
-}
-
-function Screw({ className }: { className?: string }) {
-  return <span aria-hidden="true" className={cn('screw absolute', className)} />;
 }
 
 /** A-Z letter for the option index, used as the row's clickable indicator. */
@@ -83,12 +80,19 @@ export default function GotchaQuiz({ embedded = false }: GotchaQuizProps) {
       {/* No badge. The panel this sits in already announces itself, and a
           plaque on top of that is furniture for its own sake. The lamp
           stays: it is the one thing here carrying state. */}
-      <div className="panel-divider-h flex items-center gap-3 px-6 py-3 sm:px-8">
-        <span aria-hidden="true" className={cn('led', revealed && 'led-on')} />
+      <div className="relative z-10 flex items-center justify-between gap-3 border-b border-border px-6 py-3 sm:px-8">
         <span className="nameplate text-[11px]">Challenge</span>
+        <span
+          className={cn(
+            'font-mono text-[11px] transition-colors',
+            revealed ? 'text-success' : 'text-muted-foreground',
+          )}
+        >
+          {revealed ? 'answered' : 'unanswered'}
+        </span>
       </div>
 
-      <div className="flex flex-col gap-6 px-6 py-7 sm:px-8">
+      <div className="relative z-10 flex flex-col gap-6 px-6 py-7 sm:px-8">
         <div className="flex flex-col gap-2">
           <span className="nameplate text-[11px] text-foreground/80">
             Do you actually understand AI?
@@ -120,7 +124,7 @@ export default function GotchaQuiz({ embedded = false }: GotchaQuizProps) {
                 onClick={() => handleSelect(option)}
                 className={cn(
                   'group flex w-full items-center gap-4 rounded-md border px-4 py-3.5 text-left transition-colors sm:py-4',
-                  'border-border bg-transparent hover:border-chassis-edge hover:bg-muted/50',
+                  'border-border bg-transparent hover:border-foreground/40 hover:bg-muted',
                   'focus-visible:outline-none',
                   isDisabled && 'cursor-default opacity-50 hover:border-border hover:bg-transparent',
                   showAsWrong && 'border-destructive/50 bg-destructive/5',
@@ -137,7 +141,7 @@ export default function GotchaQuiz({ embedded = false }: GotchaQuizProps) {
                       !showAsWrong &&
                       (isSelected
                         ? 'border-primary text-primary'
-                        : 'groove border-transparent text-muted-foreground'),
+                        : 'border-border text-muted-foreground'),
                   )}
                 >
                   {optionLetter(index)}
@@ -174,16 +178,16 @@ export default function GotchaQuiz({ embedded = false }: GotchaQuizProps) {
         )}
 
         {revealed && (
-          <div className="crt flex flex-col gap-2 p-4 sm:p-5">
+          <div className="flex flex-col gap-2 rounded-md border border-border bg-black/25 p-4 sm:p-5">
             <span
               className={cn(
                 'nameplate text-[11px]',
-                answeredCorrectly ? 'text-success-screen' : 'text-screen-dim',
+                answeredCorrectly ? 'text-success' : 'text-primary',
               )}
             >
               {answeredCorrectly ? 'Correct' : 'Answer'}
             </span>
-            <p className="font-mono text-[13px] leading-relaxed text-screen-fg">
+            <p className="readout text-[13px] leading-relaxed">
               Temperature 0 means greedy decoding — always take the highest-probability token.
               <br />
               That is not the same as deterministic in practice: batching, floating-point
@@ -210,10 +214,15 @@ export default function GotchaQuiz({ embedded = false }: GotchaQuizProps) {
     );
   }
 
+  /* A banner, not a chassis. The quiz is page furniture — the thing it
+     reveals is the instrument, and that one keeps its hardware. */
   return (
-    <div ref={rootRef} className="chassis relative w-full" data-revealed={revealed ? 'true' : undefined}>
-      <Screw className="left-2.5 top-2.5" />
-      <Screw className="right-2.5 top-2.5" />
+    <div
+      ref={rootRef}
+      className="banner grain relative w-full"
+      style={{ '--banner-base': 'oklch(0.3 0.09 320)' } as React.CSSProperties}
+      data-revealed={revealed ? 'true' : undefined}
+    >
       {content}
     </div>
   );

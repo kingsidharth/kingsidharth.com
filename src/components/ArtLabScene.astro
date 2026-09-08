@@ -41,6 +41,9 @@ interface Props {
   /** Scatter of points over the whole frame, painted once — for the
       night scenes, where the sky is half the picture. */
   stars?: boolean;
+  /** Multiplier on the idle group drift. 0 stills the subject entirely —
+      pointer attention and parallax keep working. */
+  drift?: number;
   class?: string;
 }
 
@@ -53,10 +56,11 @@ const {
   anchorX = 0.5,
   drifter,
   stars = false,
+  drift = 1,
   class: extra = '',
 } = Astro.props;
 
-const config = JSON.stringify({ id, plates, palette, fit, anchorY, anchorX, drifter, stars });
+const config = JSON.stringify({ id, plates, palette, fit, anchorY, anchorX, drifter, stars, drift });
 
 /* Legibility by masking rather than by scrim: a scrim has to be a colour
    and the one that works on near-black is wrong on cream. */
@@ -126,6 +130,15 @@ const layerStyle = [
     feather?: boolean;
     sway?: number;
     mono?: boolean;
+    fam?: 'a' | 'b';
+    void?: boolean;
+    crop?: {
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      keep: 'inside' | 'outside';
+    };
   }
   interface Palette {
     ink: RGB;
@@ -137,7 +150,7 @@ const layerStyle = [
     famALight?: RGB[];
     famBLight?: RGB[];
     mix?: number;
-    crisp?: boolean;
+    lightMix?: number;
   }
   interface Drifter {
     art: string;
@@ -158,6 +171,7 @@ const layerStyle = [
     anchorX: number;
     drifter?: Drifter;
     stars: boolean;
+    drift: number;
   }
 
   interface Loaded extends Plate {
@@ -229,6 +243,24 @@ const layerStyle = [
 
     const loaded: Loaded[] = [];
     let dark = document.documentElement.classList.contains('dark');
+
+    /** The page colour behind the scene, for void plates. Re-read on
+        theme changes — the void has to stay EXACTLY the page, or the
+        negative space reads as a grey cutout. Resolved through a canvas,
+        because computed styles come back in whatever space the page
+        uses (oklch here) and a fillStyle needs sRGB channels. */
+    let bg: RGB = [0, 0, 0];
+    const bgCtx = document.createElement('canvas').getContext('2d');
+    function readBg(): void {
+      if (!bgCtx) return;
+      bgCtx.clearRect(0, 0, 1, 1);
+      bgCtx.fillStyle = getComputedStyle(document.body).backgroundColor;
+      bgCtx.fillRect(0, 0, 1, 1);
+      const d = bgCtx.getImageData(0, 0, 1, 1).data;
+      bg = [d[0] ?? 0, d[1] ?? 0, d[2] ?? 0];
+    }
+    readBg();
+
     let px = -1;
     let py = -1;
     let drifting = false;
@@ -238,30 +270,45 @@ const layerStyle = [
         From POSITION, never from brightness: the ramp spends tone on
         light, so a lit edge is bright and a shadow is dark regardless of
         what the thing is. Position is continuous, so it cannot split a
-        subject in half. */
-    function tint(x: number, y: number): RGB | null {
+        subject in half.
+
+        The member picks run at a higher frequency than the family
+        split — neighbouring blooms should not all resolve to the same
+        pink — and a plate can lead with one family, so the flower
+        plates take the bloom colours almost everywhere while the
+        foliage bleeds through only where the field dips. */
+    function tint(x: number, y: number, fam?: 'a' | 'b'): RGB | null {
       const a = dark ? pal.famA : pal.famALight;
       const b = dark ? pal.famB : pal.famBLight;
       if (!a || !b) return null;
-      if (pal.crisp) {
-        /* Bloom-scale patches, each a SINGLE solid member of a single
-           family. The slow field blends everything into one wash — the
-           frequencies here put a whole patch at flower size, the picks
-           are floored rather than interpolated, and the family split is
-           a hard threshold. Edges stay organic because they are level
-           sets of the sine field, not grid blocks. */
-        const fam = field(x, y, 0.21, 0.3) > 0.56 ? a : b;
-        const pick = fam[Math.min(fam.length - 1, Math.floor(field(x, y, 0.44, 0.62) * fam.length))];
-        return pick ?? null;
-      }
-      const ca = rampPick(a, field(x, y, 0.055, 0.083));
-      const cb = rampPick(b, field(x, y, 0.071, 0.11));
-      const w = smoothstep(0.48, 0.7, field(x, y, 0.048, 0.075));
+      const ca = rampPick(a, field(x, y, 0.09, 0.13));
+      const cb = rampPick(b, field(x, y, 0.12, 0.17));
+      let w = smoothstep(0.38, 0.62, field(x, y, 0.055, 0.083));
+      if (fam === 'b') w = 0.7 + 0.3 * smoothstep(0.3, 0.7, field(x, y, 0.06, 0.09));
+      else if (fam === 'a') w *= 0.35;
       return [
         ca[0] + (cb[0] - ca[0]) * w,
         ca[1] + (cb[1] - ca[1]) * w,
         ca[2] + (cb[2] - ca[2]) * w,
       ];
+    }
+
+    /** Weight for a cropped plate: 1 well inside the kept region, 0
+        well outside it, a smooth ~2% fade across each edge. The fade is
+        what stops a crop from minting a new hard rectangle where the
+        old one was removed. */
+    function cropFade(l: Loaded, x: number, y: number): number {
+      const c = l.crop;
+      if (!c) return 1;
+      const fx = (x + 0.5) / l.cols;
+      const fy = (y + 0.5) / l.rows;
+      const e = 0.02;
+      const inside =
+        smoothstep(c.x - e, c.x + e, fx) *
+        smoothstep(c.x + c.w + e, c.x + c.w - e, fx) *
+        smoothstep(c.y - e, c.y + e, fy) *
+        smoothstep(c.y + c.h + e, c.y + c.h - e, fy);
+      return c.keep === 'inside' ? inside : 1 - inside;
     }
 
     function paint(l: Loaded, t: number): void {
@@ -294,23 +341,28 @@ const layerStyle = [
       const ox = (rect.width - l.cols * cw) * cfg.anchorX;
       const oy = (rect.height - l.rows * chh) * cfg.anchorY;
 
-      l.ctx.font = `${(chh * 0.98).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
-      l.ctx.textAlign = 'center';
-      l.ctx.textBaseline = 'middle';
-
       /* A plate with its own ink is a silhouette: flat colour, no ramp
          to hot, no colour families. Ramping a solid subject paints a
          gradient across it, which reads as lighting it has not got. */
       const flat = l.ink ? (dark ? l.ink : (l.lightInk ?? l.ink)) : null;
       const ink = flat ?? (dark ? pal.ink : pal.lightInk);
       const hot = flat ?? (dark ? pal.hot : pal.lightHot);
-      const mix = pal.mix ?? 0.6;
+      const mix = (dark ? pal.mix : (pal.lightMix ?? pal.mix)) ?? 0.6;
 
-      const live = !!l.focus && drifting;
+      /* A flat plate draws full blocks at a glyph size that OVERLAPS the
+         row pitch: partial shades (▓ is drawn with internal scanlines in
+         half the monospace faces here) striped the void into venetian
+         blinds, and a 2% row gap shows as banding across a solid mass. */
+      l.ctx.font = `${(chh * (flat ? 1.08 : 0.98)).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+      l.ctx.textAlign = 'center';
+      l.ctx.textBaseline = 'middle';
+
+      const live = !!l.focus && drifting && cfg.drift > 0;
       const attend = !!l.focus && px >= 0;
       const pxPix = px * rect.width;
       const pyPix = py * rect.height;
       const reach2 = FOCUS_R * FOCUS_R;
+      const driftK = cfg.drift;
 
       const x0 = Math.max(0, Math.floor(-ox / cw));
       const x1 = Math.min(l.cols - 1, Math.ceil((rect.width - ox) / cw));
@@ -331,56 +383,19 @@ const layerStyle = [
           let step = 0;
           if (live) {
             const ph = Math.floor(field(x, y, 0.034, 0.052) * GROUPS) * GROUP_PHASE;
-            gx += Math.sin(t * 0.5 + ph) * cw * DRIFT_X;
-            gy += Math.cos(t * 0.37 + ph * 1.3) * chh * DRIFT_Y;
+            gx += Math.sin(t * 0.5 + ph) * cw * DRIFT_X * driftK;
+            gy += Math.cos(t * 0.37 + ph * 1.3) * chh * DRIFT_Y * driftK;
             /* And a per-cell offset up and down the ramp. Stepped in
                unison this swings a tenth of the plate's ink at once,
                which reads as the plate breathing; spread out, a group
                transitions as a dissolve. */
-            step = Math.sin(t * 0.29 + ph * 0.7 + hash01(x, y) * 4.2) * 0.7;
+            step = Math.sin(t * 0.29 + ph * 0.7 + hash01(x, y) * 4.2) * 0.7 * driftK;
           }
 
           if (lit < l.cut + (hash01(x, y) - 0.5) * 0.05) continue;
 
-          /* The paper inversion is for scenery — a bright sky should be
-             nearly empty marks on cream. A flat-ink silhouette is the
-             opposite: it must stay DENSE in both themes, or the subject
-             evaporates in light mode. */
-          const tone = paperTone(lit, 0, flat ? false : !dark);
-          const glyph = pickGlyph(RAMP, tone, step);
-          if (!glyph || glyph === ' ') continue;
-
-          let near = 0;
-          if (attend) {
-            const dx = gx + cw / 2 - pxPix;
-            const dy = gy + chh / 2 - pyPix;
-            const d2 = dx * dx + dy * dy;
-            if (d2 < reach2) {
-              const u = 1 - d2 / reach2;
-              near = u * u;
-            }
-          }
-
-          const h = Math.max(0, (lit - 0.55) / 0.45);
-          let r = ink[0] + (hot[0] - ink[0]) * h;
-          let g = ink[1] + (hot[1] - ink[1]) * h;
-          let b = ink[2] + (hot[2] - ink[2]) * h;
-
-          const hue = flat || l.mono ? null : tint(x, y);
-          if (hue) {
-            /* Attention shows up as SATURATION, not as light. Lifting
-               opacity drives the full-block marks opaque and paints a
-               bright rectangle around the cursor — a selection box, not
-               a glow. Colour has nowhere to blow out to. */
-            /* In crisp mode the very brightest cells hand the colour
-               back to the ramp's hot end — petals catch WHITE light,
-               and a highlight that stays pink is part of the wash. */
-            const white = pal.crisp ? smoothstep(0.78, 0.94, lit) : 0;
-            const w = Math.min(0.95, mix * (0.45 + lit * 0.55) * (1 + near * 0.6) * (1 - white));
-            r += (hue[0] - r) * w;
-            g += (hue[1] - g) * w;
-            b += (hue[2] - b) * w;
-          }
+          const cf = cropFade(l, x, y);
+          if (cf < 0.02) continue;
 
           /* Feather the PLATE's own edges, not the canvas's.
              The masks on the element fade the frame, which is the right
@@ -403,7 +418,66 @@ const layerStyle = [
                   smoothstep(0, 0.045, 1 - y / l.rows),
                 );
 
-          const a = Math.min(1, l.alpha * fxy * (0.3 + tone * 1.05) * (1 + near * 0.28));
+          /* A void plate is negative space made literal: the page
+             colour, opaque, in the subject's own silhouette. No ramp,
+             no hue, no texture — the flowers stop for it, and what is
+             inside is the page itself. */
+          if (l.void) {
+            const a = Math.min(1, l.alpha * fxy * cf);
+            if (a < 0.015) continue;
+            l.ctx.fillStyle = `rgba(${bg[0]},${bg[1]},${bg[2]},${a.toFixed(3)})`;
+            l.ctx.fillText('█', gx + cw / 2, gy + chh / 2);
+            continue;
+          }
+
+          /* A flat plate is negative space, not a drawing: one glyph,
+              one colour, one strength. Tone ramps, hue fields and the
+              pointer's attention are all ways of modelling light, and a
+              void has no light — the black cat is the hole the flowers
+              stop for. */
+          if (flat) {
+            const a = Math.min(1, l.alpha * fxy * cf);
+            if (a < 0.015) continue;
+            l.ctx.fillStyle = `rgba(${flat[0]},${flat[1]},${flat[2]},${a.toFixed(3)})`;
+            l.ctx.fillText('█', gx + cw / 2, gy + chh / 2);
+            continue;
+          }
+
+          /* The paper inversion is for scenery — a bright sky should be
+             nearly empty marks on cream. */
+          const tone = paperTone(lit, 0, !dark);
+          const glyph = pickGlyph(RAMP, tone, step);
+          if (!glyph || glyph === ' ') continue;
+
+          let near = 0;
+          if (attend) {
+            const dx = gx + cw / 2 - pxPix;
+            const dy = gy + chh / 2 - pyPix;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < reach2) {
+              const u = 1 - d2 / reach2;
+              near = u * u;
+            }
+          }
+
+          const h = Math.max(0, (lit - 0.55) / 0.45);
+          let r = ink[0] + (hot[0] - ink[0]) * h;
+          let g = ink[1] + (hot[1] - ink[1]) * h;
+          let b = ink[2] + (hot[2] - ink[2]) * h;
+
+          const hue = l.mono ? null : tint(x, y, l.fam);
+          if (hue) {
+            /* Attention shows up as SATURATION, not as light. Lifting
+               opacity drives the full-block marks opaque and paints a
+               bright rectangle around the cursor — a selection box, not
+               a glow. Colour has nowhere to blow out to. */
+            const w = Math.min(0.95, mix * (0.45 + lit * 0.55) * (1 + near * 0.6));
+            r += (hue[0] - r) * w;
+            g += (hue[1] - g) * w;
+            b += (hue[2] - b) * w;
+          }
+
+          const a = Math.min(1, l.alpha * fxy * cf * (0.3 + tone * 1.05) * (1 + near * 0.28));
           if (a < 0.015) continue;
           l.ctx.fillStyle = `rgba(${r | 0},${g | 0},${b | 0},${a.toFixed(3)})`;
           l.ctx.fillText(glyph, gx + cw / 2, gy + chh / 2);
@@ -553,7 +627,7 @@ const layerStyle = [
       let cx = 0;
       let cy = 0;
       let motionRaf = 0;
-      const hover = matchMedia('(hover: hover)').matches;
+      const hover = matchMedia('(hover: hover)').matches || matchMedia('(pointer: coarse)').matches;
       const hasSway = loaded.some((l) => l.sway);
 
       const motionTick = (t: number) => {
@@ -597,6 +671,7 @@ const layerStyle = [
       };
 
       const host = root.parentElement ?? root;
+      host.dataset.tiltArtwork = '';
       if (hover) {
         host.addEventListener('pointermove', (e: PointerEvent) => {
           const r = root.getBoundingClientRect();
@@ -673,6 +748,7 @@ const layerStyle = [
         const next = document.documentElement.classList.contains('dark');
         if (next === dark) return;
         dark = next;
+        readBg();
         repaint();
       }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 

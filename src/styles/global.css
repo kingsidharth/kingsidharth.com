@@ -142,25 +142,22 @@
 /* ══════════════════════════════════════════════════════════════════
    INSTRUMENT HARDWARE
 
-   Two devices, and which one shows up is a CHOICE, not a consequence
-   of the page theme. Default is `contrast`: the device opposes the
-   page — graphite on cream, cream on the bench at night.
-   `data-instrument='matched'` pairs them: cream in the light, graphite
-   in the dark.
+   One device, always: the graphite bench, in both themes. It used to be
+   a choice — `data-instrument` / `data-screen` could pair the hardware
+   with the page (cream bench at night, cream glass at noon) — but the
+   choice is gone from the settings panel and the ruling is simpler:
+   an instrument is a dark object on the page, wherever it turns up.
 
    The CHROME (chassis, screws, well, panel) and the SCREEN (the glass
-   and phosphor inside it) are decoupled. Chrome keys on
-   `data-instrument`; the screen keys on `data-screen`, so a graphite
-   bench can hold cream glass, or a cream bench a dark readout. Every
-   hardware rule is therefore keyed on the relevant DEVICE's theme via
-   these selector pairs, never on the page's `.dark`.
+   and phosphor inside it) still resolve through separate token groups,
+   so a component can take the glass without the chassis — but both
+   groups are theme-independent now, and nothing keys on `.dark`.
    ══════════════════════════════════════════════════════════════════ */
 
 /* ═─ CHROME ─════════════════════════════════════════════════════════ */
 
-/* The dark bench: graphite panel. */
-:root:not(.dark):not([data-instrument='matched']),
-.dark[data-instrument='matched'] {
+/* The bench: graphite panel, both themes. */
+:root {
   --chassis-hi: oklch(0.295 0.011 68);
   --chassis-lo: oklch(0.185 0.008 62);
   --chassis-edge: oklch(0.105 0.005 55);
@@ -179,29 +176,10 @@
   --well: oklch(0.14 0.006 58);
 }
 
-/* The cream bench: anodised panel. */
-.dark:not([data-instrument='matched']),
-:root:not(.dark)[data-instrument='matched'] {
-  --chassis-hi: oklch(0.945 0.011 85);
-  --chassis-lo: oklch(0.885 0.015 82);
-  --chassis-edge: oklch(0.76 0.018 78);
-
-  --bevel-light: rgb(255 255 255 / 0.9);
-  --bevel-dark: rgb(90 74 52 / 0.28);
-  --bevel-deep: rgb(70 56 38 / 0.42);
-
-  --screw-hi: oklch(0.9 0.012 85);
-  --screw-lo: oklch(0.68 0.016 78);
-  --screw-slot: oklch(0.6 0.018 76);
-
-  --well: oklch(0.855 0.016 82);
-}
-
 /* ═─ SCREEN ─══════════════════════════════════════════════════════ */
 
-/* The dark glass: graphite, phosphor readout. */
-:root:not(.dark):not([data-screen='matched']),
-.dark[data-screen='matched'] {
+/* The glass: dark, phosphor readout, both themes. */
+:root {
   --screen-bg: oklch(0.06 0.008 120);
   --screen-fg: var(--hue-phosphor);
   --screen-dim: oklch(0.53 0.085 72);
@@ -219,25 +197,6 @@
   --screen-vignette: rgb(0 0 0 / 0.62);
 
   --success-screen: oklch(0.86 0.21 148);
-}
-
-/* The cream glass: anodised readout under glass. The glass is a warm
-   OFF-white, not paper-white — at full paper the scanlines, the vignette
-   and the sheen all vanished into the page. */
-.dark:not([data-screen='matched']),
-:root:not(.dark)[data-screen='matched'] {
-  --screen-bg: oklch(0.93 0.013 86);
-  --screen-fg: var(--hue-700);
-  /* Deeper than the dark glass's dim: pale amber on off-white was
-     washing out to nothing (the dial's 1.00 being the case in point). */
-  --screen-dim: oklch(0.58 0.09 68);
-  --screen-plain: oklch(0.32 0.008 80);
-  --screen-plain-dim: oklch(0.56 0.01 80);
-  --screen-glow: 0 0 0 rgb(0 0 0 / 0);
-  --screen-scanline: rgb(90 70 40 / 0.12);
-  --screen-vignette: rgb(120 96 60 / 0.26);
-
-  --success-screen: oklch(0.52 0.15 152);
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -285,7 +244,7 @@
   --radius-lg: calc(var(--radius) + 2px);
 
   --font-sans:
-    'IBM Plex Sans Variable', 'Noto Sans Devanagari Variable', ui-sans-serif, system-ui, sans-serif;
+    'Bricolage Grotesque', 'IBM Plex Sans Variable', 'Noto Sans Devanagari Variable', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
   --font-condensed: 'IBM Plex Sans Condensed', 'IBM Plex Sans Variable', ui-sans-serif, sans-serif;
 
@@ -477,14 +436,8 @@
       0 1px 3px var(--bevel-dark);
   }
 
-  :root:not(.dark):not([data-instrument='matched']) .cap,
-  .dark[data-instrument='matched'] .cap {
+  .cap {
     color: var(--hue-500);
-  }
-
-  .dark:not([data-instrument='matched']) .cap,
-  :root:not(.dark)[data-instrument='matched'] .cap {
-    color: var(--hue-700);
   }
 
   /* ── chassis ─────────────────────────────────────────────────────
@@ -492,14 +445,16 @@
      kept far below the threshold of conscious notice — it exists to
      stop the large flat area from banding.
 
-     Which device the panel IS is decoupled from the page theme (see
-     the hardware tokens), so the lighting and the re-scoped text
-     tokens below are keyed on the device, not on `.dark`. The text
-     re-scope is what keeps `text-foreground` readable: inside a
-     chassis it resolves to the PANEL's foreground, not the page's. */
+     The bench is graphite in both themes (see the hardware tokens), so
+     the text re-scope below is unconditional: inside a chassis
+     `text-foreground` resolves to the PANEL's foreground — pale ink on
+     graphite — never the page's. */
   .chassis {
     position: relative;
     border-radius: 6px;
+    --foreground: oklch(0.93 0.012 85);
+    --muted-foreground: oklch(0.64 0.014 75);
+    --primary: var(--hue-500);
     background:
       repeating-linear-gradient(
         90deg,
@@ -508,38 +463,15 @@
       ),
       linear-gradient(180deg, var(--color-chassis-hi) 0%, var(--color-chassis-lo) 100%);
     border: 1px solid var(--color-chassis-edge);
-  }
-
-  :root:not(.dark):not([data-instrument='matched']) .chassis,
-  .dark[data-instrument='matched'] .chassis {
-    --foreground: oklch(0.93 0.012 85);
-    --muted-foreground: oklch(0.64 0.014 75);
-    --primary: var(--hue-500);
-
     box-shadow:
       inset 0 1px 0 var(--bevel-light),
+      inset 0 10px 14px -8px rgb(255 255 255 / 0.14),
       inset 1px 0 0 rgb(255 255 255 / 0.045),
       inset -1px 0 0 var(--bevel-dark),
       inset 0 -1px 0 var(--bevel-deep),
       0 1px 1px rgb(0 0 0 / 0.18),
       0 8px 22px -6px rgb(0 0 0 / 0.3),
       0 26px 60px -18px rgb(0 0 0 / 0.35);
-  }
-
-  .dark:not([data-instrument='matched']) .chassis,
-  :root:not(.dark)[data-instrument='matched'] .chassis {
-    --foreground: oklch(0.22 0.014 60);
-    --muted-foreground: oklch(0.52 0.012 65);
-    --primary: var(--hue-700);
-
-    box-shadow:
-      inset 0 1px 0 var(--bevel-light),
-      inset 1px 0 0 rgb(255 255 255 / 0.05),
-      inset -1px 0 0 var(--bevel-dark),
-      inset 0 -1px 0 var(--bevel-dark),
-      0 1px 1px rgb(0 0 0 / 0.5),
-      0 10px 26px -6px rgb(0 0 0 / 0.6),
-      0 30px 70px -20px rgb(0 0 0 / 0.75);
   }
 
   /* ── engraved separators ─────────────────────────────────────────
@@ -568,26 +500,12 @@
     padding: 0.4rem 0.85rem;
     border-radius: 3px;
     border: 1px solid var(--color-chassis-edge);
+    color: var(--hue-500);
+    background: linear-gradient(180deg, oklch(0.36 0.012 70) 0%, oklch(0.21 0.009 62) 100%);
     box-shadow:
       inset 0 1px 0 var(--bevel-light),
       inset 0 -1px 0 var(--bevel-dark),
       0 1px 2px var(--bevel-dark);
-  }
-
-  :root:not(.dark):not([data-instrument='matched']) .plaque,
-  .dark[data-instrument='matched'] .plaque {
-    color: var(--hue-500);
-    background: linear-gradient(180deg, oklch(0.36 0.012 70) 0%, oklch(0.21 0.009 62) 100%);
-  }
-
-  .dark:not([data-instrument='matched']) .plaque,
-  :root:not(.dark)[data-instrument='matched'] .plaque {
-    color: var(--hue-700);
-    background: linear-gradient(
-      180deg,
-      color-mix(in oklch, var(--color-chassis-hi) 82%, white) 0%,
-      var(--color-chassis-lo) 100%
-    );
   }
 
   /* ── indicator lamp ──────────────────────────────────────────────
@@ -625,22 +543,10 @@
   .groove {
     background: linear-gradient(180deg, var(--color-well) 0%, color-mix(in oklch, var(--color-well) 84%, white) 100%);
     border-radius: 999px;
-  }
-
-  :root:not(.dark):not([data-instrument='matched']) .groove,
-  .dark[data-instrument='matched'] .groove {
     box-shadow:
       inset 0 2px 5px rgb(0 0 0 / 0.9),
       inset 0 -1px 0 rgb(255 255 255 / 0.06),
       0 1px 0 rgb(255 255 255 / 0.05);
-  }
-
-  .dark:not([data-instrument='matched']) .groove,
-  :root:not(.dark)[data-instrument='matched'] .groove {
-    box-shadow:
-      inset 0 2px 4px rgb(0 0 0 / 0.45),
-      inset 0 -1px 0 var(--bevel-light),
-      0 1px 0 var(--bevel-light);
   }
 
   /* ── knurled metal ───────────────────────────────────────────────
@@ -671,10 +577,6 @@
     overflow: hidden;
     border-radius: 8px;
     background: var(--color-screen);
-  }
-
-  :root:not(.dark):not([data-screen='matched']) .crt,
-  .dark[data-screen='matched'] .crt {
     box-shadow:
       /* 1 — bezel band and its inner lip */
       inset 0 0 0 5px oklch(0.155 0.007 58),
@@ -692,28 +594,11 @@
       var(--screen-glow);
   }
 
-  .dark:not([data-screen='matched']) .crt,
-  :root:not(.dark)[data-screen='matched'] .crt {
-    box-shadow:
-      inset 0 0 0 5px var(--color-chassis-lo),
-      inset 0 0 0 6px var(--color-chassis-edge),
-      inset 0 8px 12px -4px rgb(0 0 0 / 0.5),
-      inset 0 0 34px 6px var(--screen-vignette),
-      inset 1.5px 0 0 0 oklch(0.62 0.2 25 / 0.22),
-      inset -1.5px 0 0 0 oklch(0.6 0.14 200 / 0.22),
-      0 0 0 1px var(--color-chassis-edge),
-      0 1px 0 var(--bevel-light),
-      var(--screen-glow);
-  }
-
   /* Phosphor bloom. text-shadow inherits, and `currentColor` resolves
      per element, so amber readouts glow amber and green ones glow
-     green without any per-element wiring. Dark glass only — on the
-     paper-white readout a glow just reads as blur. Which theme has
-     which glass is the SCREEN choice, so this keys on `data-screen`,
-     not the chrome. */
-  :root:not(.dark):not([data-screen='matched']) .crt,
-  .dark[data-screen='matched'] .crt {
+     green without any per-element wiring. The glass is dark in both
+     themes, so the bloom is unconditional. */
+  .crt {
     text-shadow:
       0 0 0.5px color-mix(in oklch, currentColor 85%, transparent),
       0 0 3px color-mix(in oklch, currentColor 55%, transparent),
@@ -924,10 +809,13 @@
     overflow: hidden;
     border-radius: var(--radius-lg);
     border: 1px solid var(--color-card-edge);
+    /* No outer light line under the bottom edge — on the paper theme
+        `--bevel-light` is near-opaque white and printed a solid hairline
+        on the page beneath the cards. Elevation is the inset top edge
+        and the drop shadow, nothing else. */
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.22),
       inset 0 -2px 3px rgb(0 0 0 / 0.35),
-      0 1px 0 var(--bevel-light),
       0 4px 10px -2px rgb(0 0 0 / 0.35),
       0 10px 22px -8px rgb(0 0 0 / 0.4);
     transition:
@@ -936,15 +824,17 @@
   }
 
   /* Deliberately no transform: these sit in a tight grid, and shifting
-     or scaling one nudges the eye and makes the panel feel loose. Only
-     the lighting changes. */
+      or scaling one nudges the eye and makes the panel feel loose. Only
+      the lighting changes — and on hover the card's own hue blooms out
+      of it, a glow rather than a line. */
   .screen-raised:hover {
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.28),
+      inset 0 1px 0 rgb(255 255 255 / 0.3),
       inset 0 -2px 3px rgb(0 0 0 / 0.35),
-      0 1px 0 var(--bevel-light),
+      0 0 0 1px color-mix(in oklch, var(--card-base, oklch(0.5 0.1 260)) 55%, transparent),
       0 8px 16px -2px rgb(0 0 0 / 0.4),
-      0 18px 34px -10px rgb(0 0 0 / 0.45);
+      0 14px 34px -8px color-mix(in oklch, var(--card-base, oklch(0.5 0.1 260)) 40%, transparent),
+      0 18px 44px -10px rgb(0 0 0 / 0.45);
   }
 
   .screen-raised:active {
@@ -954,7 +844,8 @@
   }
 
   /* Scanlines only — no vignette or bezel, since this one is proud of
-     the panel rather than cut into it. */
+     the panel rather than cut into it. The elevation reads through the
+     1px lit top edge and the hover glow; no washes. */
   .screen-raised::before {
     content: '';
     position: absolute;
@@ -1011,18 +902,8 @@
     border-radius: inherit;
     background-image: var(--noise-tile);
     background-size: 160px 160px;
-  }
-
-  :root:not(.dark):not([data-instrument='matched']) .chassis::after,
-  .dark[data-instrument='matched'] .chassis::after {
     opacity: 0.45;
     mix-blend-mode: soft-light;
-  }
-
-  .dark:not([data-instrument='matched']) .chassis::after,
-  :root:not(.dark)[data-instrument='matched'] .chassis::after {
-    opacity: 0.3;
-    mix-blend-mode: overlay;
   }
 
   @media (prefers-reduced-transparency: reduce) {
@@ -1136,6 +1017,85 @@
   .rule {
     border: 0;
     border-top: 1px solid var(--color-rule);
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     THE BANNER
+
+     The page-chrome surface. Everything on this site that is not
+     prose is one of two things: an INSTRUMENT (chassis, screws,
+     glass — confined to the sampling bench) or a BANNER — the poster
+     cards on the home rail, the guide covers, and now the panels that
+     used to borrow the chassis. A banner is a dark printed screen: a
+     coloured ground, scanlines, grain, a hairline, phosphor type. No
+     bevels, no fasteners, nothing pretending to be metal.
+
+     Dark in both themes, like the cards, because the ground IS the
+     colour and paper has nothing to print it on. Text tokens are
+     re-scoped so anything typeset inside resolves to pale ink.
+     ════════════════════════════════════════════════════════════════ */
+  .banner {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-card-edge);
+    --foreground: oklch(0.95 0.01 85);
+    --muted-foreground: oklch(0.72 0.012 80);
+    --primary: var(--hue-500);
+    --border: rgb(255 255 255 / 0.13);
+    --rule: rgb(255 255 255 / 0.1);
+    --muted: rgb(255 255 255 / 0.06);
+    --success: oklch(0.82 0.2 148);
+    --card-base: var(--banner-base, oklch(0.24 0.02 280));
+    color: var(--foreground);
+    background:
+      radial-gradient(70% 60% at 85% 0%, color-mix(in oklch, var(--card-base) 70%, transparent) 0%, transparent 70%),
+      linear-gradient(160deg, color-mix(in oklch, var(--card-base) 55%, oklch(0.16 0.01 270)) 0%, oklch(0.13 0.012 265) 100%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.14),
+      0 4px 10px -2px rgb(0 0 0 / 0.3),
+      0 12px 30px -12px rgb(0 0 0 / 0.5);
+  }
+
+  /* Scanlines, above the ground and below anything set at z-10. */
+  .banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.14) 0 1px, transparent 1px 3px);
+  }
+
+  /* Phosphor readout on a banner: the mono voice, glowing. */
+  .banner .readout,
+  .banner .gauge-value {
+    color: var(--hue-phosphor);
+    text-shadow:
+      0 0 0.5px color-mix(in oklch, currentColor 85%, transparent),
+      0 0 4px color-mix(in oklch, currentColor 45%, transparent),
+      0 0 10px color-mix(in oklch, currentColor 18%, transparent);
+  }
+
+  /* ── section head ────────────────────────────────────────────────
+     A numbered rule. The number is the mono voice — a measurement of
+     where you are on the page — and the rule is what makes a run of
+     sections read as one document rather than as five stacked pages. */
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--color-rule);
+  }
+
+  .section-head .index {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-primary);
+    margin-inline-end: 0.9rem;
+    font-variant-numeric: tabular-nums;
   }
 
   /* ════════════════════════════════════════════════════════════════
@@ -1339,22 +1299,14 @@
   --screen-glow: 0 0 0 rgb(0 0 0 / 0);
 }
 
-:root:not(.dark):not([data-instrument='matched']):not([data-accent='amber']),
-.dark[data-instrument='matched']:not([data-accent='amber']) {
+/* The cool accent tints the hardware toward its own hue — one rule now,
+   since the bench is graphite in both themes. */
+:root:not([data-accent='amber']) {
   --chassis-hi: oklch(0.3 0.016 275);
   --chassis-lo: oklch(0.19 0.012 275);
   --chassis-edge: oklch(0.11 0.008 275);
   --well: oklch(0.14 0.01 275);
   --screen-bg: oklch(0.06 0.012 280);
-}
-
-.dark:not([data-instrument='matched']):not([data-accent='amber']),
-:root:not(.dark)[data-instrument='matched']:not([data-accent='amber']) {
-  --chassis-hi: oklch(0.95 0.006 265);
-  --chassis-lo: oklch(0.895 0.009 265);
-  --chassis-edge: oklch(0.78 0.012 265);
-  --well: oklch(0.87 0.01 265);
-  --screen-bg: oklch(0.935 0.008 265);
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -1391,11 +1343,11 @@
    to woff2 into static/fonts/generated — roughly half the bytes for the
    same outlines.
 
-   Google Sans needed more than conversion: as shipped it carries six
-   axes and every script, at 4.5MB. Pinning everything except weight and
-   subsetting to Latin brings it to 57KB. It is also PROPRIETARY —
-   Google's brand face, not licensed for third-party sites, so it must
-   come out before this ships. The rest are OFL.
+   Google Sans is the exception to keep an eye on: as shipped it carries
+   six axes and every script, at 4.5MB; pinned and subset it is ~50KB.
+   It is also PROPRIETARY — Google's brand face, not licensed for
+   third-party sites — and ships on an explicit request only. The rest
+   are OFL.
    ══════════════════════════════════════════════════════════════════ */
 
 @font-face {
@@ -1432,38 +1384,55 @@
 }
 
 @font-face {
-  font-family: 'Funnel Display';
-  src: url('/fonts/generated/FunnelDisplay-var.woff2') format('woff2-variations');
-  font-weight: 300 800;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Gabarito';
-  src: url('/fonts/generated/Gabarito-var.woff2') format('woff2-variations');
-  font-weight: 400 900;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Matangi';
-  src: url('/fonts/generated/Matangi-var.woff2') format('woff2-variations');
-  font-weight: 300 900;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Mona Sans';
-  src: url('/fonts/generated/MonaSans-var.woff2') format('woff2-variations');
-  font-weight: 200 900;
-  font-display: swap;
-}
-
-@font-face {
   font-family: 'Zalando Sans';
   src: url('/fonts/generated/ZalandoSans-var.woff2') format('woff2-variations');
   font-weight: 200 900;
   font-stretch: 75% 100%;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Rethink Sans';
+  src: url('/fonts/generated/RethinkSans-var.woff2') format('woff2-variations');
+  font-weight: 400 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Hanken Grotesk';
+  src: url('/fonts/generated/HankenGrotesk-var.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pontano Sans';
+  src: url('/fonts/generated/PontanoSans-var.woff2') format('woff2-variations');
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Special Gothic';
+  src: url('/fonts/generated/SpecialGothic-var.woff2') format('woff2-variations');
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Golos Text';
+  src: url('/fonts/generated/GolosText-var.woff2') format('woff2-variations');
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+/* Google Sans, pinned and subset by the build script — see the note in
+   scripts/build-fonts.ts. PROPRIETARY: on an explicit request, out
+   before any public release. */
+@font-face {
+  font-family: 'Google Sans';
+  src: url('/fonts/generated/GoogleSans-var.woff2') format('woff2-variations');
+  font-weight: 100 900;
   font-display: swap;
 }
 
@@ -1492,6 +1461,8 @@
    Only Spline Sans ships one; the rest fall back to IBM Plex Mono,
    which is a deliberate mismatch rather than an oversight — pairing a
    grotesque with an unrelated mono looks worse than not pairing it. */
+:root { --font-sans-active: 'Bricolage Grotesque'; }
+:root[data-font='plex'] { --font-sans-active: 'IBM Plex Sans Variable'; }
 :root[data-font='bricolage'] { --font-sans-active: 'Bricolage Grotesque'; }
 :root[data-font='familjen'] { --font-sans-active: 'Familjen Grotesk'; }
 :root[data-font='spline'] {
@@ -1500,11 +1471,13 @@
 }
 :root[data-font='strichpunkt'] { --font-sans-active: 'Strichpunkt Sans'; }
 :root[data-font='anek'] { --font-sans-active: 'Anek Latin'; }
-:root[data-font='funnel'] { --font-sans-active: 'Funnel Display'; }
-:root[data-font='gabarito'] { --font-sans-active: 'Gabarito'; }
-:root[data-font='matangi'] { --font-sans-active: 'Matangi'; }
-:root[data-font='mona'] { --font-sans-active: 'Mona Sans'; }
 :root[data-font='zalando'] { --font-sans-active: 'Zalando Sans'; }
+:root[data-font='rethink'] { --font-sans-active: 'Rethink Sans'; }
+:root[data-font='hanken'] { --font-sans-active: 'Hanken Grotesk'; }
+:root[data-font='pontano'] { --font-sans-active: 'Pontano Sans'; }
+:root[data-font='specialgothic'] { --font-sans-active: 'Special Gothic'; }
+:root[data-font='golos'] { --font-sans-active: 'Golos Text'; }
+:root[data-font='googlesans'] { --font-sans-active: 'Google Sans'; }
 
 :root[data-font] body,
 :root[data-font] h1,
@@ -1619,12 +1592,50 @@
 }
 
 @media (min-width: 1024px) {
-  /* `auto-fill` with a 16rem floor rather than a fixed count: the cards
-     want to be about 256px and the container is fluid, so let the track
+  /* `auto-fill` with a 14rem floor rather than a fixed count: the cards
+     want to be about 224px and the container is fluid, so let the track
      count fall out of the width instead of guessing it per breakpoint. */
   .card-grid {
-    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
     gap: 1.25rem;
+  }
+
+  /* The home rail is five cards, and five is the one count a fluid
+     floor gets wrong: at 1280 it holds four and strands the fifth on a
+     row of its own. So the rail states its count once the width can
+     bear it, and lets the floor decide below that. */
+  .card-grid[data-count='5'] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* ── arrival ───────────────────────────────────────────────────────
+   Cards rise into place as they enter the viewport, staggered by their
+   index. The script that flips `data-arrived` is two lines and lives in
+   the page; without JS (or under reduced motion) they simply sit there.
+   Opacity and translate only — both compositor properties. */
+/* Only hidden once JS has declared itself (`html.js`, set before first
+   paint by ThemeScript) — a no-JS page never has anything to reveal. */
+html.js [data-arrive] {
+  transition:
+    opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    translate 900ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--arrive-i, 0) * 70ms);
+}
+
+html.js [data-arrive]:not([data-arrived]) {
+  opacity: 0;
+  translate: 0 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.js [data-arrive]:not([data-arrived]) {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  html.js [data-arrive] {
+    transition: none;
   }
 }
 

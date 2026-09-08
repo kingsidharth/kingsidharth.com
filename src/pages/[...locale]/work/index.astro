@@ -2,7 +2,7 @@
 import type { GetStaticPaths } from 'astro';
 import { getCollection } from 'astro:content';
 import Base from '@/layouts/Base.astro';
-import SectionHead from '@/components/SectionHead.astro';
+import PageArtwork from '@/components/PageArtwork.astro';
 import WorkList from '@/components/WorkList.astro';
 import { localeStaticPaths, useTranslations } from '@/lib/i18n';
 import type { Locale } from '@/lib/i18n';
@@ -22,8 +22,8 @@ const work = (await getCollection('work')).sort((a, b) => a.data.order - b.data.
   description="Sixteen years of product and design work — Instamojo, Headout, GrowthSchool, Outskill."
   path="work"
 >
+  <PageArtwork title={t("work.title")} kind="work" />
   <div class="mx-auto max-w-4xl px-(--spacing-gutter) py-14">
-    <SectionHead title={t('work.title')} as="h1" />
 
     <WorkList entries={work} detailed />
 

@@ -633,7 +633,8 @@ const layerStyle = [
         }
       };
 
-      if (matchMedia('(hover: hover)').matches) {
+      host.dataset.tiltArtwork = '';
+      if (matchMedia('(hover: hover)').matches || matchMedia('(pointer: coarse)').matches) {
         host.addEventListener('pointermove', (e: PointerEvent) => {
           const r = root.getBoundingClientRect();
           px = (e.clientX - r.left) / r.width;

@@ -10,6 +10,9 @@
   (function () {
     try {
       var root = document.documentElement;
+      // Declares JS before paint, so CSS can hide things it will reveal
+      // without ever hiding them from a reader who has no JS.
+      root.classList.add('js');
       var stored = localStorage.getItem('theme');
       var dark = stored ? stored === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
       root.classList.toggle('dark', dark);
@@ -37,14 +40,10 @@
       if (treatment) root.setAttribute('data-treatment', treatment);
       var fringe = localStorage.getItem('design:fringe');
       if (fringe) root.setAttribute('data-fringe', fringe);
-      // Which device the instruments are (cream vs graphite) is decoupled
-      // from the page theme — the CSS keys on this attribute.
-      var instrument = localStorage.getItem('design:instrument');
-      if (instrument) root.setAttribute('data-instrument', instrument);
-      // The screen (the glass and phosphor inside the chrome) is its own
-      // choice, independent of the instrument chrome above.
-      var screen = localStorage.getItem('design:screen');
-      if (screen) root.setAttribute('data-screen', screen);
+      // The ambient field (scatter / bloom) is read by the hero canvas on
+      // load, same contract as the treatment above.
+      var field = localStorage.getItem('design:field');
+      if (field) root.setAttribute('data-field', field);
     } catch (e) {
       /* private mode: fall through to the CSS defaults */
     }

@@ -1,0 +1,357 @@
+---
+/**
+ * The notes hero: a sky.
+ *
+ * Three banks of the same cloud sprites the homepage flies behind the
+ * statue, and nothing else in front of them. The valley of flowers this
+ * replaces was an all-over texture at one distance — no subject, no
+ * empty space — and the lab that tried to fix it (a dragon, a pond, a
+ * cat) mostly proved the house rule instead: one subject, one light
+ * source, and a lot of dark around both. Home already spends the
+ * colossus and Guides the lone walker, so a third figure would be the
+ * same sentence again. The sky has a light and a great deal of dark,
+ * and it leaves the subject to the page: the writing under it.
+ *
+ * Rendering follows HeroBackdrop exactly where it matters. Each sprite
+ * is rasterised ONCE into a stamp at the current cell size and then
+ * slid by the pixel with drawImage — re-quantising glyphs per frame can
+ * only move a cloud a whole cell at a time, which is a jolt, not a
+ * drift. The loop runs at 20fps, only while the hero is on screen, and
+ * not at all under reduced motion (one still frame, the banks layered).
+ *
+ * The light is a warm glow low on the horizon, done in CSS: it costs
+ * nothing, and on cream it turns into the sun behind paper, which is
+ * the right reading on both grounds.
+ */
+interface Props {
+  class?: string;
+}
+
+const { class: extra = '' } = Astro.props;
+
+/* Legibility by masking rather than by scrim, as everywhere else: a
+   scrim has to be a colour and the one that works on near-black is
+   wrong on cream. Top and sides dissolve; the bottom dissolves harder,
+   into the list that follows. */
+const copyMask =
+  'radial-gradient(48% 46% at 22% 40%,rgb(0 0 0 / 0.22) 0%,rgb(0 0 0 / 0.62) 56%,#000 100%)';
+const edgeMask = 'linear-gradient(90deg,transparent 0%,#000 8%,#000 92%,transparent 100%)';
+const vertMask = 'linear-gradient(180deg,transparent 0%,#000 14%,#000 68%,transparent 100%)';
+
+const layerStyle = [
+  `-webkit-mask-image:${copyMask},${edgeMask},${vertMask}`,
+  `mask-image:${copyMask},${edgeMask},${vertMask}`,
+  '-webkit-mask-composite:source-in',
+  'mask-composite:intersect',
+].join(';');
+---
+
+<div class:list={['pointer-events-none absolute inset-0 overflow-hidden', extra]} aria-hidden="true">
+  {/* The horizon. A warm bloom low and right of centre, the one light
+      source; the page tokens keep it on-palette in both themes. */}
+  <div
+    class="sky-glow absolute inset-0 opacity-0 transition-opacity duration-[1400ms]"
+    data-sky-glow
+  >
+  </div>
+
+  {/* Paint order is DOM order, back to front. */}
+  <canvas data-sky="far" style={layerStyle} class="absolute inset-0 size-full opacity-0 transition-opacity duration-[1200ms] will-change-transform"></canvas>
+  <canvas data-sky="mid" style={layerStyle} class="absolute inset-0 size-full opacity-0 transition-opacity duration-[1200ms] will-change-transform"></canvas>
+  <canvas data-sky="near" style={layerStyle} class="absolute inset-0 size-full opacity-0 transition-opacity duration-[1200ms] will-change-transform"></canvas>
+</div>
+
+<style>
+  .sky-glow {
+    background:
+      radial-gradient(
+        55% 48% at 68% 92%,
+        color-mix(in oklch, var(--primary) 34%, transparent) 0%,
+        color-mix(in oklch, var(--primary) 10%, transparent) 40%,
+        transparent 72%
+      ),
+      radial-gradient(120% 90% at 50% 100%, rgb(0 0 0 / 0.35) 0%, transparent 60%);
+  }
+
+  :global(:root:not(.dark)) .sky-glow {
+    background: radial-gradient(
+      55% 48% at 68% 92%,
+      color-mix(in oklch, var(--primary) 22%, transparent) 0%,
+      color-mix(in oklch, var(--primary) 7%, transparent) 40%,
+      transparent 72%
+    );
+  }
+</style>
+
+<script>
+  import { TREATMENT_RAMPS, readTreatment } from '@/lib/treatments';
+
+  interface Grid {
+    cols: number;
+    rows: number;
+    lum: string;
+  }
+
+  interface Sprite {
+    cols: number;
+    rows: number;
+    lum: Uint8Array;
+  }
+
+  type Bank = 'far' | 'mid' | 'near';
+
+  interface Cloud {
+    art: 'cloud-far' | 'cloud-mid' | 'cloud-near';
+    bank: Bank;
+    /** Top edge, as a fraction of the frame's rows. */
+    top: number;
+    /** Cells per second. Slow: the nearest crosses in about two
+        minutes. Sky you can watch move is weather, and weather pulls
+        focus from the list underneath. */
+    speed: number;
+    alpha: number;
+    /** Starting offset along the loop, in cells. */
+    offset: number;
+  }
+
+  /* Small and high at the back, one big slow one low at the front. The
+     middle bank carries the mass. Every bank runs off both side edges,
+     so there is always something arriving. */
+  const CLOUDS: Cloud[] = [
+    { art: 'cloud-far', bank: 'far', top: 0.08, speed: 0.3, alpha: 0.42, offset: 20 },
+    { art: 'cloud-far', bank: 'far', top: 0.3, speed: 0.36, alpha: 0.36, offset: 190 },
+    { art: 'cloud-far', bank: 'far', top: 0.18, speed: 0.42, alpha: 0.4, offset: 330 },
+    { art: 'cloud-mid', bank: 'mid', top: 0.12, speed: 0.72, alpha: 0.58, offset: 260 },
+    { art: 'cloud-mid', bank: 'mid', top: 0.44, speed: 0.6, alpha: 0.5, offset: 70 },
+    { art: 'cloud-mid', bank: 'mid', top: 0.28, speed: 0.66, alpha: 0.46, offset: 440 },
+    { art: 'cloud-near', bank: 'near', top: 0.5, speed: 1.15, alpha: 0.5, offset: 120 },
+    { art: 'cloud-near', bank: 'near', top: 0.02, speed: 1.3, alpha: 0.34, offset: 520 },
+  ];
+
+  /** Birds, on the front bank. Two sizes, so they read as depth. */
+  const FLOCK = 5;
+  const BIRD_GLYPHS = ['v', '^'] as const;
+
+  /** Cell width in CSS px, clamped: about 220 columns on a desktop,
+      never finer than 4px on a phone (where 220 would be 1.8px). */
+  const cellFor = (width: number) => Math.min(7, Math.max(4, width / 220));
+
+  function inkFor(dark: boolean): [number, number, number] {
+    return dark ? [242, 227, 196] : [52, 42, 30];
+  }
+
+  const canvases = {
+    far: document.querySelector<HTMLCanvasElement>('canvas[data-sky="far"]'),
+    mid: document.querySelector<HTMLCanvasElement>('canvas[data-sky="mid"]'),
+    near: document.querySelector<HTMLCanvasElement>('canvas[data-sky="near"]'),
+  };
+  const glow = document.querySelector<HTMLElement>('[data-sky-glow]');
+
+  if (canvases.far && canvases.mid && canvases.near) {
+    const all = [canvases.far, canvases.mid, canvases.near] as const;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    const sprites = new Map<string, Sprite>();
+    const stamps = new Map<string, HTMLCanvasElement>();
+
+    let cols = 0;
+    let rows = 0;
+    let cw = 0;
+    let chh = 0;
+    let dark = document.documentElement.classList.contains('dark');
+    let ink = inkFor(dark);
+    let ramp = TREATMENT_RAMPS[readTreatment(document.documentElement)];
+    let raf = 0;
+    let last = 0;
+    /** Wall-clock start, so the drift resumes where it left off rather
+        than jumping when the loop is paused off-screen. */
+    let paused = 0;
+    let pausedAt = 0;
+
+    function measure(): boolean {
+      const rect = canvases.far!.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return false;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      cw = cellFor(rect.width);
+      chh = cw * 2;
+      cols = Math.ceil(rect.width / cw);
+      rows = Math.ceil(rect.height / chh);
+      for (const canvas of all) {
+        canvas.width = Math.round(rect.width * dpr);
+        canvas.height = Math.round(rect.height * dpr);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) continue;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      return true;
+    }
+
+    /** Rasterise each sprite's glyphs once at the current cell size. */
+    function buildStamps(): void {
+      stamps.clear();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      for (const [art, sprite] of sprites) {
+        const stamp = document.createElement('canvas');
+        stamp.width = Math.ceil(sprite.cols * cw * dpr);
+        stamp.height = Math.ceil(sprite.rows * chh * dpr);
+        const sctx = stamp.getContext('2d');
+        if (!sctx) continue;
+        sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        sctx.font = `${(chh * 0.98).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+        sctx.textAlign = 'center';
+        sctx.textBaseline = 'middle';
+
+        for (let y = 0; y < sprite.rows; y += 1) {
+          for (let x = 0; x < sprite.cols; x += 1) {
+            const base = (sprite.lum[y * sprite.cols + x] ?? 0) / 255;
+            if (base < 0.1) continue;
+            /* Biased up the ramp: mapped linearly a cloud spends most of
+               its range on the faint opening mark and disappears. */
+            const lit = Math.min(1, 0.3 + base * 0.7);
+            const glyph = ramp[Math.min(ramp.length - 1, Math.floor(lit * ramp.length))];
+            if (!glyph || glyph === ' ') continue;
+            sctx.fillStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${lit.toFixed(3)})`;
+            sctx.fillText(glyph, x * cw + cw / 2, y * chh + chh / 2);
+          }
+        }
+        stamps.set(art, stamp);
+      }
+    }
+
+    function drawCloud(ctx: CanvasRenderingContext2D, cloud: Cloud, t: number): void {
+      const sprite = sprites.get(cloud.art);
+      const stamp = stamps.get(cloud.art);
+      if (!sprite || !stamp) return;
+      const w = sprite.cols * cw;
+      const h = sprite.rows * chh;
+      const span = cols * cw + w;
+      const x = Math.round(((cloud.offset * cw + t * cloud.speed * cw) % span) - w);
+      const y = Math.round(cloud.top * rows * chh);
+      ctx.globalAlpha = cloud.alpha * (dark ? 1 : 0.6);
+      ctx.drawImage(stamp, x, y, w, h);
+      ctx.globalAlpha = 1;
+    }
+
+    function drawFlock(ctx: CanvasRenderingContext2D, t: number): void {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let i = 0; i < FLOCK; i += 1) {
+        const phase = i * 1.9;
+        const speed = 2.4 + (i % 3) * 0.8;
+        const span = cols + 24;
+        const x = ((i * 41 + t * speed) % span) - 12;
+        const y = rows * (0.36 + (i % 3) * 0.06) + Math.sin(t * 0.5 + phase) * 1.8;
+        if (x < 0 || x >= cols) continue;
+        const size = 1.4 + (i % 2) * 0.6;
+        ctx.font = `${(chh * size).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+        const glyph = BIRD_GLYPHS[Math.floor(t * 3 + phase) % BIRD_GLYPHS.length];
+        ctx.fillStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${dark ? 0.6 : 0.75})`;
+        ctx.fillText(glyph, x * cw + cw / 2, y * chh + chh / 2);
+      }
+    }
+
+    function draw(t: number): void {
+      if (cols === 0 || stamps.size === 0) return;
+      for (const bank of ['far', 'mid', 'near'] as const) {
+        const canvas = canvases[bank]!;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) continue;
+        ctx.clearRect(0, 0, cols * cw, rows * chh);
+        for (const cloud of CLOUDS) if (cloud.bank === bank) drawCloud(ctx, cloud, t);
+        if (bank === 'near') drawFlock(ctx, t);
+      }
+    }
+
+    const now = () => (performance.now() - paused) / 1000;
+
+    function loop(ts: number): void {
+      if (ts - last > 48) {
+        last = ts;
+        draw(now());
+      }
+      raf = requestAnimationFrame(loop);
+    }
+
+    function repaintAll(): void {
+      if (!measure()) return;
+      buildStamps();
+      draw(reduce.matches ? 0 : now());
+    }
+
+    void Promise.all(
+      [...new Set(CLOUDS.map((c) => c.art))].map(async (art) => {
+        const res = await fetch(`/art/${art}-grid.json`);
+        const g = (await res.json()) as Grid;
+        sprites.set(art, {
+          cols: g.cols,
+          rows: g.rows,
+          lum: Uint8Array.from(atob(g.lum), (c) => c.charCodeAt(0)),
+        });
+      }),
+    )
+      .then(() => {
+        repaintAll();
+
+        /* The arrival: banks fade up back to front, and the light
+           last. Under reduced motion the transition is 0.01ms by the
+           global rule, so this is simply "visible". */
+        all.forEach((canvas, i) => {
+          setTimeout(() => canvas.classList.remove('opacity-0'), 60 + i * 140);
+        });
+        setTimeout(() => glow?.classList.remove('opacity-0'), 500);
+
+        new ResizeObserver(repaintAll).observe(canvases.far!);
+
+        // Theme ink and treatment arrive as attributes on <html>, which
+        // a canvas cannot inherit.
+        new MutationObserver(() => {
+          const root = document.documentElement;
+          const nextDark = root.classList.contains('dark');
+          const nextRamp = TREATMENT_RAMPS[readTreatment(root)];
+          if (nextDark === dark && nextRamp === ramp) return;
+          dark = nextDark;
+          ink = inkFor(dark);
+          ramp = nextRamp;
+          repaintAll();
+        }).observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['class', 'data-treatment'],
+        });
+
+        if (reduce.matches) return;
+
+        // Nothing off-screen has any business holding a rAF loop open.
+        new IntersectionObserver((entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting && !raf) {
+              if (pausedAt) paused += performance.now() - pausedAt;
+              pausedAt = 0;
+              raf = requestAnimationFrame(loop);
+            } else if (!entry.isIntersecting && raf) {
+              cancelAnimationFrame(raf);
+              raf = 0;
+              pausedAt = performance.now();
+            }
+          }
+        }).observe(canvases.near!);
+
+        /* Parallax on the way out: the banks slide apart, nearest
+           fastest. Transform only, so it never touches the paint. */
+        let scrollRaf = 0;
+        const onScroll = () => {
+          if (scrollRaf) return;
+          scrollRaf = requestAnimationFrame(() => {
+            scrollRaf = 0;
+            const progress = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
+            canvases.far!.style.transform = `translate3d(0,${(progress * 18).toFixed(1)}px,0)`;
+            canvases.mid!.style.transform = `translate3d(0,${(progress * 34).toFixed(1)}px,0)`;
+            canvases.near!.style.transform = `translate3d(0,${(progress * 58).toFixed(1)}px,0)`;
+          });
+        };
+        addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+      })
+      .catch(() => {
+        /* No sky. The title still stands on the page. */
+      });
+  }
+</script>

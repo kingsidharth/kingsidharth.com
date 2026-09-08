@@ -28,7 +28,6 @@ const broadcasts = (await getCollection('broadcasts'))
 const work = (await getCollection('work')).sort((a, b) => a.data.order - b.data.order);
 const series = await getCollection('series');
 const notes = (await getLocalized('blog', locale)).slice(0, 5);
-
 ---
 
 <Base
@@ -37,10 +36,12 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
   description="Teaching AI, building products in Bengaluru. Tools, videos and writing about how AI actually behaves."
   bareTitle
 >
-  <!-- ── Hero. Two columns on desktop: the introduction on the left,
-         and Teaching + Challenge as one attached instrument on the
-         right — vertically middle-aligned against the intro rather
-         than top-aligned, which is what makes them read as a pair. ── -->
+  <!-- ── Hero. One column now. The introduction sits in the lower
+         left, where the backdrop's mask clears a space for it, and the
+         statue owns the right-hand side of the frame — which is where
+         it always was, until a second column of hardware sat on its
+         shoulder. The teaching numbers ride under the copy as a small
+         printed strip instead. ─────────────────────────────────── -->
   <!-- The min-height is the backdrop's own aspect ratio (2:1, capped at
        the 82rem the image itself is capped to). Sized to its text
        instead, the box clips the artwork with overflow-hidden — and what
@@ -54,31 +55,88 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
          the deity's head, crown and held attributes clear of the
          headline. Fluid rather than stepped, because the artwork scales
          with the viewport and a breakpoint would crop its face at one
-         width and strand it at the next.
--->
+         width and strand it at the next. -->
     <section
-      class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-[clamp(9rem,21vw,16rem)] pb-10 sm:pb-0"
+      class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-[clamp(9rem,21vw,16rem)] pb-10 sm:pb-4"
     >
-      <div class="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
+      <div class="max-w-[38rem]">
         <HeroIntro />
-
-        <div class="chassis relative w-full">
-          <span aria-hidden="true" class="screw absolute left-2.5 top-2.5"></span>
-          <span aria-hidden="true" class="screw absolute right-2.5 top-2.5"></span>
-          <span aria-hidden="true" class="screw absolute bottom-2.5 left-2.5"></span>
-          <span aria-hidden="true" class="screw absolute bottom-2.5 right-2.5"></span>
-
+        <div class="mt-8" data-arrive style="--arrive-i:2">
           <TeachingStats />
         </div>
       </div>
     </section>
   </div>
 
+  <!-- ── The lineup. Programmes and video collections interleaved:
+         they are the same kind of offer, so two separate grids made
+         the page argue with itself. Five cards, five tracks. ────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-12 sm:pt-16">
+    <Lineup series={series} />
+  </section>
+
+  <!-- ── Watch ────────────────────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
+    <SectionHead
+      index="01"
+      title={t('broadcasts.title')}
+      more={{ href: localePath(locale, 'broadcasts'), label: 'All videos' }}
+    />
+
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        broadcasts.map((entry, i) => (
+          <div data-arrive style={`--arrive-i:${i}`}>
+            <BroadcastCard entry={entry} locale={locale} />
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- ── Notes ────────────────────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pb-16 sm:pb-20">
+    <SectionHead
+      index="02"
+      title={t('notes.title')}
+      more={{ href: localePath(locale, 'notes'), label: t('notes.all') }}
+    />
+
+    <div class="max-w-3xl">
+      {notes.map((entry) => <NoteRow entry={entry} locale={locale} />)}
+    </div>
+  </section>
+
+  <!-- ── Work ─────────────────────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pb-16 sm:pb-20">
+    <SectionHead
+      index="03"
+      title={t('work.title')}
+      sub={t('work.sub')}
+      more={{ href: localePath(locale, 'work'), label: 'More about the work' }}
+    />
+    <WorkList entries={work} />
+  </section>
+
+  <!-- ── The catcher. Someone who read this far is the person most
+         likely to want a go. A banner, not an instrument: the
+         instrument is what it reveals. ─────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pb-4">
+    <SectionHead index="04" title="Challenge" sub="one question, one dial" />
+    <div class="mx-auto max-w-2xl" data-arrive>
+      <GotchaQuiz client:visible />
+    </div>
+  </section>
+
   <!-- Revealed by the quiz. Hidden rather than un-rendered so the
        reveal is instant and it stays out of the a11y tree until then.
        Note `client:idle`, NOT `client:visible`: a `hidden` element has
        no layout, so an IntersectionObserver never fires and the island
-       would still be inert after the reveal. -->
+       would still be inert after the reveal.
+
+       This is the one instrument on the page, and it keeps its chassis:
+       it is the temperature explainer, which is where the hardware
+       vocabulary lives now. -->
   <section
     id="instrument-reveal"
     hidden
@@ -98,9 +156,9 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     <p class="mt-6">
       <a
         href={localePath(locale, 'guides/sampling')}
-        class="plaque inline-flex px-3.5 py-2 font-condensed text-[13px] font-semibold transition-transform hover:brightness-110 active:translate-y-px"
+        class="inline-flex items-center gap-2 rounded-md border border-border px-3.5 py-2 font-condensed text-[13px] font-semibold transition-colors hover:border-primary hover:text-primary"
       >
-        Open the full bench →
+        Open the full bench <span aria-hidden="true">→</span>
       </a>
     </p>
   </section>
@@ -115,72 +173,17 @@ const notes = (await getLocalized('blog', locale)).slice(0, 5);
     });
   </script>
 
-  <!-- ── The lineup. Programmes and video collections interleaved:
-         they are the same kind of offer, so two separate grids made
-         the page argue with itself. ───────────────────────────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-16">
-    <Lineup series={series} />
-  </section>
-
-  <!-- ── Watch ────────────────────────────────────────────────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
-    <SectionHead title={t('broadcasts.title')} />
-
-    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      {broadcasts.map((entry) => <BroadcastCard entry={entry} locale={locale} />)}
-    </div>
-  </section>
-
-  <!-- ── Work ─────────────────────────────────────────────────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pb-16 sm:pb-20">
-    <SectionHead title={t('work.title')} />
-    <WorkList entries={work} />
-    <p class="mt-6 font-mono text-xs">
-      <a href={localePath(locale, 'work')} class="text-primary hover:underline">
-        More about the work →
-      </a>
-    </p>
-  </section>
-
-  <!-- ── Notes ────────────────────────────────────────────────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
-    <SectionHead title={t('notes.title')} />
-
-    <div class="max-w-3xl">
-      {notes.map((entry) => <NoteRow entry={entry} locale={locale} />)}
-
-      <p class="mt-5 font-mono text-xs text-muted-foreground">
-        <a href={localePath(locale, 'blog')} class="text-primary hover:underline">
-          {t('notes.all')} →
-        </a>
-      </p>
-    </div>
-  </section>
   <!-- ── Elsewhere ────────────────────────────────────────────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pb-4">
-    <div class="chassis relative flex flex-wrap items-center justify-between gap-6 p-6">
-      <span class="screw top-2.5 left-2.5"></span>
-      <span class="screw top-2.5 right-2.5"></span>
-      <span class="screw bottom-2.5 left-2.5"></span>
-      <span class="screw bottom-2.5 right-2.5"></span>
-
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-16 pb-4">
+    <div
+      class="flex flex-wrap items-center justify-between gap-x-10 gap-y-6 border-t border-rule pt-8"
+    >
       <div>
-        <p class="text-xl font-semibold">Socials</p>
-        <p class="mt-1 text-sm text-muted-foreground">
-          They won't let you follow me everywhere.
-        </p>
+        <p class="text-xl font-semibold">Elsewhere</p>
+        <p class="mt-1 text-sm text-muted-foreground">They won't let you follow me everywhere.</p>
       </div>
 
-      <SocialLinks variant="tile" class="max-w-[22rem] flex-1" />
+      <SocialLinks variant="tile" class="w-full max-w-[22rem] sm:w-auto" />
     </div>
   </section>
-
-  <!-- ── The catcher. Last thing before the footer: someone who read
-         this far is the person most likely to want a go. ────────── -->
-  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-8 pb-4">
-    <div class="mx-auto max-w-2xl">
-      <GotchaQuiz client:visible />
-    </div>
-  </section>
-
 </Base>

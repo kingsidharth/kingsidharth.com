@@ -20,7 +20,7 @@ export async function GET(context: APIContext) {
       description: entry.data.description,
       pubDate: entry.data.pubDate,
       categories: entry.data.tags,
-      link: localePath(locale, `blog/${splitId(entry.id).slug}`),
+      link: localePath(splitId(entry.id).locale, `notes/${splitId(entry.id).slug}`),
     })),
     customData: `<language>${locale === 'hi' ? 'hi-IN' : 'en-GB'}</language>`,
   });

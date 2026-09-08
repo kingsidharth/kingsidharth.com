@@ -51,14 +51,10 @@ const FACES: Face[] = [
      half is dead weight nothing on the site sets, but the condensed half
      is what card titles are for. */
   { name: 'AnekLatin-var', src: 'anek/AnekLatin/variable/AnekLatin[wdth,wght].ttf', pin: { wdth: [75, 100] } },
-  { name: 'FunnelDisplay-var', src: 'funnel_display/variable/FunnelDisplay[wght].ttf' },
-  { name: 'Gabarito-var', src: 'gabarito/variable/Gabarito[wght].ttf' },
-  { name: 'Matangi-var', src: 'matangi/Matangi[wght].ttf' },
   // Unpinned, unlike the rest. Mona Sans ships a STAT table the
   // instancer cannot rewrite — it walks off the end of the design-axis
   // list and throws — so its opsz and ital axes stay in the file and the
   // browser takes their defaults, which are the text drawing and upright.
-  { name: 'MonaSans-var', src: 'mona_sans/MonaSansVF[wght,opsz,ital].ttf' },
   { name: 'ZalandoSans-var', src: 'zalando_sans/variable/ZalandoSans[wdth,wght,slnt].ttf', pin: { wdth: [75, 100], slnt: 0 } },
   { name: 'SplineSans-var', src: 'spline_sans/SplineSans[wght].ttf' },
   { name: 'SplineSansMono-var', src: 'spline_sans/mono/SplineSansMono[wght].ttf' },
@@ -66,6 +62,23 @@ const FACES: Face[] = [
      Strichpunkt's wdth runs 100-200, so it has no condensed to keep —
      only an expanded range no rule on the site asks for. */
   { name: 'StrichpunktSans-var', src: 'strichpunkt_sans/variable/StrichpunktSans[wdth,wght].ttf', pin: { wdth: 100 } },
+  { name: 'RethinkSans-var', src: 'rethink-sans/variable/RethinkSans[wght].ttf' },
+  { name: 'HankenGrotesk-var', src: 'Hanken Grotesk/HankenGrotesk[wght].ttf' },
+  { name: 'PontanoSans-var', src: 'pontano_sans/variable/PontanoSans[wght].ttf' },
+  { name: 'SpecialGothic-var', src: 'special_gothic/variable/SpecialGothic[wdth,wght].ttf', pin: { wdth: 100 } },
+  { name: 'GolosText-var', src: 'golos_text/GolosText[wght].ttf' },
+  /* Google Sans Flex carries six axes (opsz, wdth, wght, GRAD, ROND,
+     slnt) and every script at ~4.5MB. Everything except weight is pinned
+     to its text default and the weight range is clamped to the working
+     hundred-through-black the site actually sets; Latin-only subsetting
+     lands it around 60KB. PROPRIETARY — Google's brand face, not
+     licensed for third-party sites; it is here on an explicit request
+     and has to come out again before any public release. */
+  {
+    name: 'GoogleSans-var',
+    src: 'google_sans/GoogleSansFlex.ttf',
+    pin: { opsz: 18, wdth: 100, GRAD: 0, ROND: 0, slnt: 0, wght: [100, 900] },
+  },
 ];
 
 /** Latin plus the punctuation and symbols this site actually sets. */

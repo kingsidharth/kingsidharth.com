@@ -28,10 +28,6 @@ const programmes = [
     shadow: 'oklch(0.16 0.09 275)',
     labelBg: 'oklch(0.78 0.13 190)',
     labelInk: 'oklch(0.22 0.07 220)',
-    lines: [
-      { text: 'Steal the', cls: 'block text-[15px] leading-none opacity-70' },
-      { text: 'Secret Prompts', cls: 'mt-1 block text-[28px] leading-[0.95]' },
-    ],
     frames: {
       idle: ['┬┴┬┴┤ω・)', '┬┴┬┴┤・ω・)'],
       l1: '┬┴┬┤ ͡° ͜ʖ ͡°)',
@@ -52,10 +48,6 @@ const programmes = [
     to: 'oklch(0.42 0.16 12)',
     ink: 'oklch(0.98 0 0)',
     shadow: 'oklch(0.19 0.1 340)',
-    lines: [
-      { text: 'Vibe Coding', cls: 'block text-[28px] leading-[0.95]' },
-      { text: '101', cls: 'mt-1 block text-[15px] leading-none opacity-70' },
-    ],
     frames: {
       idle: ['(◑‿◐)'],
       l1: '(◑‿◐)♪',
@@ -67,7 +59,7 @@ const programmes = [
   {
     name: 'Freshcast',
     art: 'freshcast',
-    kind: 'Tool',
+    kind: 'Podcast',
     verb: 'Listen',
     sub: 'AI updates in 5 minutes',
     href: 'https://freshcast.app',
@@ -77,10 +69,6 @@ const programmes = [
     to: 'oklch(0.4 0.13 132)',
     ink: 'oklch(0.9 0.17 140)',
     shadow: 'oklch(0.17 0.07 155)',
-    lines: [
-      { text: 'Freshcast', cls: 'block text-[28px] leading-[0.95]' },
-      { text: 'AI in five minutes', cls: 'mt-1 block text-[15px] leading-none opacity-70' },
-    ],
     frames: {
       idle: ['( ⌐■_■)🎧', '( ⌐■_■)♫'],
       l1: '(♪ ᐛ )♪',
@@ -89,6 +77,34 @@ const programmes = [
       recover: '( ˘▽˘)っ♨',
     },
   },
+];
+
+/* Each title is set differently — same ingredients, different recipe —
+   so the row does not read as one template filled in five times. The
+   recipe the series cards proved out (a small line set against a big
+   one, size doing all the separating) is the floor now; what varies is
+   the arrangement. Weight appears once per card, on the line that IS
+   the title. Indexed alongside `programmes`. */
+const lines = [
+  // Small setup line, then the payload at full size, split across two
+  // decks so "Secret Prompts" can go bigger than its measure allows.
+  [
+    { text: 'Steal the', cls: 'block text-[14px] leading-none opacity-65' },
+    { text: 'Secret', cls: 'mt-0.5 block text-[32px] leading-[0.9]' },
+    { text: 'Prompts', cls: 'block text-[32px] leading-[0.9]' },
+  ],
+  // Inverted: the number is the title. "101" is the part people say
+  // out loud, so it is the part that gets the 34px.
+  [
+    { text: 'Vibe Coding', cls: 'block text-[14px] leading-none opacity-65' },
+    { text: '101', cls: 'mt-0.5 block text-[34px] leading-[0.9]' },
+  ],
+  // Name forward — a podcast title carries its own weight; the
+  // descriptor stays small under it.
+  [
+    { text: 'Freshcast', cls: 'block text-[30px] leading-[0.95]' },
+    { text: 'AI in five minutes', cls: 'mt-1 block text-[13px] leading-none opacity-70' },
+  ],
 ];
 
 interface Props {
@@ -139,6 +155,16 @@ const { variant = 'panel' } = Astro.props;
 
         {variant === 'lineup' && p.art && <CardArt name={p.art} />}
 
+        {/* The same base scrim the series cards beside it wear, so the
+            whole row's lettering sits on one consistent darkening toward
+            the foot instead of half the cards relying on text-shadow. */}
+        {variant === 'lineup' && (
+          <span
+            class="pointer-events-none absolute inset-0 bg-linear-to-t from-black/90 via-black/45 via-52% to-black/10"
+            aria-hidden="true"
+          />
+        )}
+
         {
           p.symbols && (
             <span
@@ -171,20 +197,20 @@ const { variant = 'panel' } = Astro.props;
         }
 
         {
-          /* One title treatment, not four.
-             There used to be a marquee, a wordmark, an extruded and a
-             sprite variant, which meant five cards in a row answered the
-             question "what is a title here" five different ways — and
-             the marquee band cut a solid stripe straight across its own
-             artwork. Stacked lines, size doing the separating, weight
-             once per card, sliced by the same pixel mask as the picture
-             under it. */
+          /* One title treatment per card, set from the shared `lines`
+             recipes — and under it, the same mono caption the series
+             cards carry, so the row reads as one set. */
           <span class="relative z-10 mt-auto w-full">
             <span class="phosphor-type pixel-type card-title block text-[oklch(0.97_0.03_190)]">
-              {p.lines.map((l) => (
+              {lines[i]!.map((l) => (
                 <span class={l.cls}>{l.text}</span>
               ))}
             </span>
+            {variant === 'lineup' && (
+              <span class="pixel-type-sm mt-1.5 block font-mono text-xs text-white/60">
+                {p.kind} · {p.verb}
+              </span>
+            )}
           </span>
         }
       </a>

@@ -1,0 +1,37 @@
+---
+interface Props { title: string; kind: 'speaking' | 'work'; }
+const { title, kind } = Astro.props;
+const art = kind === 'speaking' ? 'designers' : 'pmcourse';
+---
+<header class="page-artwork relative isolate overflow-hidden" data-page-artwork data-tilt-artwork>
+  <div class="mx-auto grid min-h-[25rem] max-w-6xl items-center gap-5 px-(--spacing-gutter) py-12 sm:grid-cols-2 sm:py-16">
+    <div class="relative z-10">
+      <p class="nameplate mb-4">{kind === 'speaking' ? 'Talks & workshops' : 'Product & design'}</p>
+      <h1 class="pixel-type text-5xl font-extrabold sm:text-6xl">{title}</h1>
+    </div>
+    <div class="art-window relative h-64 sm:h-80" aria-hidden="true">
+      <img src={`/art/${art}.svg`} alt="" width="644" height="854" fetchpriority="high" class="page-art-image absolute inset-0 size-full object-contain" />
+    </div>
+  </div>
+</header>
+<style>
+  .page-artwork { color: #f4f1ed; background: radial-gradient(ellipse at 75% 50%, #293347, #11131b 72%); }
+  .art-window { mask-image: linear-gradient(transparent, black 12%, black 85%, transparent); }
+  .page-art-image { transition: transform 160ms ease-out; }
+  @media (prefers-reduced-motion: reduce) { .page-art-image { transition: none; } }
+</style>
+<script>
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  document.querySelectorAll<HTMLElement>('[data-page-artwork]').forEach(host => {
+    const image = host.querySelector<HTMLImageElement>('img');
+    if (!image) return;
+    host.addEventListener('pointermove', event => {
+      if (reduce.matches) return;
+      const bounds = host.getBoundingClientRect();
+      const x = (event.clientX - bounds.left) / bounds.width - .5;
+      const y = (event.clientY - bounds.top) / bounds.height - .5;
+      image.style.transform = `translate3d(${x * 20}px, ${y * 16}px, 0) rotate(${x}deg)`;
+    });
+    host.addEventListener('pointerleave', () => { image.style.transform = ''; });
+  });
+</script>

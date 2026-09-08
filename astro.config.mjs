@@ -28,7 +28,12 @@ export default defineConfig({
     },
   },
 
-  integrations: [react(), mdx(), sitemap({ i18n: { defaultLocale: 'en', locales: { en: 'en', hi: 'hi' } } })],
+  integrations: [react(), mdx(), sitemap({ filter: (page) => !new URL(page).pathname.split('/').includes('blog'), i18n: { defaultLocale: 'en', locales: { en: 'en', hi: 'hi' } } })],
+
+  server: {
+    host: true,
+    allowedHosts: ['kingsidharth.local'],
+  },
 
   vite: {
     plugins: [tailwindcss()],

@@ -13,7 +13,7 @@
  * picks colours freely.
  */
 import CardArt from '@/components/CardArt.astro';
-import { posterGround } from '@/lib/poster';
+import { guidePalette, posterGround } from '@/lib/poster';
 
 interface Props {
   href: string;
@@ -28,15 +28,7 @@ interface Props {
 
 const { href, title, art, meta, index = 0 } = Astro.props;
 
-const PALETTES = [
-  { seed: 12, from: 'oklch(0.36 0.17 342)', via: 'oklch(0.25 0.13 322)', to: 'oklch(0.42 0.16 12)' },
-  { seed: 19, from: 'oklch(0.3 0.1 202)', via: 'oklch(0.22 0.07 192)', to: 'oklch(0.36 0.11 162)' },
-  { seed: 5, from: 'oklch(0.32 0.13 285)', via: 'oklch(0.24 0.1 262)', to: 'oklch(0.4 0.11 208)' },
-  { seed: 33, from: 'oklch(0.38 0.14 42)', via: 'oklch(0.27 0.11 28)', to: 'oklch(0.44 0.15 72)' },
-  { seed: 26, from: 'oklch(0.33 0.11 158)', via: 'oklch(0.23 0.09 168)', to: 'oklch(0.4 0.13 132)' },
-];
-
-const palette = PALETTES[index % PALETTES.length];
+const palette = guidePalette(index);
 const ground = posterGround(palette.seed, palette);
 ---
 

@@ -42,12 +42,14 @@ const { class: extra = '' } = Astro.props;
    ellipse sits over the copy block in the lower left. */
 const copyMask =
   'radial-gradient(52% 40% at 26% 22%,rgb(0 0 0 / 0.2) 0%,rgb(0 0 0 / 0.6) 56%,#000 100%)';
-/* Fades on all four sides. Left and right alone left a hard horizontal
-   cut where the artwork stopped — the homepage hero dissolves on every
-   edge and this has to as well, or the sky reads as a pasted rectangle. */
+/* Fades on all four sides, and deep ones: the artwork should dissolve
+   into the page well before its own rectangle ends, not merely soften.
+   Left and right alone left a hard horizontal cut where the artwork
+   stopped — the homepage hero dissolves on every edge and this has to
+   as well, or the sky reads as a pasted rectangle. */
 const edgeMask =
-  'linear-gradient(90deg,transparent 0%,#000 16%,#000 84%,transparent 100%)';
-const vertMask = 'linear-gradient(180deg,transparent 0%,#000 8%,#000 78%,transparent 100%)';
+  'linear-gradient(90deg,transparent 0%,#000 24%,#000 76%,transparent 100%)';
+const vertMask = 'linear-gradient(180deg,transparent 0%,#000 13%,#000 70%,transparent 100%)';
 
 const layerStyle = [
   `-webkit-mask-image:${copyMask},${edgeMask},${vertMask}`,
@@ -74,7 +76,7 @@ const layerStyle = [
       is a grey stain around the artwork; the masks already dissolve
       the edges, so light mode gets nothing. */}
   <div
-    class="absolute inset-0 hidden bg-[radial-gradient(120%_95%_at_50%_46%,transparent_40%,rgb(0_0_0/0.6)_100%)] dark:block"
+    class="absolute inset-0 hidden bg-[radial-gradient(120%_95%_at_50%_46%,transparent_34%,rgb(0_0_0/0.72)_100%)] dark:block"
   >
   </div>
 </div>
@@ -144,9 +146,10 @@ const layerStyle = [
       ink: [78, 104, 142],
       hot: [252, 138, 190],
       /* On paper the terrain is drawn, not glowing: a slate line dark
-         enough to read on cream, and a sun that stays an accent rather
-         than flooding the frame. */
-      lightInk: [96, 102, 126],
+         enough to read as SHADOW on cream — a mid grey only reads as
+         haze — and a sun that stays an accent rather than flooding the
+         frame. */
+      lightInk: [64, 68, 94],
       lightHot: [176, 44, 104],
       alpha: 1,
       speed: 0,
@@ -156,9 +159,14 @@ const layerStyle = [
          almost no floor so the renderer can cut with a jitter — which
          means for a painting with a lot of dark-but-not-black ground,
          96% of cells arrive above the threshold and the whole frame
-         fills in. The night has to be cut back here or there is no night. */
-      cut: 0.22,
-      lightCut: 0.32,
+         fills in. The night has to be cut back here or there is no night.
+         Settled a step darker again: the scene should read as a dark
+         picture with a light in it, not as a bright one dimmed. */
+      cut: 0.26,
+      /* Lower than it was: with the sun dropped out by the disc rule
+         above rather than by a high threshold, the threshold can come
+         down and keep the shadow mass that makes the terrain read. */
+      lightCut: 0.26,
     },
   };
 
@@ -176,7 +184,7 @@ const layerStyle = [
 
     const loaded: Loaded[] = [];
     let raf = 0;
-    let dark = document.documentElement.classList.contains('dark');
+    const dark = true; // This artwork keeps its night palette in both page themes.
     /** Pointer position in fractions of the hero, or -1 when away. */
     let px = -1;
     let py = -1;
@@ -237,7 +245,47 @@ const layerStyle = [
       for (let y = 0; y < l.rows; y += 1) {
         for (let x = 0; x < l.cols; x += 1) {
           const base = (l.lum[y * l.cols + x] ?? 0) / 255;
-          if (base < cut + (hash01(x, y) - 0.5) * 0.06) continue;
+
+          /* The sun's position in the frame, needed BEFORE the cut.
+             On paper the sun is the one place the page shows through,
+             and it is found by BRIGHTNESS, not by a guessed circle: the
+             painting's glow decays smoothly from the core, so a fixed
+             radius either eats the rim or misses the centre. The
+             brightest core is pulled under the cut and drops out as
+             paper; the band just outside it is pulled down the tone
+             ramp below, which after the paper invert draws it as the
+             rim. */
+          let fx = 0;
+          let fy = 0;
+          let rad = -1;
+          let disc = 0;
+          if (l.art === 'guide-portal') {
+            fx = x / l.cols - SUN[0];
+            fy = ((y / l.rows - SUN[1]) * l.rows * 2) / l.cols;
+            rad = Math.sqrt(fx * fx + fy * fy);
+            disc = 1 - smoothstep(0.1, 0.17, rad);
+          }
+
+          /* The floor the night is cut to is `base`; on paper the sun's
+             core is subtracted first so the light drops out of the
+             drawing entirely. */
+          const hole =
+            !dark && l.art === 'guide-portal' ? smoothstep(0.5, 0.6, base) : 0;
+          const seen = base - hole * 1.2;
+          if (seen < cut + (hash01(x, y) - 0.5) * 0.06) {
+            /* On paper, below the horizon, a cell under the cut is
+               SHADOW, not haze — and shadow is where the ink lives. The
+               night cut stays for the sky (faint cells there are haze
+               on cream), but the dark ground must not drop out or the
+               picture loses its shadows entirely. The painting's own
+               horizon sits at about 0.55; jitter keeps the hand-off from
+               drawing a straight line across the dunes. */
+            const groundShadow =
+              !dark &&
+              l.art === 'guide-portal' &&
+              y / l.rows > 0.52 + (hash01(x, 7) - 0.5) * 0.05;
+            if (!groundShadow) continue;
+          }
 
           /* Light coming along the path.
              A band travelling DOWN the frame, so illumination arrives
@@ -247,6 +295,7 @@ const layerStyle = [
              thing that travels is the light, which is also the only
              honest motion for a picture about walking somewhere. */
           let lit = base;
+          let rimK = 0;
           if (l.art === 'guide-portal') {
             /* The rise and fall, smoothed.
                It used to switch on at `base > 0.55`, and a hard threshold
@@ -263,32 +312,42 @@ const layerStyle = [
                AROUND them is the one movement the drawing asks for. It is
                weighted to the annulus, so the ring turns and the disc and
                the ground stay still. */
-            const fx = x / l.cols - SUN[0];
-            const fy = ((y / l.rows - SUN[1]) * l.rows * 2) / l.cols;
-            const rad = Math.sqrt(fx * fx + fy * fy);
             const band = Math.exp(-((rad - 0.185) ** 2) / 0.004);
             const spin = 0.5 + 0.5 * Math.sin(Math.atan2(fy, fx) * 2 - t * 0.42);
 
-            /* And the disc itself.
-               Dark mode lifts it: the painting's orange sun converts to
-               a mid grey, arriving in the middle of the ramp as a mauve
-               shape rather than a light, and no tone curve can fix that
-               because the tone was never there — lifting inside the
-               known radius puts it at the top of the ramp, where the
-               core blows to white.
-               Light mode does the opposite, and this is the part that
-               is not an inversion of colour but of MATERIAL: on paper
-               the sun is the one place the page shows through. Pulling
-               the disc DOWN drops its cells under the cut, so the sun
-               reads as a clean circle of paper held inside its drawn
-               rim — the way an engraving leaves the light source blank
-               and draws everything around it. */
-            const disc = 1 - smoothstep(0.1, 0.17, rad);
-
-            lit = Math.min(
-              1,
-              base * (1 + w * (swell - 1)) + band * spin * base * 0.5 + disc * (dark ? 0.38 : -0.24),
-            );
+            /* The disc itself, dark mode only.
+               The painting's orange sun converts to a mid grey, arriving
+               in the middle of the ramp as a mauve shape rather than a
+               light — lifting inside the known radius puts it at the top
+               of the ramp, where the core blows to white. On paper the
+               disc is already gone: it fell under the cut above, leaving
+               a clean circle of page inside its drawn rim. */
+            if (dark) {
+              lit = Math.min(
+                1,
+                base * (1 + w * (swell - 1)) + band * spin * base * 0.5 + disc * 0.38,
+              );
+            } else {
+              /* The rim, and the ring's direction reversed.
+                 The falloff band around the punched core is pulled DOWN
+                 the source ramp, which after the paper invert is UP the
+                 ink ramp — the sun is outlined, not drawn. And the light
+                 travelling around the arcs adds ink as it passes rather
+                 than washing it away: on paper, more light is more
+                 drawing around the light. */
+              const rim =
+                rad < 0.26
+                  ? smoothstep(0.36, 0.48, base) * (1 - smoothstep(0.52, 0.62, base))
+                  : 0;
+              rimK = rim;
+              lit = Math.max(
+                0,
+                Math.min(
+                  1,
+                  base * (1 + w * (swell - 1)) - band * spin * base * 0.4 - rim * 0.32,
+                ),
+              );
+            }
           } else if (l.art === 'journey-near') {
             const band = ((t * 0.09) % 1.5) - 0.25;
             const d = Math.abs(y / l.rows - band);
@@ -318,10 +377,12 @@ const layerStyle = [
 
           // Toward the layer's highlight only where it is already hot, so
           // the accent stays rationed rather than tinting the whole bank.
-          // On paper it is rationed harder: at full pull the sun is one
-          // flat pink disc, which is precisely the light-mode failure
-          // this tuning exists to fix.
-          const h = Math.max(0, (lit - 0.55) / 0.45) * (dark ? 1 : 0.55);
+          // On paper the hue keys off the SOURCE brightness, not `lit`:
+          // the rim around the paper sun is pulled down the tone ramp to
+          // draw at all, and keying the accent off the lowered value
+          // would strip the pink from the one ring that should carry it.
+          const h =
+            Math.max(0, ((dark ? lit : base) - 0.55) / 0.45) * (dark ? 1 : 0.75);
           const ink = dark ? l.ink : l.lightInk;
           const hot = dark ? l.hot : l.lightHot;
           /* Accent through the midtones, white at the very top. A hue
@@ -329,14 +390,29 @@ const layerStyle = [
              the core blow out is what makes it read as a light source
              that happens to be pink. */
           const core = smoothstep(0.84, 1, lit) * (dark ? 0.85 : 0.2);
-          const r = Math.round((ink[0] + (hot[0] - ink[0]) * h) * (1 - core) + 255 * core);
-          const g = Math.round((ink[1] + (hot[1] - ink[1]) * h) * (1 - core) + 246 * core);
-          const b = Math.round((ink[2] + (hot[2] - ink[2]) * h) * (1 - core) + 250 * core);
+          let r = Math.round((ink[0] + (hot[0] - ink[0]) * h) * (1 - core) + 255 * core);
+          let g = Math.round((ink[1] + (hot[1] - ink[1]) * h) * (1 - core) + 246 * core);
+          let b = Math.round((ink[2] + (hot[2] - ink[2]) * h) * (1 - core) + 250 * core);
+
+          /* The rim carries the accent on paper. The cells bright enough
+             to key the hue off the source are the ones the hole punched
+             out, so the pink is put on the ring directly — where the sun
+             meets the drawing. */
+          if (!dark && rimK > 0) {
+            const rk = rimK * 0.6;
+            r = Math.round(r + (hot[0] - r) * rk);
+            g = Math.round(g + (hot[1] - g) * rk);
+            b = Math.round(b + (hot[2] - b) * rk);
+          }
 
           // Was `0.35 + base * 0.75`, which capped even a pure-white cell at
           // well under full strength once the layer alpha was applied. The
           // brightest cells now reach the layer's alpha exactly.
-          const a = Math.min(1, l.alpha * (0.3 + tone * 1.05));
+          /* On paper the floor of the range sits higher: the edge masks
+             that merely soften near-white ink on black crush mid-grey ink
+             on cream to a haze, and the shadow mass is exactly what the
+             paper version cannot afford to lose. */
+          const a = Math.min(1, l.alpha * (dark ? 0.24 + tone * 0.92 : 0.45 + tone * 1.0));
           l.ctx.fillStyle = `rgba(${r},${g},${b},${a.toFixed(3)})`;
           l.ctx.fillText(glyph, originX + x * cw + cw / 2, oy + y * chh + chh / 2);
         }
@@ -379,7 +455,8 @@ const layerStyle = [
          canvas stack — the stack is `pointer-events-none` so it never
          eats a click meant for the page. */
       const host = root.parentElement ?? root;
-      if (matchMedia('(hover: hover)').matches) {
+      host.dataset.tiltArtwork = '';
+      if (matchMedia('(hover: hover)').matches || matchMedia('(pointer: coarse)').matches) {
         host.addEventListener('pointermove', (e: PointerEvent) => {
           const r = root.getBoundingClientRect();
           px = (e.clientX - r.left) / r.width;
@@ -390,14 +467,6 @@ const layerStyle = [
           py = -1;
         });
       }
-
-      new MutationObserver(() => {
-        const next = document.documentElement.classList.contains('dark');
-        if (next === dark) return;
-        dark = next;
-        const now2 = performance.now() / 1000;
-        for (const l of loaded) paint(l, now2);
-      }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
       new ResizeObserver(() => {
         const t = performance.now() / 1000;

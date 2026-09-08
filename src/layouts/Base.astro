@@ -29,6 +29,7 @@ const canonical = new URL(localePath(locale, path), Astro.site);
 <html lang={locale} dir={LOCALE_META[locale].dir} class="scroll-pt-20">
   <head>
     <meta charset="utf-8" />
+    <link rel="preload" href="/fonts/Bricolage-var.woff2" as="font" type="font/woff2" crossorigin />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
@@ -52,6 +53,7 @@ const canonical = new URL(localePath(locale, path), Astro.site);
     <meta property="og:locale" content={locale === 'hi' ? 'hi_IN' : 'en_GB'} />
     <meta name="twitter:card" content="summary_large_image" />
 
+    {(path.startsWith("notes/") || path.startsWith("guides/") || path.startsWith("speaking/")) && <link rel="alternate" type="text/markdown" href={localePath(locale, `${path}.md`)} />}
     <link rel="sitemap" href="/sitemap-index.xml" />
     <link
       rel="alternate"
@@ -77,8 +79,29 @@ const canonical = new URL(localePath(locale, path), Astro.site);
       <slot />
     </main>
 
-    <Footer locale={locale} />
+    <Footer locale={locale} markdownPath={(path.startsWith("notes/") || path.startsWith("guides/") || path.startsWith("speaking/")) ? localePath(locale, `${path}.md`) : undefined} />
 
     <DesignSettings client:idle />
+
+    <script>
+      // Arrival. Anything marked `data-arrive` rises into place the
+      // first time it enters the viewport; `--arrive-i` staggers a run
+      // of siblings. One observer for the whole page, unobserved once
+      // each element has arrived.
+      const targets = document.querySelectorAll<HTMLElement>('[data-arrive]');
+      if (targets.length > 0) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              entry.target.setAttribute('data-arrived', '');
+              io.unobserve(entry.target);
+            }
+          },
+          { rootMargin: '0px 0px -8% 0px' },
+        );
+        for (const el of targets) io.observe(el);
+      }
+    </script>
   </body>
 </html>

@@ -1,4 +1,5 @@
 ---
+import ContentAgeNotice from "@/components/ContentAgeNotice.astro";
 import type { GetStaticPaths } from 'astro';
 import { getCollection, render } from 'astro:content';
 import Base from '@/layouts/Base.astro';
@@ -9,20 +10,24 @@ import { LOCALES, formatDate, localeParam, localePath, useTranslations } from '@
 import type { Locale } from '@/lib/i18n';
 
 export const getStaticPaths = (async () => {
-  const paths = [];
+  const paths: { params: { locale: string | undefined; slug: string }; props: Props }[] = [];
 
   for (const locale of LOCALES) {
-    for (const guide of await getGuides(locale)) {
+    const guides = await getGuides(locale);
+    guides.forEach((guide, index) => {
       for (const entry of [guide.root, ...guide.chapters]) {
         // A guide root lives at `<guide>/index.mdx` but must be served
         // from `/guides/<guide>`, not `/guides/<guide>/index`.
         const slug = splitId(entry.id).slug.replace(/\/index$/, '');
         paths.push({
           params: { locale: localeParam(locale), slug },
-          props: { entry, guide, locale },
+          // `index` is the guide's position in the index, which picks
+          // the ground its cover is printed on — the same one its card
+          // in the rail already wears.
+          props: { entry, guide, locale, index },
         });
       }
-    }
+    });
   }
 
   return paths;
@@ -32,9 +37,10 @@ type Props = {
   entry: Awaited<ReturnType<typeof getCollection<'guides'>>>[number];
   guide: Awaited<ReturnType<typeof getGuides>>[number];
   locale: Locale;
+  index: number;
 };
 
-const { entry, guide, locale } = Astro.props as Props;
+const { entry, guide, locale, index } = Astro.props as Props;
 const t = useTranslations(locale);
 const { Content } = await render(entry);
 
@@ -77,6 +83,7 @@ const showRail = sequence.length > 1 && !guide.root.data.hideContents;
             : formatDate(entry.data.pubDate, locale, { day: undefined })
         }
         startHref={guide.chapters[0] ? chapterHref(guide.chapters[0]) : undefined}
+        index={index}
         chapters={sequence.slice(1).map((chapter) => ({
           href: chapterHref(chapter),
           part: chapter.data.part,
@@ -151,7 +158,8 @@ const showRail = sequence.length > 1 && !guide.root.data.hideContents;
         )
       }
 
-      <div class="prose-bench">
+      <ContentAgeNotice date={entry.data.pubDate} />
+    <div class="prose-bench">
         <Content />
       </div>
 
@@ -160,7 +168,10 @@ const showRail = sequence.length > 1 && !guide.root.data.hideContents;
         (prev || next) && (
           <nav class="mt-14 grid gap-3 border-t border-rule pt-6 sm:grid-cols-2">
             {prev ? (
-              <a href={chapterHref(prev)} class="group chassis p-4">
+              <a
+                href={chapterHref(prev)}
+                class="group rounded-md border border-border p-4 transition-colors hover:border-primary"
+              >
                 <span class="nameplate">← {t('guides.prev')}</span>
                 <span class="mt-1 block text-sm transition-colors group-hover:text-primary">
                   {prev.data.navLabel ?? prev.data.title}
@@ -171,7 +182,10 @@ const showRail = sequence.length > 1 && !guide.root.data.hideContents;
             )}
 
             {next && (
-              <a href={chapterHref(next)} class="group chassis p-4 sm:text-end">
+              <a
+                href={chapterHref(next)}
+                class="group rounded-md border border-border p-4 transition-colors hover:border-primary sm:text-end"
+              >
                 <span class="nameplate">{t('guides.next')} →</span>
                 <span class="mt-1 block text-sm transition-colors group-hover:text-primary">
                   {next.data.navLabel ?? next.data.title}

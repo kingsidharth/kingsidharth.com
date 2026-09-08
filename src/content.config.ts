@@ -192,6 +192,10 @@ const collections_ = defineCollection({
 
 export const collections = {
   blog,
+  speaking: defineCollection({
+    loader: glob({ base: "./src/content/speaking", pattern: "**/*.md" }),
+    schema: z.object({ ...documentBase, event: z.string(), place: z.string() }),
+  }),
   guides,
   instruments,
   broadcasts,
