@@ -1,0 +1,12 @@
+/notes/*.md
+  Content-Type: text/markdown; charset=utf-8
+/speaking/*.md
+  Content-Type: text/markdown; charset=utf-8
+/guides/*.md
+  Content-Type: text/markdown; charset=utf-8
+/hi/notes/*.md
+  Content-Type: text/markdown; charset=utf-8
+/hi/guides/*.md
+  Content-Type: text/markdown; charset=utf-8
+/llms.txt
+  Content-Type: text/plain; charset=utf-8

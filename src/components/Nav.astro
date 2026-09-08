@@ -1,0 +1,86 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+import LocaleSwitcher from './LocaleSwitcher.astro';
+import { localePath, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+
+const links = [
+  { href: localePath(locale, 'guides'), label: t('nav.guides') },
+  { href: localePath(locale, 'broadcasts'), label: t('nav.watch') },
+  { href: localePath(locale, 'notes'), label: t('nav.notes') },
+  { href: localePath(locale, 'tinkering'), label: t('nav.tools') },
+  { href: '/speaking', label: 'Speaking' },
+  { href: localePath(locale, 'work'), label: t('nav.work') },
+];
+
+const here = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isCurrent = (href: string) => {
+  const clean = href.replace(/\/$/, '') || '/';
+  return clean === '/' ? here === '/' : here === clean || here.startsWith(`${clean}/`);
+};
+---
+
+<!-- The bar floats over the bench rather than spanning the viewport,
+     so it reads as a control strip sitting on the same surface as the
+     instruments below it. -->
+<!-- Two explicit rows on small screens, one row from `sm` up.
+     `flex-wrap` was doing the wrapping by accident: brand and controls
+     ended up on separate lines with a stray gap between them, which
+     reads as a bug rather than as a layout. Stating the two rows means
+     the brand keeps the controls beside it and the links get their own
+     evenly-spread strip underneath. -->
+<header class="sticky top-0 z-40 px-(--spacing-gutter) pt-3 pb-2">
+  <nav
+    class="navbar relative mx-auto flex max-w-(--container-wide) flex-col gap-1.5 py-2 pr-3 pl-5 sm:flex-row sm:items-center sm:justify-between sm:gap-x-6 sm:py-2.5 sm:pl-5"
+    aria-label="Primary"
+  >
+    <div class="flex items-center justify-between gap-4">
+      <a
+        href={localePath(locale)}
+        class="flex items-center gap-2.5 text-sm font-semibold sm:text-[0.9375rem]"
+      >
+        @kingsidharth
+      </a>
+
+      <!-- On one row these sit at the far right, after the links; on two
+           they belong with the brand, so the link strip below is nothing
+           but links. -->
+      <div class="flex items-center gap-2.5 sm:hidden">
+        <LocaleSwitcher locale={locale} />
+        <ThemeToggle locale={locale} />
+      </div>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <ul
+        class="grid w-full grid-cols-3 items-center gap-y-1 sm:flex sm:justify-between gap-x-5 font-mono text-xs max-sm:pb-0.5 sm:w-auto sm:justify-end"
+      >
+        {
+          links.map((l) => (
+            <li>
+              <a
+                href={l.href}
+                aria-current={isCurrent(l.href) ? 'page' : undefined}
+                class="inline-flex min-h-11 items-center border-b border-transparent text-muted-foreground sm:min-h-0 sm:pb-0.5 transition-colors hover:border-primary hover:text-foreground aria-[current=page]:border-primary aria-[current=page]:text-foreground"
+              >
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <div class="hidden items-center gap-2.5 sm:flex">
+        <LocaleSwitcher locale={locale} />
+        <ThemeToggle locale={locale} />
+      </div>
+    </div>
+  </nav>
+</header>

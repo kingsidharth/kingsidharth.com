@@ -1,0 +1,33 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '@/layouts/Base.astro';
+import { localeStaticPaths, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+export const getStaticPaths = (() => localeStaticPaths()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props as { locale: Locale };
+const t = useTranslations(locale);
+---
+
+<Base
+  locale={locale}
+  title={t('nav.about')}
+  description="Product builder with 16 years of experience. Based in Bengaluru."
+  path="about"
+>
+  <div class="mx-auto max-w-3xl px-(--spacing-gutter) py-14">
+    <h1 class="text-4xl">Sidharth. Bengaluru.</h1>
+
+    <div class="prose-bench mt-8">
+      <p>
+        About 16 years building products. Started at Instamojo (founding team), moved to Headout,
+        now working on product and design at Outskill.
+      </p>
+      <p>
+        I build tools and write about how AI actually works — specifically the gap between what it
+        does and what people think it does.
+      </p>
+    </div>
+  </div>
+</Base>

@@ -1,0 +1,41 @@
+---
+/**
+ * A numbered rule across the page: index in the mono voice, the title
+ * in the sans, and an optional link flush right — so the "see all"
+ * lives on the same line as the thing it sees all of, rather than as an
+ * afterthought under the list.
+ */
+interface Props {
+  title: string;
+  sub?: string;
+  as?: 'h1' | 'h2';
+  id?: string;
+  /** "01", "02"… Rendered before the title. */
+  index?: string;
+  /** A flush-right link: `{ href, label }`. */
+  more?: { href: string; label: string };
+}
+
+const { title, sub, as: Tag = 'h2', id, index, more } = Astro.props;
+---
+
+<div class="section-head mb-8" id={id}>
+  <div>
+    <Tag class="flex items-baseline text-2xl">
+      {index && <span class="index" aria-hidden="true">{index}</span>}
+      {title}
+    </Tag>
+    {sub && <p class="mt-1.5 font-mono text-xs text-muted-foreground">{sub}</p>}
+  </div>
+
+  {
+    more && (
+      <a
+        href={more.href}
+        class="shrink-0 font-mono text-xs text-primary transition-colors hover:text-foreground"
+      >
+        {more.label} <span aria-hidden="true">→</span>
+      </a>
+    )
+  }
+</div>

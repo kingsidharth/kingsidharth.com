@@ -1,0 +1,74 @@
+---
+import type { Locale } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+---
+
+<!-- A slide switch sunk into the panel: recessed track, knurled slug
+     that travels and lights when the bench goes dark. -->
+<button
+  type="button"
+  data-theme-toggle
+  class="groove relative h-7 w-13 shrink-0 cursor-pointer border-0 p-0"
+  aria-label={t('theme.toggle')}
+  aria-pressed="false"
+>
+  <span
+    data-theme-slug
+    class="cap pointer-events-none absolute top-1/2 left-0.5 h-6 w-6 -translate-y-1/2 rounded-full border border-chassis-edge transition-transform duration-200 ease-[cubic-bezier(.3,1.4,.5,1)] dark:translate-x-6"
+  ></span>
+  <span
+    class="pointer-events-none absolute top-1/2 right-2 size-1.5 -translate-y-1/2 rounded-full bg-muted-foreground/40 transition-colors dark:bg-transparent"
+    aria-hidden="true"></span>
+  <span class="sr-only" data-theme-label>{t('theme.light')}</span>
+</button>
+
+<script>
+  const KEY = 'theme';
+
+  function apply(dark: boolean) {
+    document.documentElement.classList.toggle('dark', dark);
+    document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]')) {
+      btn.setAttribute('aria-pressed', String(dark));
+    }
+  }
+
+  function sync() {
+    const dark = document.documentElement.classList.contains('dark');
+    for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]')) {
+      btn.setAttribute('aria-pressed', String(dark));
+    }
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement | null)?.closest('[data-theme-toggle]');
+    if (!btn) return;
+    const next = !document.documentElement.classList.contains('dark');
+    apply(next);
+    try {
+      localStorage.setItem(KEY, next ? 'dark' : 'light');
+    } catch {
+      /* private mode: the choice just will not persist */
+    }
+  });
+
+  // Follow the OS only while the visitor has not chosen for themselves.
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    try {
+      if (localStorage.getItem(KEY)) return;
+    } catch {
+      /* fall through and follow the OS */
+    }
+    apply(e.matches);
+  });
+
+  sync();
+  document.addEventListener('astro:page-load', sync);
+</script>

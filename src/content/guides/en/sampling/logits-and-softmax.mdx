@@ -1,0 +1,42 @@
+---
+title: Logits, and what softmax does to them
+description: The model does not output probabilities. It outputs scores, and you choose how to read them.
+pubDate: 2025-07-11
+part: 1
+navLabel: Logits and softmax
+tags: [sampling]
+---
+
+A language model's final layer emits one real number per vocabulary entry. These
+are logits. They are unbounded, they are not probabilities, and comparing two of
+them across different prompts means nothing.
+
+Softmax turns them into a distribution:
+
+```python
+def softmax(logits, temperature=1.0):
+    scaled = [l / temperature for l in logits]
+    m = max(scaled)                      # subtract the max for stability
+    exps = [math.exp(s - m) for s in scaled]
+    total = sum(exps)
+    return [e / total for e in exps]
+```
+
+Two things worth noticing.
+
+## Temperature divides, it does not add
+
+Dividing every logit by `T` before exponentiating is what makes temperature
+non-linear in its effect. `T < 1` widens the gaps between logits, so the top
+token pulls further ahead. `T > 1` compresses them toward each other.
+
+At `T → 0` the distribution collapses onto the argmax — that is greedy decoding,
+and it is the same thing as `temperature=0`.
+
+## The subtraction is not cosmetic
+
+`exp()` of a large logit overflows a float. Subtracting the maximum before
+exponentiating shifts everything into a safe range without changing the result,
+because softmax is invariant to a constant shift. Every production implementation
+does this; if you write your own and skip it, you will get `NaN` on long prompts
+and blame the model.

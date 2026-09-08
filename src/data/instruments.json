@@ -1,0 +1,30 @@
+[
+  {
+    "id": "agents-md-generator",
+    "name": "AGENTS.md generator",
+    "blurb": "Reads the repo, asks four questions, writes the file your agent actually obeys.",
+    "status": "beta",
+    "version": "0.2",
+    "screen": "typewriter",
+    "figure": 2
+  },
+  {
+    "id": "freshcast",
+    "name": "Freshcast",
+    "blurb": "Turns a reading list into a podcast on a schedule. Runs as an MCP server.",
+    "status": "live",
+    "version": "0.4",
+    "screen": "player",
+    "href": "https://freshcast.app",
+    "figure": 3
+  },
+  {
+    "id": "vibe-coding-guide",
+    "name": "Vibe coding guide",
+    "blurb": "How to get useful work out of a coding agent without losing the plot.",
+    "status": "beta",
+    "version": "0.3",
+    "screen": "tokens",
+    "figure": 4
+  }
+]

@@ -1,0 +1,1029 @@
+---
+/**
+ * The thangka behind the hero.
+ *
+ * A colossal seated Buddha holding one plain slab on an open palm, and
+ * standing on the ground line beneath it, a single present-day human
+ * about a tenth of the frame high. The whole composition exists for that
+ * ratio; the figure is cropped by the top edge because being cut off by
+ * the frame is what tells you how big something is.
+ *
+ * Symbolic rather than painted, then run through the same block-glyph
+ * pipeline as every other image on this site. An ornate raster on top of
+ * an ascii site is a visitor; this is made of the same material.
+ *
+ * It ships twice: an SVG in `noscript`, and canvases everywhere else.
+ * The canvas renders from tone rather than from baked characters, which
+ * is the only way a cell can climb the ramp and change glyph under the
+ * cursor — that is the interaction: the statue's own glyphs transform,
+ * rather than something else moving over the top of it.
+ *
+ * On top of that base interaction sit two opt-in ambient fields,
+ * chosen in the design panel and landed as `data-field` on <html>:
+ * scatter (glyphs shoved aside spring home) and bloom (loose cells
+ * breathe up the ramp). Both run through the same heat buffer and
+ * dirty-rect repaint as the pointer's stamp — they are emitters, not
+ * separate pipelines — and both go quiet under prefers-reduced-motion.
+ */
+interface Props {
+  class?: string;
+}
+
+const { class: extra = '' } = Astro.props;
+
+/* Legibility comes from masking the artwork, not from laying a scrim
+   over it. A scrim has to be a colour, and the one colour that works on
+   near-black is wrong on cream; a mask removes ink and is correct in
+   both themes.
+ *
+ * Two layers, intersected, and the split between them matters more than
+ * it used to. The artwork now reads as stacked tonal plates separated by
+ * pale mist, and those mist bands run straight through the middle of the
+ * frame — exactly where a horizontal scrim would sit. Dimming the whole
+ * band erased the thing that makes the layers legible. So the band does
+ * almost nothing now, and nearly all the work is done by an ellipse over
+ * the copy block itself, where the loss actually buys something.
+ *
+ * Real spaces, not underscores: the underscore-for-space escape is a
+ * Tailwind arbitrary-value convention and means nothing in a plain
+ * `style` attribute, where one invalid stop discards the declaration. */
+const maskLayers = [
+  'linear-gradient(to bottom,#000 0%,#000 30%,rgb(0 0 0 / 0.82) 44%,rgb(0 0 0 / 0.82) 70%,#000 84%,#000 97%,transparent 100%)',
+  'radial-gradient(50% 40% at 27% 58%,rgb(0 0 0 / 0.06) 0%,rgb(0 0 0 / 0.38) 52%,#000 100%)',
+].join(',');
+
+/* `intersect` so the two layers multiply. The default is `add`, which
+   would union them — every masked region filled back in by the other,
+   and no visible effect at all. */
+const maskStyle = [
+  `-webkit-mask-image:${maskLayers}`,
+  `mask-image:${maskLayers}`,
+  '-webkit-mask-composite:source-in',
+  'mask-composite:intersect',
+].join(';');
+
+/* The sky gets the ellipse and NOT the band.
+ *
+ * The clouds drift through the middle third of the frame, which is
+ * exactly where the band cuts hardest — with the statue's mask applied
+ * they were being halved in the only place they exist, and the effect
+ * read as "the clouds are not working" rather than "the clouds are
+ * masked". They are soft and semi-transparent already; the ellipse over
+ * the copy is the only part they actually need. */
+const cloudMask = 'radial-gradient(50% 40% at 27% 58%,rgb(0 0 0 / 0.12) 0%,rgb(0 0 0 / 0.5) 52%,#000 100%)';
+const cloudMaskStyle = [`-webkit-mask-image:${cloudMask}`, `mask-image:${cloudMask}`].join(';');
+---
+
+<div
+  class:list={[
+    'pointer-events-none absolute top-0 left-1/2 -translate-x-1/2',
+    /* The container states its own ratio.
+       It used to take its height from the fallback <img> inside it. That
+       image moved into `noscript`, which left a box of zero height —
+       every canvas here is absolutely positioned, so nothing was left to
+       give it one, `measure()` bailed on a zero rect, and the hero
+       rendered nothing at all. 2:1 is the grid's own aspect. */
+    'aspect-[2/1]',
+    /* Wider than the phone on purpose. A 2:1 image fitted to a 390px
+       viewport is a 195px strip, and a colossal statue rendered 195px
+       tall is not colossal — the scale the whole picture is built on
+       collapses. Overflowing the viewport keeps the figure big, which is
+       the only way the human at its feet means anything. */
+    'w-[168%] max-w-none sm:w-full sm:max-w-[88rem]',
+    /* The edges are dissolved rather than cut: a hard vertical boundary
+       between artwork and page reads as a mistake. */
+    '[mask-image:linear-gradient(90deg,transparent_0%,#000_9%,#000_91%,transparent_100%)]',
+    extra,
+  ]}
+  aria-hidden="true"
+>
+  <!-- In `noscript` on purpose.
+       Rendered normally these paint first, then get hidden the moment
+       the canvas is ready, then the canvas fades up — which reads as a
+       flash, a blank, and a fade rather than as one arrival. They exist
+       only for the no-JS case, so that is the only case that should see
+       them. When JS is on the entry animation IS the reveal, and it
+       should not be competing with a still frame of itself. -->
+  <noscript>
+    <img
+      src="/art/hero-thangka.svg"
+      alt=""
+      width="1320"
+      height="660"
+      style={maskStyle}
+      class="hidden w-full dark:block"
+    />
+    <img
+      src="/art/hero-thangka-light.svg"
+      alt=""
+      width="1320"
+      height="660"
+      style={maskStyle}
+      class="w-full dark:hidden"
+    />
+  </noscript>
+
+  <!-- Two canvases, not one: the far plate (statue, ranges, mist) and
+       the near plate (the foreground ledge and its path). Splitting them
+       is what allows a parallax offset on scroll, and doing it as two
+       elements means the offset is a compositor transform rather than a
+       full 25,600-cell repaint every frame.
+
+       Sized off the image beside them rather than given their own box,
+       so the swap when they go live cannot shift anything. -->
+  <!-- Paint order is DOM order here — none of these carry a z-index —
+       so the back cloud bank sits behind the statue and the front one
+       passes over it. That is the whole trick: without something in
+       front, layered clouds are just a busier sky. -->
+  <canvas
+    data-hero-cloud="back"
+    data-enter={"-14px"}
+    data-enter-delay={"0ms"}
+    style={cloudMaskStyle}
+    class="absolute inset-0 size-full opacity-0 will-change-transform"></canvas>
+  <canvas
+    data-hero-canvas="far"
+    data-enter={"22px"}
+    data-enter-delay={"90ms"}
+    style={maskStyle}
+    class="absolute inset-0 size-full opacity-0 will-change-transform"></canvas>
+  <canvas
+    data-hero-canvas="near"
+    data-enter={"38px"}
+    data-enter-delay={"160ms"}
+    style={maskStyle}
+    class="absolute inset-0 size-full opacity-0 will-change-transform"></canvas>
+  <canvas
+    data-hero-cloud="front"
+    data-enter={"54px"}
+    data-enter-delay={"240ms"}
+    style={cloudMaskStyle}
+    class="absolute inset-0 size-full opacity-0 will-change-transform"></canvas>
+</div>
+
+
+<script>
+  import {
+    HOT_RAMP,
+    TREATMENT_RAMPS,
+    paperTone,
+    pickGlyph,
+    readField,
+    readFringeOffset,
+    readTreatment,
+  } from '@/lib/treatments';
+
+  /** Radius of the pointer's stamp, in cells. */
+  const REACH = 8;
+  /** Per-frame heat decay: about two seconds of tail at 60fps. */
+  const DECAY = 0.955;
+
+  /* ---- Ambient field constants (cells and seconds throughout) ---- */
+
+  /* Scatter: velocity per stamp event at the stamp's centre, the
+     tangential curl on it, and the spring the glyph homes with. The
+     impulse only lands while the pointer is MOVING — a held pointer
+     presses, a swept one drags the weave apart. */
+  const SCATTER_PUSH = 3;
+  const SCATTER_SWIRL = 0.6;
+  const SCATTER_SPRING = 130;
+  const SCATTER_DAMP = 6.5;
+  const MAX_DISP = 3;
+  /* Repaint slack around a dirty patch: a displaced glyph is drawn up
+     to MAX_DISP cells from its home, so the patch that could contain it
+     is grown by this much on every side before clearing. */
+  const DISP_MARGIN = 4;
+
+  /* Bloom: cadence and how many cells wake per step. Sparse on purpose —
+     roughly forty lit cells across 25,600 reads as dust in the light;
+     four hundred would read as static. */
+  const BLOOM_STEP_MS = 150;
+  const BLOOM_PER_STEP = 3;
+
+  function inkFor(dark: boolean): [number, number, number] {
+    return dark ? [242, 227, 196] : [48, 38, 27];
+  }
+
+  /* The pointer's accent. On the cream page the pale pink reads as a
+     watermark rather than a heat, so light mode gets the deeper one. */
+  function hotFor(dark: boolean): [number, number, number] {
+    return dark ? [244, 122, 183] : [198, 62, 122];
+  }
+
+  /** Row fraction where the foreground ledge begins in the source. */
+  const NEAR_FROM = 0.72;
+
+  /* Visibility cutoff, and how far a cell may wander either side of it.
+     The export bakes almost no floor, so the edge between picture and
+     nothing is decided here — jittered per cell, because a single
+     threshold applied evenly draws a clean contour line, and a clean
+     contour is the one thing a hand-inked image never has. */
+  const CUT = 0.1;
+  const JITTER = 0.06;
+
+  /** How far the two plates separate over a screen of scrolling. */
+  const FAR_DRIFT = 34;
+  const NEAR_DRIFT = -16;
+
+  /**
+   * The sky, as sprites.
+   *
+   * Drawn artwork rather than a procedural field. The first version was
+   * a threshold on a few sines and it read as wide horizontal smears,
+   * because that is what a sine field is — clouds have lobes, and the
+   * lobes are the thing you recognise.
+   *
+   * Each sprite's grid is generated at a column count that makes its
+   * cells the same size as the statue's, so a cloud crossing the
+   * mountains belongs to the same print rather than sitting on top of it.
+   *
+   * `depth` is the whole illusion: it sets speed, and speed is the only
+   * cue that separates a small near cloud from a large far one.
+   */
+  interface Cloud {
+    art: 'cloud-far' | 'cloud-mid' | 'cloud-near';
+    /** Row the sprite's top sits on. */
+    row: number;
+    /**
+     * Cells per second. These are slow on purpose — the nearest crosses
+     * the frame in about two and a half minutes, the farthest in nearly
+     * twenty. Sky that moves at a speed you can watch is weather, and
+     * weather pulls focus; this should only be noticeable if you stop
+     * and look for it.
+     */
+    speed: number;
+    alpha: number;
+    /** Starting offset along the loop, in cells. */
+    offset: number;
+  }
+
+  /* The back bank does most of the work now — small clusters up high,
+     one big slow one low — because depth behind the statue is what
+     reads as sky. The front bank is rationed to a single mid cloud:
+     with the birds up close (below), more than one foreground bank
+     stacked up as clutter crossing the statue's face. */
+  const BACK_CLOUDS: Cloud[] = [
+    { art: 'cloud-far', row: 3, speed: 0.28, alpha: 0.5, offset: 0 },
+    { art: 'cloud-far', row: 20, speed: 0.4, alpha: 0.45, offset: 150 },
+    { art: 'cloud-far', row: 12, speed: 0.34, alpha: 0.4, offset: 320 },
+    { art: 'cloud-mid', row: 8, speed: 0.7, alpha: 0.62, offset: 250 },
+    { art: 'cloud-mid', row: 26, speed: 0.55, alpha: 0.5, offset: 60 },
+    { art: 'cloud-near', row: 32, speed: 0.9, alpha: 0.38, offset: 420 },
+  ];
+
+  const FRONT_CLOUDS: Cloud[] = [
+    { art: 'cloud-mid', row: 44, speed: 1.3, alpha: 0.55, offset: 60 },
+  ];
+
+  /** Birds, on the front layer so they pass over everything — and big
+      enough to read as nearer than the statue, not as specks behind it. */
+  const FLOCK = 7;
+  /** The close pair — see drawFlock. */
+  const NEAR_FLOCK = 2;
+  const BIRD_GLYPHS = ['v', '^'] as const;
+
+  interface Grid {
+    cols: number;
+    rows: number;
+    lum: string;
+  }
+
+  /** Deterministic 0-1 per cell. Stable across repaints, so the ragged
+      edge and the disco glitter stay put instead of crawling. */
+  function hash01(x: number, y: number): number {
+    return ((((x * 374761393) ^ (y * 668265263)) >>> 0) % 1024) / 1024;
+  }
+
+  /**
+   * The entry.
+   *
+   * Each plate arrives from a little below its resting place and fades
+   * up, further and later the nearer it is — which is the same parallax
+   * the scroll uses, played once on arrival. The depth is already true;
+   * this just says so before you have touched anything.
+   *
+   * It rides the `translate` property, not `transform`, because the
+   * scroll parallax owns `transform` and the two would overwrite each
+   * other. `translate` is applied first and composes cleanly, so the
+   * entry can finish while the scroll offset keeps working.
+   */
+  function enter(canvases: HTMLCanvasElement[]): void {
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    for (const canvas of canvases) {
+      const from = canvas.dataset.enter ?? '0px';
+      const delay = canvas.dataset.enterDelay ?? '0ms';
+
+      if (still) {
+        canvas.classList.remove('opacity-0');
+        continue;
+      }
+
+      canvas.style.translate = `0 ${from}`;
+      canvas.style.transition = `translate 1100ms cubic-bezier(0.16, 1, 0.3, 1) ${delay}, opacity 800ms ease ${delay}`;
+
+      // Two frames, not one. Setting the start and the end inside the
+      // same frame gives the browser one computed style and no
+      // transition — the plate would simply appear in place.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          canvas.classList.remove('opacity-0');
+          canvas.style.translate = '0 0';
+        });
+      });
+    }
+  }
+
+  const far = document.querySelector<HTMLCanvasElement>('canvas[data-hero-canvas="far"]');
+  const near = document.querySelector<HTMLCanvasElement>('canvas[data-hero-canvas="near"]');
+  const cloudBack = document.querySelector<HTMLCanvasElement>('canvas[data-hero-cloud="back"]');
+  const cloudFront = document.querySelector<HTMLCanvasElement>('canvas[data-hero-cloud="front"]');
+  const host = far?.parentElement?.parentElement;
+
+  if (far && near && cloudBack && cloudFront && host) {
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+
+    let cols = 0;
+    let rows = 0;
+    /** First row belonging to the near plate. */
+    let split = 0;
+    let lum = new Uint8Array(0);
+    let heat = new Float32Array(0);
+    let cw = 0;
+    let chh = 0;
+    let dark = document.documentElement.classList.contains('dark');
+    let ink = inkFor(dark);
+    let hot = hotFor(dark);
+    let treatment = readTreatment(document.documentElement);
+    let cool = TREATMENT_RAMPS[treatment];
+    let fringe = readFringeOffset(document.documentElement);
+    let field = readField(document.documentElement);
+    let raf = 0;
+
+    /* Scatter state. Displacement and velocity live in cells (Y in cell
+       rows), so paint() just adds disp * currentCellSize to the pen —
+       the buffers survive resizes without rescaling. Allocated lazily;
+       an `off` page never pays a byte for them. */
+    let dispX = new Float32Array(0);
+    let dispY = new Float32Array(0);
+    let velX = new Float32Array(0);
+    let velY = new Float32Array(0);
+
+    /* Ambient emitters (bloom) share one timer, owned by manageAmbient();
+       it re-arms on every visibility or field change. */
+    let ambientTimer: ReturnType<typeof setInterval> | undefined;
+    let inView = true;
+    /** Last tick's timestamp, for dt; 0 means "first frame". */
+    let lastTick = 0;
+
+    const fieldActive = (): boolean => field !== 'off' && !reduce.matches;
+
+    function ensureScatter(): void {
+      if (cols === 0 || dispX.length === cols * rows) return;
+      dispX = new Float32Array(cols * rows);
+      dispY = new Float32Array(cols * rows);
+      velX = new Float32Array(cols * rows);
+      velY = new Float32Array(cols * rows);
+    }
+
+    const ctxOf = (canvas: HTMLCanvasElement) => canvas.getContext('2d');
+
+    /** Bounding box of cells holding heat, so a frame redraws a patch
+        and not the whole 320x80 grid. */
+    let box = { x0: 0, y0: 0, x1: -1, y1: -1 };
+
+    const widen = (x: number, y: number) => {
+      if (box.x1 < box.x0) {
+        box = { x0: x, y0: y, x1: x, y1: y };
+        return;
+      }
+      box.x0 = Math.min(box.x0, x);
+      box.y0 = Math.min(box.y0, y);
+      box.x1 = Math.max(box.x1, x);
+      box.y1 = Math.max(box.y1, y);
+    };
+
+    /**
+     * Paint one plate over a cell rectangle.
+     *
+     * Both canvases cover the whole element and share one coordinate
+     * system; each simply declines the rows that are not its own. That
+     * keeps the split a rendering detail rather than a layout one, so
+     * the two can be transformed independently without anything having
+     * to line back up.
+     */
+    function paint(
+      canvas: HTMLCanvasElement,
+      from: number,
+      to: number,
+      x0: number,
+      y0: number,
+      x1: number,
+      y1: number,
+    ): void {
+      const ctx = ctxOf(canvas);
+      if (!ctx) return;
+
+      const ry0 = Math.max(y0, from);
+      const ry1 = Math.min(y1, to - 1);
+      if (x1 < x0 || ry1 < ry0) return;
+
+      ctx.clearRect(x0 * cw, ry0 * chh, (x1 - x0 + 1) * cw, (ry1 - ry0 + 1) * chh);
+
+      for (let y = ry0; y <= ry1; y += 1) {
+        for (let x = x0; x <= x1; x += 1) {
+          const i = y * cols + x;
+          const base = (lum[i] ?? 0) / 255;
+          const h = heat[i] ?? 0;
+
+          // The jittered cutoff. Heat lifts a cell over it, so the ragged
+          // edge also softens wherever the pointer passes. On cream the
+          // floor sits higher: faint cells that read as depth on black
+          // read as a dirty haze on paper, so they are simply not drawn.
+          const cut = dark ? CUT : 0.17;
+          if (base + h * 0.5 < cut + (hash01(x, y) - 0.5) * 2 * JITTER) continue;
+
+          const t = Math.min(1, h * 2);
+          const lit = Math.min(1, base + h * 0.4);
+          const heated = h > 0.1;
+          /* On paper the picture inverts: full patches go thin and
+             shadows take the ink. Heat is the exception — it switches
+             alphabet and decodes the positive print, so it keeps the
+             dark-field mapping. */
+          const tone = heated ? lit : paperTone(base, h * 0.4, !dark);
+
+          const set = heated ? HOT_RAMP : cool;
+          const glyph = pickGlyph(set, tone);
+          if (!glyph || glyph === ' ') continue;
+
+          // Crossfade toward the accent rather than switching at a
+          // threshold — a hard switch leaves a visible ring where the
+          // stamp ends, instead of a trail cooling on its way out.
+          const r = Math.round(ink[0] + (hot[0] - ink[0]) * t);
+          const g = Math.round(ink[1] + (hot[1] - ink[1]) * t);
+          const b = Math.round(ink[2] + (hot[2] - ink[2]) * t);
+
+          // Disco: a fixed hash lights roughly one cell in nine as a full
+          // block pushed most of the way to white. Hashed, not random, or
+          // a repaint reshuffles the glitter and the ball boils.
+          // Alpha follows the mark, not the source: inverted shadows
+          // are the full patches, so they have to be the opaque ones.
+          let alpha = dark ? Math.min(1, 0.4 + lit * 0.7) : Math.min(1, 0.2 + tone * 0.95);
+          let glyphOut = glyph;
+          let rr = r;
+          let gg = g;
+          let bb = b;
+          if (treatment === 'disco' && hash01(x + 7, y + 13) < 0.11) {
+            glyphOut = '█';
+            alpha = 1;
+            rr = Math.round(r + (255 - r) * 0.75);
+            gg = Math.round(g + (255 - g) * 0.75);
+            bb = Math.round(b + (255 - b) * 0.75);
+          }
+
+          // A scattered glyph draws where the field has pushed it, not
+          // at its home cell; every other field leaves the pen alone.
+          const ox = dispX.length > 0 ? (dispX[i] ?? 0) * cw : 0;
+          const oy = dispY.length > 0 ? (dispY[i] ?? 0) * chh : 0;
+          const px = x * cw + cw / 2 + ox;
+          const py = y * chh + chh / 2 + oy;
+
+          if (fringe === 0) {
+            ctx.fillStyle = `rgba(${rr},${gg},${bb},${alpha})`;
+            ctx.fillText(glyphOut, px, py);
+            continue;
+          }
+
+          // Three single-channel copies summed with `lighter`, which is
+          // what an additive display does: where they overlap they
+          // reconstruct the ink and only the edges fringe. Compositing
+          // normally would stack three coloured glyphs and the last would
+          // win.
+          const d = fringe * cw;
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.fillStyle = `rgba(${rr},0,0,${alpha})`;
+          ctx.fillText(glyphOut, px - d, py);
+          ctx.fillStyle = `rgba(0,${gg},0,${alpha})`;
+          ctx.fillText(glyphOut, px, py);
+          ctx.fillStyle = `rgba(0,0,${bb},${alpha})`;
+          ctx.fillText(glyphOut, px + d, py);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+      }
+    }
+
+    function paintBoth(x0: number, y0: number, x1: number, y1: number): void {
+      paint(far, 0, split, x0, y0, x1, y1);
+      paint(near, split, rows, x0, y0, x1, y1);
+    }
+
+    interface Sprite {
+      cols: number;
+      rows: number;
+      lum: Uint8Array;
+    }
+
+    const sprites = new Map<string, Sprite>();
+
+    /**
+     * Blit one cloud into the grid at its drifting position.
+     *
+     * The loop is the sprite's width plus the grid's, so a cloud leaves
+     * one side entirely before it re-enters the other and there is never
+     * a moment where the same cloud is visible twice.
+     */
+    /** Each sprite's glyphs, rasterised once at the current cell size. */
+    const stamps = new Map<string, HTMLCanvasElement>();
+
+    /**
+     * Rasterise every cloud's glyphs into its own canvas.
+     *
+     * This is what makes the drift smooth. Drawing the glyphs afresh each
+     * frame meant re-quantising the cloud onto the grid every time, so it
+     * could only ever move a whole CELL at a step — a four-pixel jolt,
+     * several times a second, which is exactly as smooth as it sounds.
+     * Rasterised once, the cloud is an image that slides by the pixel.
+     *
+     * Rebuilt whenever the cell size, ink or treatment changes, since all
+     * three are baked into the stamp.
+     */
+    function buildStamps(): void {
+      stamps.clear();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      for (const [art, sprite] of sprites) {
+        const stamp = document.createElement('canvas');
+        stamp.width = Math.ceil(sprite.cols * cw * dpr);
+        stamp.height = Math.ceil(sprite.rows * chh * dpr);
+        const sctx = stamp.getContext('2d');
+        if (!sctx) continue;
+
+        sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        sctx.font = `${(chh * 0.98).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+        sctx.textAlign = 'center';
+        sctx.textBaseline = 'middle';
+
+        for (let y = 0; y < sprite.rows; y += 1) {
+          for (let x = 0; x < sprite.cols; x += 1) {
+            const base = (sprite.lum[y * sprite.cols + x] ?? 0) / 255;
+            if (base < 0.1) continue;
+
+            /* Biased up the ramp. Mapped linearly a cloud spends most of
+               its range on the faint opening mark and disappears — right
+               for the empty sky, wrong for the thing crossing it. */
+            const lit = Math.min(1, 0.3 + base * 0.7);
+            const glyph = cool[Math.min(cool.length - 1, Math.floor(lit * cool.length))];
+            if (!glyph || glyph === ' ') continue;
+
+            // Alpha is applied per instance at blit time, so one stamp
+            // serves several clouds at different depths.
+            sctx.fillStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${lit.toFixed(3)})`;
+            sctx.fillText(glyph, x * cw + cw / 2, y * chh + chh / 2);
+          }
+        }
+
+        stamps.set(art, stamp);
+      }
+    }
+
+    function drawCloud(ctx: CanvasRenderingContext2D, cloud: Cloud, t: number): void {
+      const sprite = sprites.get(cloud.art);
+      const stamp = stamps.get(cloud.art);
+      if (!sprite || !stamp) return;
+
+      const w = sprite.cols * cw;
+      const h = sprite.rows * chh;
+      const span = cols * cw + w;
+      // Rounded to the pixel, not to the cell: one-pixel steps read as
+      // motion, four-pixel steps read as a stutter.
+      const x = Math.round(((cloud.offset * cw + t * cloud.speed * cw) % span) - w);
+
+      ctx.globalAlpha = cloud.alpha * (dark ? 1 : 0.55);
+      ctx.drawImage(stamp, x, cloud.row * chh, w, h);
+      ctx.globalAlpha = 1;
+    }
+
+    /**
+     * Birds. Close now, not distant: they fly the band the front clouds
+     * used to own, drawn at one and a half to two cells so they read as
+     * nearer than the statue rather than as specks behind it. Each gets
+     * its own size — a flock at one scale reads as a swarm, not as depth.
+     */
+    function drawFlock(ctx: CanvasRenderingContext2D, t: number): void {
+      const baseFont = ctx.font;
+      for (let i = 0; i < FLOCK; i += 1) {
+        const phase = i * 1.7;
+        const speed = 2.6 + (i % 3) * 0.9;
+        const span = cols + 24;
+        const x = ((i * 37 + t * speed) % span) - 12;
+        const y = rows * (0.34 + (i % 4) * 0.055) + Math.sin(t * 0.5 + phase) * 2.2;
+        if (x < 0 || x >= cols) continue;
+
+        const size = 1.5 + (i % 3) * 0.35;
+        ctx.font = `${(chh * size).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+        const glyph = BIRD_GLYPHS[Math.floor(t * 3 + phase) % BIRD_GLYPHS.length];
+        ctx.fillStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${dark ? 0.62 : 0.75})`;
+        ctx.fillText(glyph, x * cw + cw / 2, y * chh + chh / 2);
+      }
+
+      /* The close pair. Bigger, lower, nearly three times as fast —
+         proximity is speed and scale, nothing else. They cross in front
+         of the ledge itself, which is the one depth cue the far flock
+         cannot give. */
+      for (let i = 0; i < NEAR_FLOCK; i += 1) {
+        const phase = i * 2.3 + 11;
+        const speed = 6.8 + i * 1.6;
+        const span = cols + 48;
+        const x = ((i * 97 + t * speed) % span) - 24;
+        const y = rows * (0.47 + i * 0.06) + Math.sin(t * 0.7 + phase) * 3;
+        if (x < 0 || x >= cols) continue;
+
+        const size = 2.9 + i * 0.45;
+        ctx.font = `${(chh * size).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+        const glyph = BIRD_GLYPHS[Math.floor(t * 4 + phase) % BIRD_GLYPHS.length];
+        ctx.fillStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${dark ? 0.72 : 0.85})`;
+        ctx.fillText(glyph, x * cw + cw / 2, y * chh + chh / 2);
+      }
+      ctx.font = baseFont;
+    }
+
+    function drawClouds(t: number): void {
+      if (cols === 0 || sprites.size === 0) return;
+
+      const backCtx = ctxOf(cloudBack);
+      if (backCtx) {
+        backCtx.clearRect(0, 0, cols * cw, rows * chh);
+        for (const cloud of BACK_CLOUDS) drawCloud(backCtx, cloud, t);
+      }
+
+      const frontCtx = ctxOf(cloudFront);
+      if (frontCtx) {
+        frontCtx.clearRect(0, 0, cols * cw, rows * chh);
+        for (const cloud of FRONT_CLOUDS) drawCloud(frontCtx, cloud, t);
+        drawFlock(frontCtx, t);
+      }
+    }
+
+    function measure(): boolean {
+      const rect = far.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0 || cols === 0) return false;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      cw = rect.width / cols;
+      chh = rect.height / rows;
+
+      for (const canvas of [cloudBack, far, near, cloudFront]) {
+        canvas.width = Math.round(rect.width * dpr);
+        canvas.height = Math.round(rect.height * dpr);
+        const ctx = ctxOf(canvas);
+        if (!ctx) continue;
+        // setTransform, not scale: scale multiplies into whatever is
+        // already there, so every resize would compound the last one.
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.font = `${(chh * 0.98).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+      }
+      return true;
+    }
+
+    function repaintAll(): void {
+      if (!measure()) return;
+      buildStamps();
+      for (const canvas of [far, near]) {
+        ctxOf(canvas)?.clearRect(0, 0, cols * cw, rows * chh);
+      }
+      paintBoth(0, 0, cols - 1, rows - 1);
+      drawClouds(performance.now() / 1000);
+    }
+
+    /** Start (or resume) the physics loop. */
+    function wake(): void {
+      if (!raf) {
+        lastTick = 0;
+        raf = requestAnimationFrame(tick);
+      }
+    }
+
+    /**
+     * Bloom. A few cells wake, climb partway up the ramp and cool over
+     * the ordinary heat tail — the same two seconds the pointer leaves
+     * behind it, which keeps every field on one clock.
+     */
+    function bloomStep(): void {
+      if (document.hidden || !fieldActive()) return;
+      for (let k = 0; k < BLOOM_PER_STEP; k += 1) {
+        /* Bias onto the artwork: a bloom in empty sky reads as noise,
+           one on the print reads as the print breathing. */
+        for (let t = 0; t < 10; t += 1) {
+          const x = Math.floor(Math.random() * cols);
+          const y = Math.floor(Math.random() * rows);
+          const i = y * cols + x;
+          if ((lum[i] ?? 0) <= 60) continue;
+          heat[i] = Math.min(1, (heat[i] ?? 0) + 0.32 + Math.random() * 0.3);
+          widen(x, y);
+          break;
+        }
+      }
+      wake();
+    }
+
+    /** One timer for whichever ambient emitter the field wants; re-armed
+        on visibility and field changes, silent under reduced motion. */
+    function manageAmbient(): void {
+      if (ambientTimer) {
+        clearInterval(ambientTimer);
+        ambientTimer = undefined;
+      }
+      if (!fieldActive() || !inView) return;
+      if (field === 'bloom') {
+        ambientTimer = setInterval(bloomStep, BLOOM_STEP_MS);
+      }
+    }
+
+    function tick(now: number): void {
+      const dt =
+        lastTick > 0 ? Math.min((now - lastTick) / 1000, 1 / 30) : 1 / 60;
+      lastTick = now;
+
+      const prev = { ...box };
+      box = { x0: 0, y0: 0, x1: -1, y1: -1 };
+
+      let alive = false;
+      const integrating = fieldActive() && dispX.length > 0;
+
+      for (let y = prev.y0; y <= prev.y1; y += 1) {
+        for (let x = prev.x0; x <= prev.x1; x += 1) {
+          const i = y * cols + x;
+          const h = (heat[i] ?? 0) * DECAY;
+          heat[i] = h > 0.004 ? h : 0;
+          let hot = heat[i] > 0;
+
+          if (integrating) {
+            const damp = Math.exp(-SCATTER_DAMP * dt);
+            let vx = (velX[i] ?? 0) * damp;
+            let vy = (velY[i] ?? 0) * damp;
+            vx -= (dispX[i] ?? 0) * SCATTER_SPRING * dt;
+            vy -= (dispY[i] ?? 0) * SCATTER_SPRING * dt;
+            let dxn = (dispX[i] ?? 0) + vx * dt;
+            let dyn = (dispY[i] ?? 0) + vy * dt;
+            const len = Math.hypot(dxn, dyn);
+            if (len > MAX_DISP) {
+              const k = MAX_DISP / len;
+              dxn *= k;
+              dyn *= k;
+            }
+            dispX[i] = dxn;
+            dispY[i] = dyn;
+            velX[i] = vx;
+            velY[i] = vy;
+            if (len > 0.02 || Math.hypot(vx, vy) > 0.08) {
+              hot = true;
+            } else {
+              // Settled: hard-zero so the buffers decay to true rest
+              // instead of idling forever on sub-pixel residue.
+              dispX[i] = 0;
+              dispY[i] = 0;
+              velX[i] = 0;
+              velY[i] = 0;
+            }
+          }
+
+          if (hot) {
+            widen(x, y);
+            alive = true;
+          }
+        }
+      }
+
+      // Repaint the union of last frame's patch and anything widened
+      // this one — a fresh ring front lands outside the old box, so
+      // painting prev alone would leave it half-drawn — grown by the
+      // scatter margin so a displaced glyph is always repainted along
+      // with the ground it slid across.
+      let px0 = prev.x0;
+      let py0 = prev.y0;
+      let px1 = prev.x1;
+      let py1 = prev.y1;
+      if (box.x1 >= box.x0) {
+        if (px1 < px0) {
+          px0 = box.x0;
+          py0 = box.y0;
+          px1 = box.x1;
+          py1 = box.y1;
+        } else {
+          px0 = Math.min(px0, box.x0);
+          py0 = Math.min(py0, box.y0);
+          px1 = Math.max(px1, box.x1);
+          py1 = Math.max(py1, box.y1);
+        }
+      }
+      const m = integrating ? DISP_MARGIN : 0;
+      px0 = Math.max(0, px0 - m);
+      py0 = Math.max(0, py0 - m);
+      px1 = Math.min(cols - 1, px1 + m);
+      py1 = Math.min(rows - 1, py1 + m);
+
+      if (px1 >= px0 && py1 >= py0) {
+        paintBoth(px0, py0, px1, py1);
+      }
+      raf = alive ? requestAnimationFrame(tick) : 0;
+      if (!raf) lastTick = 0;
+    }
+
+    function stamp(clientX: number, clientY: number): void {
+      const rect = far.getBoundingClientRect();
+      const cx = Math.floor((clientX - rect.left) / cw);
+      const cy = Math.floor((clientY - rect.top) / chh);
+
+      for (let dy = -REACH; dy <= REACH; dy += 1) {
+        for (let dx = -REACH; dx <= REACH; dx += 1) {
+          const x = cx + dx;
+          const y = cy + dy;
+          if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
+          const d = Math.hypot(dx, dy);
+          if (d > REACH) continue;
+          const i = y * cols + x;
+          heat[i] = Math.min(1, (heat[i] ?? 0) + (1 - d / REACH) * 0.5);
+          widen(x, y);
+        }
+      }
+
+      if (reduce.matches) {
+        // No tail: cells under the pointer transform and release the
+        // moment it moves on.
+        paintBoth(0, 0, cols - 1, rows - 1);
+        heat.fill(0);
+        return;
+      }
+
+      // Scatter: on top of the heat, a swept pointer shoves glyphs
+      // radially away with a tangential curl — the curl is what turns a
+      // flee into a vortex, and it is why circling the cursor feels
+      // different from crossing with it.
+      if (field === 'scatter' && dispX.length > 0) {
+        for (let dy = -REACH; dy <= REACH; dy += 1) {
+          for (let dx = -REACH; dx <= REACH; dx += 1) {
+            const d = Math.hypot(dx, dy);
+            if (d > REACH || d < 1e-4) continue;
+            const x = cx + dx;
+            const y = cy + dy;
+            if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
+            const fall = 1 - d / REACH;
+            const imp = fall * fall * SCATTER_PUSH;
+            const ux = dx / d;
+            const uy = dy / d;
+            const i = y * cols + x;
+            velX[i] = (velX[i] ?? 0) + (ux - uy * SCATTER_SWIRL) * imp;
+            velY[i] = (velY[i] ?? 0) + (uy + ux * SCATTER_SWIRL) * imp;
+            widen(x, y);
+          }
+        }
+      }
+
+      wake();
+    }
+
+    fetch('/art/hero-grid.json')
+      .then((res) => res.json() as Promise<Grid>)
+      .then((grid) => {
+        cols = grid.cols;
+        rows = grid.rows;
+        split = Math.round(rows * NEAR_FROM);
+        lum = Uint8Array.from(atob(grid.lum), (c) => c.charCodeAt(0));
+        heat = new Float32Array(cols * rows);
+        ensureScatter();
+
+        // The sky can arrive late without anything looking broken, so it
+        // is not worth blocking the statue on.
+        void Promise.all(
+          [...new Set([...BACK_CLOUDS, ...FRONT_CLOUDS].map((c) => c.art))].map(async (art) => {
+            const res = await fetch(`/art/${art}-grid.json`);
+            const g = (await res.json()) as Grid;
+            sprites.set(art, {
+              cols: g.cols,
+              rows: g.rows,
+              lum: Uint8Array.from(atob(g.lum), (c) => c.charCodeAt(0)),
+            });
+          }),
+        ).then(() => {
+          buildStamps();
+          drawClouds(performance.now() / 1000);
+        });
+
+        repaintAll();
+        enter([cloudBack, far, near, cloudFront]);
+
+        new ResizeObserver(repaintAll).observe(far);
+
+        // Theme ink, treatment, fringing and field all arrive as
+        // attributes on <html>, and a canvas can inherit none of them.
+        new MutationObserver(() => {
+          const root = document.documentElement;
+          const nextDark = root.classList.contains('dark');
+          const nextInk = inkFor(nextDark);
+          const nextTreatment = readTreatment(root);
+          const nextFringe = readFringeOffset(root);
+          const nextField = readField(root);
+          if (
+            nextInk[0] === ink[0] &&
+            nextTreatment === treatment &&
+            nextFringe === fringe &&
+            nextField === field
+          ) {
+            return;
+          }
+          dark = nextDark;
+          ink = nextInk;
+          hot = hotFor(nextDark);
+          treatment = nextTreatment;
+          cool = TREATMENT_RAMPS[treatment];
+          fringe = nextFringe;
+
+          // Switching fields releases live state immediately: displaced
+          // glyphs snap home before the repaint.
+          field = nextField;
+          ensureScatter();
+          dispX.fill(0);
+          dispY.fill(0);
+          velX.fill(0);
+          velY.fill(0);
+          manageAmbient();
+          repaintAll();
+        }).observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['class', 'data-treatment', 'data-fringe', 'data-field'],
+        });
+
+        host.dataset.tiltArtwork = '';
+      if (matchMedia('(hover: hover)').matches || matchMedia('(pointer: coarse)').matches) {
+          host.addEventListener('pointermove', (event: PointerEvent) => {
+            stamp(event.clientX, event.clientY);
+          });
+        }
+
+        /* The sky loop. Separate from the heat loop above because they
+           answer to different things: heat only runs while it is decaying,
+           clouds run for as long as the hero is on screen. 20fps — these
+           cross the frame over a minute, and nothing about that needs 60.
+
+           Under reduced motion the banks are drawn once and left there:
+           the layering is the picture, the drift is the part someone
+           asked us not to do. */
+        if (reduce.matches) {
+          drawClouds(0);
+        } else {
+          let skyRaf = 0;
+          let lastSky = 0;
+          const sky = (now: number) => {
+            if (now - lastSky > 32) {
+              lastSky = now;
+              drawClouds(now / 1000);
+            }
+            skyRaf = requestAnimationFrame(sky);
+          };
+
+          // Nothing off-screen has any business holding a rAF loop open.
+          new IntersectionObserver((entries) => {
+            for (const entry of entries) {
+              inView = entry.isIntersecting;
+              if (entry.isIntersecting && !skyRaf) skyRaf = requestAnimationFrame(sky);
+              else if (!entry.isIntersecting && skyRaf) {
+                cancelAnimationFrame(skyRaf);
+                skyRaf = 0;
+              }
+            }
+            // The ambient emitters answer to visibility too — a hero
+            // scrolled away has no business ticking bloom timers.
+            manageAmbient();
+          }).observe(cloudFront);
+        }
+
+        /* Parallax. The two plates slide apart as the hero leaves, which
+           is the only moment the separation is visible — a still hero has
+           no parallax to show. Transform only, so this stays on the
+           compositor and never triggers the 25,600-cell repaint above. */
+        if (reduce.matches) return;
+        let scrollRaf = 0;
+        const onScroll = () => {
+          if (scrollRaf) return;
+          scrollRaf = requestAnimationFrame(() => {
+            scrollRaf = 0;
+            const progress = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
+            // The banks take the drift too, further apart than the
+            // plates they sit between, so the depth order survives the
+            // scroll instead of collapsing halfway down it.
+            cloudBack.style.transform = `translate3d(0,${(progress * FAR_DRIFT * 1.35).toFixed(1)}px,0)`;
+            far.style.transform = `translate3d(0,${(progress * FAR_DRIFT).toFixed(1)}px,0)`;
+            near.style.transform = `translate3d(0,${(progress * NEAR_DRIFT).toFixed(1)}px,0)`;
+            cloudFront.style.transform = `translate3d(0,${(progress * NEAR_DRIFT * 1.6).toFixed(1)}px,0)`;
+          });
+        };
+        addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+      })
+      .catch(() => {
+        /* The SVG is still there; nothing to recover. */
+      });
+  }
+</script>

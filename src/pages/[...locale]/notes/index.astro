@@ -1,0 +1,81 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '@/layouts/Base.astro';
+import SkyHero from '@/components/SkyHero.astro';
+import NoteRow from '@/components/NoteRow.astro';
+import { getLocalized } from '@/lib/content';
+import { localeStaticPaths, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+export const getStaticPaths = (() => localeStaticPaths()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props as { locale: Locale };
+const t = useTranslations(locale);
+
+const notes = await getLocalized('blog', locale);
+
+// Group by year so a long archive stays scannable.
+const byYear = new Map<number, typeof notes>();
+for (const note of notes) {
+  const year = note.data.pubDate.getFullYear();
+  const bucket = byYear.get(year);
+  if (bucket) bucket.push(note);
+  else byYear.set(year, [note]);
+}
+const years = [...byYear.entries()].sort((a, b) => b[0] - a[0]);
+
+const essays = notes.filter((n) => n.data.kind !== 'til').length;
+const tils = notes.length - essays;
+const span =
+  years.length > 1 ? `${years[years.length - 1]![0]}–${years[0]![0]}` : String(years[0]?.[0] ?? '');
+---
+
+<Base
+  locale={locale}
+  title={t('notes.title')}
+  description="Findings, not claims. Short notes and essays on building with AI."
+  path="notes"
+>
+  <!-- The sky. Shorter than the other heroes on purpose: this page is
+       a list, and the list is the subject. -->
+  <header
+    class="relative isolate flex min-h-[max(22rem,56svh)] flex-col justify-end overflow-hidden pt-32 pb-10"
+  >
+    <SkyHero />
+    <div class="relative mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)">
+      <p class="nameplate mb-3 text-primary">
+        {essays} {essays === 1 ? 'essay' : 'essays'}
+        {tils > 0 && ` · ${tils} ${tils === 1 ? 'TIL' : 'TILs'}`}
+        {' · '}{span}
+      </p>
+      <h1 class="pixel-type text-4xl sm:text-5xl">{t('notes.title')}</h1>
+      <p class="mt-4 max-w-[46ch] text-base text-muted-foreground sm:text-lg">
+        Findings, not claims. Short notes and longer essays on building things, mostly with AI,
+        going back a while.
+      </p>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-6 pb-14">
+    {years.length === 0 && <p class="text-muted-foreground">{t('notes.empty')}</p>}
+
+    {
+      /* The year sits in its own column from `lg` up — a margin note
+         beside the rows it dates, rather than a heading over them — so a
+         long archive scans as one continuous list with a ruler down the
+         side. Below `lg` it folds back into a nameplate above the rows. */
+      years.map(([year, entries]) => (
+        <section class="grid gap-x-10 border-t border-rule py-6 lg:grid-cols-[8rem_minmax(0,48rem)]">
+          <h2 class="nameplate mb-3 lg:sticky lg:top-24 lg:mb-0 lg:self-start lg:font-mono lg:text-2xl lg:font-light lg:text-muted-foreground/70">
+            {year}
+          </h2>
+          <div>
+            {entries.map((entry) => (
+              <NoteRow entry={entry} locale={locale} />
+            ))}
+          </div>
+        </section>
+      ))
+    }
+  </div>
+</Base>

@@ -1,0 +1,30 @@
+---
+import ArtworkTilt from './ArtworkTilt.astro';
+import SocialLinks from './SocialLinks.astro';
+import { localePath } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+interface Props {
+  locale: Locale;
+  markdownPath?: string;
+}
+
+const { locale, markdownPath } = Astro.props;
+---
+
+<footer class="mt-24 border-t border-rule">
+  <div
+    class="mx-auto flex max-w-(--container-wide) flex-wrap items-center justify-between gap-6 px-(--spacing-gutter) py-8 font-mono text-xs text-muted-foreground"
+  >
+    <ArtworkTilt />
+    <p>Bengaluru</p>
+
+    <div class="flex flex-wrap items-center gap-x-5 gap-y-3">
+      <a href={localePath(locale, 'notes')} class="transition-colors hover:text-foreground">Notes</a>
+      <a href="/speaking" class="transition-colors hover:text-foreground">Speaking</a>
+      <a href="/rss.xml">RSS</a>
+      {markdownPath && <a href={markdownPath} class="inline-block py-2">Read Markdown</a>}
+      <SocialLinks variant="row" />
+    </div>
+  </div>
+</footer>

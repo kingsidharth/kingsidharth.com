@@ -1,0 +1,88 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import CardArt from '@/components/CardArt.astro';
+import { posterGround } from '@/lib/poster';
+
+interface Props {
+  entry: CollectionEntry<'series'>;
+}
+
+const { entry } = Astro.props;
+const { title, url, seed, from, via, to, art, parts } = entry.data;
+
+/* Each title is set differently — same ingredients, different recipe —
+   so the row does not read as one template filled in twice. Letter
+   spacing is deliberately absent: every line here is under 24px. */
+/* One axis per line.
+ *
+ * The previous set stacked three at once — size AND weight AND italic —
+ * on lines that were already distinguished by position. Size alone
+ * separates a title from its qualifier; adding weight to that is already
+ * more than the job needs, and adding italic on top is a third answer to
+ * a question nobody asked twice. Weight appears once per card, on the
+ * line that IS the title. Italics are gone.
+ */
+const layouts: Record<string, { text: string; cls: string }[]> = {
+  'pm-course-hinglish': [
+    { text: 'A PM course', cls: 'block text-[14px] leading-none opacity-65' },
+    { text: 'in Hinglish', cls: 'mt-0.5 block text-[32px] leading-[0.9]' },
+  ],
+  'for-designers': [
+    { text: 'For', cls: 'block text-[14px] leading-none opacity-65' },
+    { text: 'UI/UX', cls: 'mt-0.5 block text-[34px] leading-[0.9]' },
+    { text: 'Designers', cls: 'mt-0.5 block text-[15px] leading-none opacity-70' },
+  ],
+};
+const lines = layouts[entry.data.id] ?? [
+  { text: title, cls: 'block text-[28px] leading-[0.95]' },
+];
+
+/* Portrait, because that is the shape a series cover actually is.
+ *
+ * The ground and the figure are both shared with the programme cards
+ * beside it — `posterGround` for the colour, `CardArt` for the ascii —
+ * so the row reads as one set of seven rather than five of one kind and
+ * two of another.
+ */
+const ground = posterGround(seed, { from, via, to });
+---
+
+<!-- The aspect ratio lives on the anchor, not the article: as a grid
+     item the anchor is stretched to the row height, and an article
+     sizing itself independently ended up a few pixels taller than the
+     programme cards beside it. -->
+<a
+  href={url}
+  class="group block aspect-[3/4] focus-visible:outline-none"
+  style={`--breathe-dur:${7 + (seed % 3) * 2}s; --breathe-delay:-${(seed % 7) * 0.9}s; --card-base:${via}`}
+>
+  <article
+    class="grain relative flex size-full flex-col overflow-hidden rounded-lg border border-card-edge saturate-[0.6] transition-[filter] duration-300 group-hover:saturate-100 group-focus-visible:ring-2 group-focus-visible:ring-ring group-focus-visible:saturate-100"
+  >
+    <div class="card-ground absolute inset-0" style={`background:${ground};`} aria-hidden="true"></div>
+
+    <CardArt name={art} />
+
+    <div
+      class="absolute inset-0 bg-[repeating-linear-gradient(0deg,rgb(0_0_0/0.13)_0_1px,transparent_1px_3px)]"
+      aria-hidden="true"
+    >
+    </div>
+
+    <div
+      class="absolute inset-0 bg-linear-to-t from-black/90 via-black/45 via-52% to-black/10"
+      aria-hidden="true"
+    >
+    </div>
+
+
+
+    <div class="relative z-10 mt-auto p-3.5">
+      <h3 class="phosphor-type pixel-type card-title text-[oklch(0.97_0.03_190)]">
+        {lines.map((l) => <span class={l.cls}>{l.text}</span>)}
+      </h3>
+
+      <p class="pixel-type-sm mt-1.5 font-mono text-xs text-white/60">{parts} videos</p>
+    </div>
+  </article>
+</a>

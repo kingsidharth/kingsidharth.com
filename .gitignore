@@ -44,3 +44,37 @@ dist
 node_modules
 .tmp
 Gemfile.lock
+
+# ── Astro (v7 rebuild) ────────────────────────────────────────────
+# The Jekyll-era rules above ignore `*.css` wholesale and every dotted
+# folder. Astro's stylesheets live in src/ and must be tracked, so
+# re-include them explicitly. Order matters: negations come last.
+!src/
+!src/**/*.css
+!static/
+!static/**
+# `!static/**` un-ignores everything under static/, including the OS
+# junk the rules at the top of this file exist to keep out. Re-ignore it
+# here, after the negation, or every Finder visit offers a .DS_Store.
+static/**/.DS_Store
+
+.astro/
+.vercel/
+.netlify/
+bun.lockb.bak
+static/fonts
+
+# Source art for the ascii pipeline — generated, large, and only needed
+# to re-render. The SVG output in static/art is what ships.
+art-src/
+
+# Python helpers under scripts/ (layer splitting for the ascii pipeline)
+scripts/__pycache__/
+# Intermediate plate PNGs the splitter writes next to itself; the JSON
+# grids in static/art are the shipped artefact.
+scripts/layer-*.png
+
+# Version CI workflows despite the legacy hidden-directory ignore.
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml

@@ -1,0 +1,33 @@
+---
+interface Props { body?: string; title: string; }
+const { body = '', title } = Astro.props;
+const embedded = new Set([...body.matchAll(/<iframe[^>]+src=["'][^"']*\/embed\/([\w-]{11})/g)].map(match => match[1]));
+const videos = [...new Set([...body.matchAll(/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/g)].map(match => match[1]))].filter(id => !embedded.has(id));
+---
+{videos.length > 0 && <div class="mb-8 grid gap-5">
+  {videos.map(id => <figure>
+    <div data-video-preview data-video-id={id} data-video-title={title} class="relative aspect-video overflow-hidden rounded-lg bg-black">
+      <button type="button" class="group relative flex size-full items-center justify-center" aria-label={`Play video: ${title}`}>
+        <img src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" width="480" height="360" loading="lazy" class="absolute inset-0 size-full object-cover opacity-75 transition-opacity group-hover:opacity-100" />
+        <span class="relative flex size-16 items-center justify-center rounded-full bg-white text-2xl text-black shadow-lg" aria-hidden="true">▶</span>
+      </button>
+    </div>
+    <figcaption class="mt-2 text-sm text-muted-foreground"><a class="inline-block py-2 underline underline-offset-4" href={`https://www.youtube.com/watch?v=${id}`}>Watch on YouTube</a></figcaption>
+  </figure>)}
+</div>}
+<script>
+  document.querySelectorAll<HTMLElement>('[data-video-preview]').forEach(preview => {
+    preview.querySelector('button')?.addEventListener('click', () => {
+      const id = preview.dataset.videoId;
+      if (!id || !/^[\w-]{11}$/.test(id)) return;
+      const frame = document.createElement('iframe');
+      frame.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`;
+      frame.title = preview.dataset.videoTitle ?? 'Video';
+      frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+      frame.allowFullscreen = true;
+      frame.className = 'absolute inset-0 size-full border-0';
+      preview.replaceChildren(frame);
+      frame.focus();
+    }, { once: true });
+  });
+</script>

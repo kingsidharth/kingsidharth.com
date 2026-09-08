@@ -1,0 +1,51 @@
+---
+/**
+ * Runs before first paint, so the page never flashes the wrong theme.
+ * Must stay inline and un-deferred — moving it to a module or adding
+ * `defer` reintroduces the flash.
+ */
+---
+
+<script is:inline>
+  (function () {
+    try {
+      var root = document.documentElement;
+      // Declares JS before paint, so CSS can hide things it will reveal
+      // without ever hiding them from a reader who has no JS.
+      root.classList.add('js');
+      var stored = localStorage.getItem('theme');
+      var dark = stored ? stored === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      root.classList.toggle('dark', dark);
+      root.style.colorScheme = dark ? 'dark' : 'light';
+
+      // Design-settings choices. Applied here, before paint, for the same
+      // reason as the theme: reading them in the React island would land
+      // after first paint and flash the default palette.
+      var accent = localStorage.getItem('design:accent');
+      if (accent) root.setAttribute('data-accent', accent);
+      var typeset = localStorage.getItem('design:typeset');
+      if (typeset) root.setAttribute('data-typeset', typeset);
+      var font = localStorage.getItem('design:font');
+      if (font) root.setAttribute('data-font', font);
+      var scale = localStorage.getItem('design:scale');
+      if (scale) root.setAttribute('data-scale', scale);
+      var headline = localStorage.getItem('design:headline');
+      if (headline) root.setAttribute('data-headline', headline);
+      var ligatures = localStorage.getItem('design:ligatures');
+      if (ligatures) root.setAttribute('data-ligatures', ligatures);
+      // These two have to be set before the hero canvas reads them on
+      // load, or it draws blocks once and only switches when something
+      // else happens to touch the attribute.
+      var treatment = localStorage.getItem('design:treatment');
+      if (treatment) root.setAttribute('data-treatment', treatment);
+      var fringe = localStorage.getItem('design:fringe');
+      if (fringe) root.setAttribute('data-fringe', fringe);
+      // The ambient field (scatter / bloom) is read by the hero canvas on
+      // load, same contract as the treatment above.
+      var field = localStorage.getItem('design:field');
+      if (field) root.setAttribute('data-field', field);
+    } catch (e) {
+      /* private mode: fall through to the CSS defaults */
+    }
+  })();
+</script>

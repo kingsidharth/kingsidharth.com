@@ -1,0 +1,290 @@
+---
+/**
+ * A particle hero, for comparing against the glyph renderer.
+ *
+ * The reference (tmp/ — "AI Canvas", 60K particles) rebuilds a dropped
+ * image from particles that scatter under the mouse and spring home.
+ * This is the same idea through the lab's own materials: the same
+ * `-grid.json` plates, the same LabPalette ink/hot ramp, the same theme
+ * flipping — so the only variable left on the page is the renderer.
+ *
+ * Physics, per frame, all typed arrays:
+ *   pull each particle home with a spring, push it away from the
+ *   pointer inside a radius, damp. That is the whole engine; the feel
+ *   lives in three constants (SPRING, DAMP, REACH).
+ */
+import type { LabPalette } from '@/lib/art-lab';
+
+interface Props {
+  id: string;
+  /** Grid plate to rebuild, e.g. `lab-dragon-ink`. */
+  art: string;
+  palette: LabPalette;
+  /** Target particle count; the grid is subsampled to hit it. */
+  count?: number;
+  class?: string;
+}
+
+const { id, art, palette, count = 24000, class: extra = '' } = Astro.props;
+const config = JSON.stringify({ id, art, palette, count });
+---
+
+<div
+  class:list={['pointer-events-none absolute inset-0 overflow-hidden', extra]}
+  data-particle-scene={id}
+  aria-hidden="true"
+>
+  <script type="application/json" data-particle-config set:html={config} />
+  <canvas data-particle-layer class="absolute inset-0 size-full opacity-0 transition-opacity duration-700"></canvas>
+</div>
+
+<script>
+  interface Grid {
+    cols: number;
+    rows: number;
+    lum: string;
+  }
+  type RGB = readonly [number, number, number];
+  interface Palette {
+    ink: RGB;
+    hot: RGB;
+    lightInk: RGB;
+    lightHot: RGB;
+  }
+  interface Config {
+    id: string;
+    art: string;
+    palette: Palette;
+    count: number;
+  }
+
+  /* Tuned against the reference: calm return, not a snap. */
+  const SPRING = 0.014;
+  const DAMP = 0.88;
+  const REACH = 110;
+  const PUSH = 2.4;
+  const IDLE = 0.35;
+  /* Half the refresh of the glyph renderer: particles must move smoothly
+     or the effect is nothing, but 60 buys nothing over 30. */
+  const FRAME_MS = 33;
+
+  async function boot(root: HTMLElement): Promise<void> {
+    const raw = root.querySelector('[data-particle-config]')?.textContent;
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-particle-layer]');
+    if (!raw || !canvas) return;
+    const cfg = JSON.parse(raw) as Config;
+    const pal = cfg.palette;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+
+    const res = await fetch(`/art/${cfg.art}-grid.json`);
+    const g = (await res.json()) as Grid;
+    const lum = Uint8Array.from(atob(g.lum), (c) => c.charCodeAt(0));
+
+    let dark = document.documentElement.classList.contains('dark');
+
+    /* The particle pool. Colour is per-particle and only depends on the
+       theme, so it is recomputed on flip and never inside the loop. */
+    const N = cfg.count;
+    const hx = new Float32Array(N);
+    const hy = new Float32Array(N);
+    const x = new Float32Array(N);
+    const y = new Float32Array(N);
+    const vx = new Float32Array(N);
+    const vy = new Float32Array(N);
+    const col = new Uint8Array(N * 3);
+    const alp = new Float32Array(N);
+    const ph = new Float32Array(N);
+    const lit = new Float32Array(N);
+
+    /* Subsample the lit cells to the target count, deterministically,
+       so a resize never reshuffles the picture. */
+    const cells: Array<[number, number, number]> = [];
+    for (let gy = 0; gy < g.rows; gy += 1) {
+      for (let gx = 0; gx < g.cols; gx += 1) {
+        const v = (lum[gy * g.cols + gx] ?? 0) / 255;
+        if (v > 0.06) cells.push([gx, gy, v]);
+      }
+    }
+    const step = Math.max(1, cells.length / N);
+    let n = 0;
+    for (let i = 0; i < cells.length && n < N; i += step) {
+      const c = cells[Math.floor(i)];
+      if (!c) continue;
+      lit[n] = c[2];
+      hx[n] = c[0];
+      hy[n] = c[1];
+      ph[n] = ((c[0] * 374761393) ^ (c[1] * 668265263)) % 628 / 100;
+      n += 1;
+    }
+    const count = n;
+
+    function themeColors(): void {
+      const ink = dark ? pal.ink : pal.lightInk;
+      const hot = dark ? pal.hot : pal.lightHot;
+      for (let i = 0; i < count; i += 1) {
+        const h = Math.max(0, (lit[i] - 0.45) / 0.55);
+        col[i * 3] = ink[0] + (hot[0] - ink[0]) * h;
+        col[i * 3 + 1] = ink[1] + (hot[1] - ink[1]) * h;
+        col[i * 3 + 2] = ink[2] + (hot[2] - ink[2]) * h;
+        alp[i] = Math.min(1, 0.14 + lit[i] * 0.95);
+      }
+    }
+    themeColors();
+
+    let W = 0;
+    let H = 0;
+    let size = 2;
+
+    function layout(): void {
+      const rect = root.getBoundingClientRect();
+      if (rect.width === 0 || !canvas) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = rect.width;
+      H = rect.height;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      const c2d = canvas.getContext('2d');
+      if (c2d) c2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+      /* The dragon grids are 2:1-ish portraits; fit the whole picture
+         (contain) — the concept is the drawing, cropped it is fog. */
+      const cw = Math.min(W / g.cols, (H / g.rows) * 2);
+      const ox = (W - g.cols * cw) / 2;
+      const oy = (H - g.rows * (cw / 2)) / 2;
+      size = Math.min(2.6, Math.max(1.1, cw * 0.6));
+      for (let i = 0; i < count; i += 1) {
+        hx[i] = ox + hx[i] * cw + cw / 2;
+        hy[i] = oy + hy[i] * (cw / 2) + cw / 4;
+        x[i] = hx[i];
+        y[i] = hy[i];
+        vx[i] = 0;
+        vy[i] = 0;
+      }
+    }
+    layout();
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let px = -1e4;
+    let py = -1e4;
+    let raf = 0;
+    let last = 0;
+    let inView = true;
+
+    function draw(t: number): void {
+      if (W === 0) return;
+      ctx!.clearRect(0, 0, W, H);
+      const reach2 = REACH * REACH;
+      for (let i = 0; i < count; i += 1) {
+        /* Spring home. */
+        vx[i] += (hx[i] - x[i]) * SPRING;
+        vy[i] += (hy[i] - y[i]) * SPRING;
+        /* Idle breath, per particle phase: a still field is a screenshot. */
+        if (!reduce.matches) {
+          vx[i] += Math.sin(t * 0.6 + ph[i]) * 0.004 * IDLE;
+          vy[i] += Math.cos(t * 0.5 + ph[i] * 1.3) * 0.004 * IDLE;
+        }
+        /* Pointer push. */
+        const dx = x[i] - px;
+        const dy = y[i] - py;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < reach2 && d2 > 0.01) {
+          const d = Math.sqrt(d2);
+          const f = (1 - d / REACH) * PUSH;
+          vx[i] += (dx / d) * f;
+          vy[i] += (dy / d) * f;
+        }
+        vx[i] *= DAMP;
+        vy[i] *= DAMP;
+        x[i] += vx[i];
+        y[i] += vy[i];
+
+        const c = i * 3;
+        ctx!.fillStyle = `rgba(${col[c]},${col[c + 1]},${col[c + 2]},${alp[i].toFixed(3)})`;
+        ctx!.fillRect(x[i] - size / 2, y[i] - size / 2, size, size);
+      }
+    }
+
+    const tick = (t: number) => {
+      raf = requestAnimationFrame(tick);
+      if (t - last < FRAME_MS) return;
+      last = t;
+      draw(t / 1000);
+      /* Settled and no pointer in frame: stop repainting until woken. */
+      if (px < -1e3 && settled()) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    };
+    function settled(): boolean {
+      let s = 0;
+      for (let i = 0; i < count; i += 97) {
+        s += Math.abs(x[i] - hx[i]) + Math.abs(vx[i]);
+      }
+      return s < 0.4;
+    }
+    function start(): void {
+      if (raf || reduce.matches || !inView) return;
+      raf = requestAnimationFrame(tick);
+    }
+    function stop(): void {
+      if (!raf) return;
+      cancelAnimationFrame(raf);
+      raf = 0;
+    }
+
+    const host = root.parentElement ?? root;
+    host.dataset.tiltArtwork = '';
+      if (matchMedia('(hover: hover)').matches || matchMedia('(pointer: coarse)').matches) {
+      host.addEventListener('pointermove', (e: PointerEvent) => {
+        const r = root.getBoundingClientRect();
+        px = e.clientX - r.left;
+        py = e.clientY - r.top;
+        start();
+      });
+      host.addEventListener('pointerleave', () => {
+        px = -1e4;
+        py = -1e4;
+      });
+    }
+
+    new IntersectionObserver(
+      (entries) => {
+        inView = entries.some((e) => e.isIntersecting);
+        if (inView) start();
+        else stop();
+      },
+      { rootMargin: '80px' },
+    ).observe(root);
+
+    reduce.addEventListener('change', () => {
+      if (reduce.matches) {
+        stop();
+        layout();
+        draw(0);
+      } else start();
+    });
+
+    new MutationObserver(() => {
+      const next = document.documentElement.classList.contains('dark');
+      if (next === dark) return;
+      dark = next;
+      themeColors();
+      start();
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    new ResizeObserver(() => {
+      layout();
+      start();
+    }).observe(root);
+
+    layout();
+    draw(0);
+    canvas.classList.remove('opacity-0');
+    start();
+  }
+
+  for (const el of document.querySelectorAll<HTMLElement>('[data-particle-scene]')) {
+    void boot(el);
+  }
+</script>

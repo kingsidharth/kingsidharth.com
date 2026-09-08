@@ -1,0 +1,34 @@
+---
+title: The Truth about Temperature
+description: Temperature, top-k and top-p are three knobs on one machine. This is what the machine does.
+pubDate: 2025-07-10
+part: 0
+subtitle: Setting it to 0 will NOT make it better at maths
+hideContents: true
+benefits:
+  - Pick a temperature on purpose instead of copying one off a blog post
+  - Explain why the same prompt gives a different answer every time
+  - Recognise the failure that looks like creativity and is actually a broken sampler
+  - Read a distribution on screen rather than arguing about a vibe
+art: sampling
+# The gap between the open palm and the lowest cube — where the throw
+# is decided and nothing is drawn.
+artFocus: [0.52, 0.63]
+artMotion: settle
+navLabel: Overview
+tags: [sampling, decoding]
+---
+
+import SamplingLab from '@/components/instruments/SamplingLab.astro';
+
+Every argument about "which temperature should I use" is really an argument about
+a distribution nobody has looked at. This guide puts the distribution on screen
+first, then adds one knob at a time.
+
+<SamplingLab />
+
+The bench above is the whole machine, live. Each panel is why the last one
+matters: the dial that should matter but doesn't, what was underneath it, the
+question that decides whether you are sampling or guessing — then the switches,
+run in series the way the real pipeline does. The chapters below take the same
+ground in prose, one knob at a time.

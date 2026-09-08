@@ -1,0 +1,46 @@
+---
+title: Evals are the new PRD
+description: A spec nobody can run is a wish. An eval is a spec that argues back.
+pubDate: 2025-07-30
+kind: essay
+tags: [evals, product, agents]
+---
+
+A product requirements document describes what should happen. An eval decides
+whether it did. Only one of those two survives contact with a model.
+
+The shift is not that specs got replaced. It is that the spec became executable,
+and the moment a spec is executable it stops being a document and starts being a
+test suite with opinions.
+
+## What changes when the spec runs
+
+Write "the assistant should be concise" in a PRD and you have written nothing.
+Six people will read six different sentences. Write it as an eval — median
+response under 90 tokens on this fixture set, no regression on the helpfulness
+rubric — and you have written a constraint that can fail.
+
+The failure is the point. A requirement that cannot fail is not a requirement.
+
+> The question is never "is the model good." It is "good at what, measured how,
+> compared to what it did last Tuesday."
+
+## Three things to write down before the first eval
+
+- **The fixture set.** Twenty real inputs beat two thousand synthetic ones. Pull
+  them from whatever your users actually typed.
+- **The comparison.** Against the previous version, against a naive baseline, or
+  against a human. Absolute scores are decoration.
+- **The thing you refuse to trade.** Every eval suite optimises something at the
+  expense of something else. Name the something else before you start.
+
+Skip the third and you will ship a model that is measurably better and
+noticeably worse.
+
+## Where it breaks
+
+Evals rot. The fixture set stops resembling production, the rubric drifts, and
+one day you are optimising a number that no longer points at anything. Budget
+for re-grounding the suite as seriously as you budget for writing it.
+
+The PRD never had this problem, because the PRD never told you anything.

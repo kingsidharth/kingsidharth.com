@@ -1,0 +1,49 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  entries: CollectionEntry<'work'>[];
+  /** The homepage shows summaries only; /work shows the outcomes too. */
+  detailed?: boolean;
+}
+
+const { entries, detailed = false } = Astro.props;
+---
+
+<ul class="max-w-3xl">
+  {
+    entries.map((entry) => (
+      <li class="border-b border-rule py-6">
+        <div class="flex flex-col gap-1 sm:flex-row sm:gap-6">
+          <div class="sm:w-48 sm:shrink-0">
+            <span class="font-semibold">{entry.data.org}</span>
+          </div>
+
+          <div class="min-w-0 flex-1">
+            <p class="flex flex-wrap items-baseline gap-x-3">
+              <span>{entry.data.role}</span>
+              <span class="nameplate">{entry.data.period}</span>
+            </p>
+            <p class="mt-1.5 text-sm text-muted-foreground">{entry.data.summary}</p>
+
+            {
+              detailed && entry.data.highlights.length > 0 && (
+                <ul class="mt-4 space-y-2">
+                  {entry.data.highlights.map((h) => (
+                    <li class="flex gap-3 text-sm">
+                      <span
+                        class="mt-[0.62em] h-px w-3 shrink-0 bg-primary"
+                        aria-hidden="true"
+                      />
+                      <span>{h}</span>
+                    </li>
+                  ))}
+                </ul>
+              )
+            }
+          </div>
+        </div>
+      </li>
+    ))
+  }
+</ul>

@@ -1,0 +1,41 @@
+---
+import { LOCALE_META, localePath, populatedLocales, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+
+const available = populatedLocales();
+
+/**
+ * Strip the current locale prefix so the switcher lands on the same
+ * page in the other language rather than dumping people on the home page.
+ */
+const bare = Astro.url.pathname.replace(new RegExp(`^/${locale}(?=/|$)`), '').replace(/^\//, '');
+
+// Only one language is live today. The control is wired but there is
+// nothing to switch to, so render nothing rather than a dead affordance.
+const show = available.length > 1;
+---
+
+{
+  show && (
+    <div class="flex items-center gap-1" role="group" aria-label={t('lang.switch')}>
+      {available.map((l) => (
+        <a
+          href={localePath(l, bare)}
+          hreflang={l}
+          lang={l}
+          aria-current={l === locale ? 'true' : undefined}
+          class="nameplate rounded-xs px-1.5 py-1 transition-colors hover:text-foreground aria-[current]:text-primary"
+        >
+          {LOCALE_META[l].endonym}
+        </a>
+      ))}
+    </div>
+  )
+}

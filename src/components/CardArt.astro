@@ -1,0 +1,47 @@
+---
+/**
+ * Card artwork that resolves under the cursor.
+ *
+ * Two renders of the same drawing — 23 glyphs across and 92 — stacked
+ * and crossfaded. At rest the card is coarse enough that you read the
+ * silhouette and nothing else; hovering quadruples the sampling and the
+ * detail arrives. It is the same idea as the desaturate-to-saturate
+ * already on these cards, applied to resolution instead of colour, and
+ * the two run on one transition so the card wakes up as a single move.
+ *
+ * Both files cover the same 644px box, so they overlay exactly and the
+ * crossfade has nothing to line up.
+ *
+ * Must sit inside something carrying Tailwind's `group` class.
+ */
+interface Props {
+  /** Basename in `static/art`, without extension or resolution suffix. */
+  name: string;
+  class?: string;
+}
+
+const { name, class: extra = '' } = Astro.props;
+
+const layer =
+  'absolute inset-0 size-full object-cover transition-opacity duration-500 motion-reduce:transition-none';
+---
+
+<span class:list={['card-art pointer-events-none absolute inset-0', extra]} aria-hidden="true">
+  <img
+    src={`/art/${name}-low.svg`}
+    alt=""
+    loading="lazy"
+    decoding="async"
+    class:list={[layer, 'art-coarse group-hover:opacity-0 group-focus-visible:opacity-0']}
+  />
+  <img
+    src={`/art/${name}.svg`}
+    alt=""
+    loading="lazy"
+    decoding="async"
+    class:list={[
+      layer,
+      'art-fine opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100',
+    ]}
+  />
+</span>

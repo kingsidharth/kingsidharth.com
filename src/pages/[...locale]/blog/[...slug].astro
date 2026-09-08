@@ -1,0 +1,12 @@
+---
+import { getCollection } from 'astro:content';
+import { splitId } from '@/lib/content';
+import { localeParam, localePath } from '@/lib/i18n';
+export async function getStaticPaths() {
+  return (await getCollection('blog', ({data}) => !data.draft)).map(entry => {
+    const { locale, slug } = splitId(entry.id);
+    return { params: { locale: localeParam(locale), slug }, props: { locale, slug } };
+  });
+}
+return Astro.redirect(localePath(Astro.props.locale, `notes/${Astro.props.slug}`), 301);
+---

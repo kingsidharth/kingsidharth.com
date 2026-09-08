@@ -1,0 +1,33 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import SectionHead from '@/components/SectionHead.astro';
+import InstrumentCard from '@/components/InstrumentCard.astro';
+import { localeStaticPaths, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+export const getStaticPaths = (() => localeStaticPaths()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props as { locale: Locale };
+const t = useTranslations(locale);
+
+const instruments = (await getCollection('instruments')).sort(
+  (a, b) => a.data.figure - b.data.figure
+);
+---
+
+<Base
+  locale={locale}
+  title={t('shelf.title')}
+  description="Interactive things I build to see how AI actually behaves."
+  path="tinkering"
+>
+  <div class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-14">
+    <SectionHead title={t('shelf.title')} as="h1" />
+
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {instruments.map((entry) => <InstrumentCard entry={entry} locale={locale} />)}
+    </div>
+  </div>
+</Base>

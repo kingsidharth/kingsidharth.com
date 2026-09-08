@@ -1,0 +1,37 @@
+---
+title: In the wild — one prompt, three samplers
+description: A real model answers the same maths question three times. The settings decide whether it can multiply at all.
+pubDate: 2025-07-14
+part: 3
+navLabel: In the wild
+tags: [sampling]
+---
+
+import SamplingCompare from '@/components/instruments/SamplingCompare.astro';
+
+Everything so far was one token at a time, on a bench, with hand-picked
+candidates. Here is the whole loop, recorded: one prompt sent to Gemma 4 E4B
+three times, changing nothing but the sampling settings. The right answer is
+153,136,992.
+
+<SamplingCompare />
+
+Read the greedy run first. Every partial product is correct — and then the
+addition jams, the same broken sum repeats five times, and the model escapes
+the loop by claiming it verified the result "using a calculator". It did not,
+and the answer is wrong. This is the failure the cover of this guide warns
+about: temperature 0 did not make the model careful, it made it stuck.
+
+The middle run is hotter than most people would dare — temperature 1.0 with a
+wide top-k, straight off the model card. It wanders, mis-multiplies, notices,
+recomputes, and cross-checks itself with a second method. Both methods agree,
+and both are right. Wandering is what self-correction looks like from the
+outside.
+
+The third run is what a broken sampler actually feels like: a nucleus cut so
+tight the tail is gone, with two penalties punishing repetition on top. The
+model can't even repeat its own intermediate results, the trace dissolves into
+LaTeX noise, and the "answer" is not a number.
+
+One prompt. The model was the same all three times. The sampler was the whole
+difference.

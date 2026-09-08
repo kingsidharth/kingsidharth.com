@@ -1,0 +1,23 @@
+---
+/**
+ * A plain 2x2. This was briefly an asymmetric bento with the
+ * temperature visualiser spanning two cells; giving the flagship more
+ * room made the other three read as leftovers.
+ */
+import type { CollectionEntry } from 'astro:content';
+import InstrumentCard from '@/components/InstrumentCard.astro';
+import type { Locale } from '@/lib/i18n';
+
+interface Props {
+  entries: CollectionEntry<'instruments'>[];
+  locale: Locale;
+}
+
+const { entries, locale } = Astro.props;
+---
+
+<!-- A plain 2x2. The asymmetric bento gave the flagship more room but
+     made the other three read as leftovers. -->
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+  {entries.map((entry) => <InstrumentCard entry={entry} locale={locale} />)}
+</div>

@@ -1,0 +1,315 @@
+---
+/**
+ * Each programme is its own small screen — a bank of displays you can
+ * press, under the teaching readout in the same panel.
+ *
+ * The faces are kaomoji rather than drawn ASCII: they read at a glance
+ * at this size, where box-drawing art turned to mush. Frames ship as
+ * one JSON attribute per card; as individual `data-*` attributes the
+ * quotes and backslashes in the old art arrived empty.
+ */
+import CardArt from '@/components/CardArt.astro';
+import { posterGround } from '@/lib/poster';
+
+const programmes = [
+  {
+    // Peeking from behind a wall, then leaning further out with each
+    // nudge until it makes off with the goods.
+    name: 'Steal the Secret Prompts',
+    art: 'secrets',
+    kind: 'Tool',
+    verb: 'Open',
+    href: '/prompts',
+    seed: 5,
+    from: 'oklch(0.32 0.13 285)',
+    via: 'oklch(0.24 0.1 262)',
+    to: 'oklch(0.4 0.11 208)',
+    ink: 'oklch(0.88 0.16 195)',
+    shadow: 'oklch(0.16 0.09 275)',
+    labelBg: 'oklch(0.78 0.13 190)',
+    labelInk: 'oklch(0.22 0.07 220)',
+    frames: {
+      idle: ['┬┴┬┴┤ω・)', '┬┴┬┴┤・ω・)'],
+      l1: '┬┴┬┤ ͡° ͜ʖ ͡°)',
+      l2: '┤ ͡° ͜ʖ ͡°)ノ⌐■-■',
+      l3: '(⌐■_■)ﾉ♨ ┬┴┬┴',
+      recover: '┬┴┬┴┤・_・)',
+    },
+  },
+  {
+    name: 'Vibe Coding 101',
+    art: 'vibe-touch',
+    kind: 'Guide',
+    verb: 'Read',
+    href: '/guides/vibe-coding/101',
+    seed: 12,
+    from: 'oklch(0.36 0.17 342)',
+    via: 'oklch(0.25 0.13 322)',
+    to: 'oklch(0.42 0.16 12)',
+    ink: 'oklch(0.98 0 0)',
+    shadow: 'oklch(0.19 0.1 340)',
+    frames: {
+      idle: ['(◑‿◐)'],
+      l1: '(◑‿◐)♪',
+      l2: '(ノ￣□￣)ノ ~┻━┻',
+      l3: '(┛◉Д◉)┛彡┻━┻',
+      recover: '┬─┬ノ( º _ ºノ)',
+    },
+  },
+  {
+    name: 'Freshcast',
+    art: 'freshcast',
+    kind: 'Podcast',
+    verb: 'Listen',
+    sub: 'AI updates in 5 minutes',
+    href: 'https://freshcast.app',
+    seed: 26,
+    from: 'oklch(0.33 0.11 158)',
+    via: 'oklch(0.23 0.09 168)',
+    to: 'oklch(0.4 0.13 132)',
+    ink: 'oklch(0.9 0.17 140)',
+    shadow: 'oklch(0.17 0.07 155)',
+    frames: {
+      idle: ['( ⌐■_■)🎧', '( ⌐■_■)♫'],
+      l1: '(♪ ᐛ )♪',
+      l2: '(☞ ᐛ )☞♬',
+      l3: '\\(^ᗜ^)/♬♬',
+      recover: '( ˘▽˘)っ♨',
+    },
+  },
+];
+
+/* Each title is set differently — same ingredients, different recipe —
+   so the row does not read as one template filled in five times. The
+   recipe the series cards proved out (a small line set against a big
+   one, size doing all the separating) is the floor now; what varies is
+   the arrangement. Weight appears once per card, on the line that IS
+   the title. Indexed alongside `programmes`. */
+const lines = [
+  // Small setup line, then the payload at full size, split across two
+  // decks so "Secret Prompts" can go bigger than its measure allows.
+  [
+    { text: 'Steal the', cls: 'block text-[14px] leading-none opacity-65' },
+    { text: 'Secret', cls: 'mt-0.5 block text-[32px] leading-[0.9]' },
+    { text: 'Prompts', cls: 'block text-[32px] leading-[0.9]' },
+  ],
+  // Inverted: the number is the title. "101" is the part people say
+  // out loud, so it is the part that gets the 34px.
+  [
+    { text: 'Vibe Coding', cls: 'block text-[14px] leading-none opacity-65' },
+    { text: '101', cls: 'mt-0.5 block text-[34px] leading-[0.9]' },
+  ],
+  // Name forward — a podcast title carries its own weight; the
+  // descriptor stays small under it.
+  [
+    { text: 'Freshcast', cls: 'block text-[30px] leading-[0.95]' },
+    { text: 'AI in five minutes', cls: 'mt-1 block text-[13px] leading-none opacity-70' },
+  ],
+];
+
+interface Props {
+  /** `panel` is the tight 2x2 inside the hero chassis; `lineup` is the
+      portrait card that sits alongside the video collections. */
+  variant?: 'panel' | 'lineup';
+}
+
+const { variant = 'panel' } = Astro.props;
+---
+
+<div
+  class:list={[
+    variant === 'panel'
+      ? 'grid grid-cols-2 gap-3 p-5 pt-0 sm:p-6 sm:pt-0'
+      : 'contents',
+  ]}
+>
+  {
+    programmes.map((p, i) => (
+      <a
+        href={p.href}
+        data-face-card
+        class:list={[
+          'screen-raised grain group relative flex cursor-pointer flex-col gap-3 saturate-[0.6] transition-[filter] duration-300 hover:saturate-100 focus-visible:saturate-100',
+          variant === 'panel'
+            ? 'h-full items-center justify-center px-3 py-5'
+            : 'aspect-[3/4] items-start justify-between px-4 py-4 text-left',
+        ]}
+        style={[
+          /* The base colour the title's shadow is mixed from, so the
+             shadow deepens the card rather than greying it. */
+          `--card-base:${p.via}`,
+          `--sprite-shadow:${p.shadow}`,
+          /* Period and phase for the resting breath, so the rail reads as
+             a row of separate things idling rather than one animation. */
+          `--breathe-dur:${7 + (i % 3) * 2}s`,
+          `--breathe-delay:${-(i * 1.7).toFixed(1)}s`,
+        ].join(';')}
+      >
+        {/* The ground is its own element so it can drift on hover without
+            moving anything else. */}
+        <span
+          class="card-ground pointer-events-none absolute inset-0"
+          style={`background:${posterGround(p.seed, p)}`}
+          aria-hidden="true"
+        />
+
+        {variant === 'lineup' && p.art && <CardArt name={p.art} />}
+
+        {/* The same base scrim the series cards beside it wear, so the
+            whole row's lettering sits on one consistent darkening toward
+            the foot instead of half the cards relying on text-shadow. */}
+        {variant === 'lineup' && (
+          <span
+            class="pointer-events-none absolute inset-0 bg-linear-to-t from-black/90 via-black/45 via-52% to-black/10"
+            aria-hidden="true"
+          />
+        )}
+
+        {
+          p.symbols && (
+            <span
+              class="symbol-drift pointer-events-none absolute inset-x-0 top-2 overflow-hidden text-center text-[11px] opacity-50"
+              style={`color:${p.ink};`}
+              aria-hidden="true"
+            >
+              <span>{p.symbols.repeat(2)}</span>
+            </span>
+          )
+        }
+
+
+
+        {
+          variant === 'panel' && (
+        <span
+              data-face
+              data-frames={JSON.stringify(p.frames)}
+              class:list={[
+                'sprite-text block whitespace-nowrap text-center',
+                variant === 'lineup' ? 'relative self-start text-[11px] opacity-80' : 'text-xl',
+              ]}
+              style={`color:${p.ink};`}
+              aria-hidden="true"
+            >
+              {p.frames.idle[0]}
+            </span>
+          )
+        }
+
+        {
+          /* One title treatment per card, set from the shared `lines`
+             recipes — and under it, the same mono caption the series
+             cards carry, so the row reads as one set. */
+          <span class="relative z-10 mt-auto w-full">
+            <span class="phosphor-type pixel-type card-title block text-[oklch(0.97_0.03_190)]">
+              {lines[i]!.map((l) => (
+                <span class={l.cls}>{l.text}</span>
+              ))}
+            </span>
+            {variant === 'lineup' && (
+              <span class="pixel-type-sm mt-1.5 block font-mono text-xs text-white/60">
+                {p.kind} · {p.verb}
+              </span>
+            )}
+          </span>
+        }
+      </a>
+    ))
+  }
+</div>
+
+<script>
+  interface Frames {
+    idle?: string[];
+    /** Escalation rungs: hover reaches l1, each click advances one more. */
+    l1?: string;
+    l2?: string;
+    l3?: string;
+    recover?: string;
+  }
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  for (const card of document.querySelectorAll<HTMLElement>('[data-face-card]')) {
+    const face = card.querySelector<HTMLElement>('[data-face]');
+    if (!face) continue;
+
+    const frames = JSON.parse(face.dataset.frames ?? '{}') as Frames;
+    const idle = frames.idle?.length ? frames.idle : [face.textContent?.trim() ?? ''];
+    const rungs = [frames.l1, frames.l2, frames.l3].filter(
+      (f): f is string => typeof f === 'string',
+    );
+
+    // 0 = idle, 1 = hovering, 2..n = clicked that many times past hover.
+    let level = 0;
+    let tick = 0;
+    let hovering = false;
+    let recovering = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const paint = () => {
+      if (recovering) return;
+      if (level > 0 && rungs[level - 1]) face.textContent = rungs[level - 1];
+      else face.textContent = idle[tick % idle.length];
+    };
+
+    // Idle cycling is the only part that is not user-initiated, so it is
+    // the only part reduced motion switches off.
+    // Each card gets its own period and start offset. With a shared
+    // interval every face flipped on the same frame, which read as one
+    // animation rather than four independent things idling.
+    if (!reduce && idle.length > 1) {
+      const period = 900 + Math.round(Math.random() * 700);
+      setTimeout(
+        () => {
+          setInterval(() => {
+            tick += 1;
+            if (level === 0) paint();
+          }, period);
+        },
+        Math.round(Math.random() * period),
+      );
+    }
+
+    const settle = () => {
+      if (timer) clearTimeout(timer);
+      recovering = true;
+      if (frames.recover) face.textContent = frames.recover;
+      timer = setTimeout(() => {
+        recovering = false;
+        level = hovering ? 1 : 0;
+        paint();
+      }, 1100);
+    };
+
+    card.addEventListener('mouseenter', () => {
+      hovering = true;
+      if (level === 0 && !recovering) {
+        level = 1;
+        paint();
+      }
+    });
+
+    card.addEventListener('mouseleave', () => {
+      hovering = false;
+      if (!recovering) {
+        level = 0;
+        paint();
+      }
+    });
+
+    // No preventDefault — these still have to navigate once the hrefs
+    // are real.
+    card.addEventListener('click', () => {
+      if (recovering) return;
+      if (level < rungs.length) {
+        level += 1;
+        paint();
+        if (level >= rungs.length) {
+          if (timer) clearTimeout(timer);
+          timer = setTimeout(settle, 900);
+        }
+      }
+    });
+  }
+</script>

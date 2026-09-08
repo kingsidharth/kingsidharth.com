@@ -1,0 +1,64 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import ShelfScreen from './instruments/ShelfScreen';
+import { useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+interface Props {
+  entry: CollectionEntry<'instruments'>;
+  locale: Locale;
+}
+
+const { entry, locale } = Astro.props;
+const { name, blurb, status, version, screen, href, figure } = entry.data;
+const t = useTranslations(locale);
+
+const lit = status === 'live';
+---
+
+<article class="flex flex-col">
+  <div class="chassis p-2.5 pb-0">
+    <div class="crt aspect-4/3">
+      <ShelfScreen screen={screen} client:visible />
+    </div>
+
+    <div class="flex items-center justify-between gap-2 px-1 py-2.5">
+      <span class="nameplate">{t('shelf.figure')} {String(figure).padStart(2, '0')}</span>
+      <span
+        class:list={[
+          'size-1.5 rounded-full',
+          lit ? 'bg-success shadow-[0_0_8px_var(--color-success)]' : 'bg-muted-foreground/50',
+        ]}
+        aria-hidden="true"></span>
+    </div>
+  </div>
+
+  <div class="mt-3">
+    <h3 class="text-xl">
+      {
+        href ? (
+          <a href={href} class="transition-colors hover:text-primary">
+            {name}
+          </a>
+        ) : (
+          name
+        )
+      }
+    </h3>
+    <p class="mt-1.5 text-sm text-muted-foreground">{blurb}</p>
+
+    <p class="mt-3 flex flex-wrap gap-1.5 font-mono text-2xs">
+      <span class="rounded-xs border border-border px-1.5 py-0.5 text-muted-foreground">
+        v{version}
+      </span>
+      <span
+        class:list={[
+          'rounded-xs border px-1.5 py-0.5',
+          lit ? 'border-success/60 text-success' : 'border-border text-muted-foreground',
+        ]}
+      >
+        {t(`status.${status}` as const)}
+      </span>
+    </p>
+  </div>
+</article>

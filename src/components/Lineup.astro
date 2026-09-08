@@ -1,0 +1,31 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Programmes from './Programmes.astro';
+import SeriesCard from './SeriesCard.astro';
+
+interface Props {
+  series: CollectionEntry<'series'>[];
+}
+
+const { series } = Astro.props;
+---
+
+<!--
+  Programmes and video collections in one grid, interleaved rather than
+  segregated. They are the same kind of offer — a thing to go and watch
+  or read — so splitting them into two grids made the page argue with
+  itself.
+
+  A grid, not the marquee this used to be. A moving rail made every card
+  a target that slides away from the cursor; pausing on hover only
+  papered over that, because you still had to catch one first. Holding
+  still also lets the cards be big enough to look at.
+
+  Programmes renders with `variant="lineup"`, which drops its own
+  container and emits bare portrait cards through `display: contents`, so
+  both card types land as direct children here and share its tracks.
+-->
+<div class="card-grid" data-count={String(3 + series.length)}>
+  <Programmes variant="lineup" />
+  {series.map((entry) => <SeriesCard entry={entry} />)}
+</div>

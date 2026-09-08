@@ -1,0 +1,727 @@
+---
+/**
+ * The notes hero: a valley of flowers, five depths deep.
+ *
+ * It travelled forward once, and the travel is gone. Two reasons, and
+ * the second is the real one. It was on screen too long at the near end,
+ * so a foreground plate sat blocking everything behind it — and it cost
+ * a full repaint of every cell of every plate, sixty times a second, to
+ * animate a drift nobody asked to be that busy.
+ *
+ * So the plates sit at fixed depths, and what moves is the picture
+ * shifting under your pointer. Each plate shifts by its own amount, which
+ * is what makes it read as parallax rather than as the whole image
+ * sliding. That runs as a `translate3d` — the compositor does it on the
+ * GPU — so the scene costs nothing at rest and nothing while you move
+ * across it. And it STAYS where you leave it: springing back to centre on
+ * pointer-leave threw the valley sideways every time the cursor crossed
+ * an edge, which is a bigger movement than any you made on purpose.
+ *
+ * Exactly one plate is alive. Not the nearest — the nearest is cropped to
+ * a scattering of blooms and nearly transparent, so there is nothing there
+ * to interact with. One step back is the first plate you see whole, so
+ * that one gets the strongest parallax, a pointer that saturates the
+ * flowers it passes over, and a slow drift: six groups of blooms swaying
+ * out of step, and their marks dissolving up and down the shade ramp. It
+ * repaints at 11fps and stops dead when the hero scrolls out of view or
+ * the reader has asked for less motion. The other four are painted once.
+ *
+ * The near plates are deliberately faint. At full strength a foreground
+ * simply hides what is behind it, and four depths you cannot see through
+ * are one depth.
+ *
+ * Depth lives BETWEEN plates, never inside one. Displacing cells within
+ * a plate was tried twice — from per-cell tone and from a smooth field —
+ * and both fragmented the flowers, because anything that varies across a
+ * bloom pulls that bloom apart.
+ *
+ * Colour is the default state, in two families: teals and greens for the
+ * foliage, waterlily and lotus colours for the blooms. Which family a cell
+ * belongs to cannot come from its brightness — the ramp spends tone on
+ * light, so a leaf's lit edge is bright and a shadowed petal is dark. It
+ * comes from a smooth positional field instead, which is continuous and
+ * therefore cannot split a bloom down the middle.
+ *
+ * Marks are shade blocks throughout, one family. Mixing hairlines with
+ * blocks read as outlines; braille had no mass and dissolved. "Finer" is
+ * bought in the GRID instead — these render at 420-560 columns, so each
+ * mark is small because the cell is, not because the glyph is thin.
+ *
+ * The cat is painted in full on its own plate and hidden by a mask that
+ * follows the pointer, so finding it is also free.
+ */
+interface Props {
+  class?: string;
+}
+
+const { class: extra = '' } = Astro.props;
+
+/* Legibility by masking rather than by scrim: a scrim has to be a colour
+   and the one that works on near-black is wrong on cream. */
+const copyMask =
+  'radial-gradient(54% 44% at 26% 24%,rgb(0 0 0 / 0.18) 0%,rgb(0 0 0 / 0.6) 56%,#000 100%)';
+/* Top and bottom only. The sides must NOT fade — the layers tile through
+   them, and fading the edges would put a seam where the loop joins. */
+const vertMask = 'linear-gradient(180deg,transparent 0%,#000 10%,#000 82%,transparent 100%)';
+
+const layerStyle = [
+  `-webkit-mask-image:${copyMask},${vertMask}`,
+  `mask-image:${copyMask},${vertMask}`,
+  '-webkit-mask-composite:source-in',
+  'mask-composite:intersect',
+].join(';');
+---
+
+<div
+  class:list={['pointer-events-none absolute inset-0 overflow-hidden', extra]}
+  aria-hidden="true"
+>
+  {/* Paint order is DOM order, back to front. The cat rides in the
+      middle of the stack so nearer flowers grow in front of it. */}
+  <canvas data-jungle="p0" style={layerStyle} class="absolute inset-0 size-full opacity-0 transition-opacity duration-[900ms] will-change-transform"></canvas>
+  <canvas data-jungle="p1" style={layerStyle} class="absolute inset-0 size-full opacity-0 transition-opacity duration-[900ms] will-change-transform"></canvas>
+  <canvas data-jungle="cat" style={layerStyle} class="absolute inset-0 size-full opacity-0 transition-opacity duration-[900ms] will-change-transform"></canvas>
+  <canvas data-jungle="p2" style={layerStyle} class="absolute inset-0 size-full opacity-0 transition-opacity duration-[900ms] will-change-transform"></canvas>
+  <canvas data-jungle="p3" style={layerStyle} class="absolute inset-0 size-full opacity-0 transition-opacity duration-[900ms] will-change-transform"></canvas>
+  <canvas data-jungle="p4" style={layerStyle} class="absolute inset-0 size-full opacity-0 transition-opacity duration-[900ms] will-change-transform"></canvas>
+
+  <div
+    class="absolute inset-0 bg-[radial-gradient(125%_100%_at_50%_40%,transparent_38%,rgb(0_0_0/0.55)_100%)]"
+  >
+  </div>
+</div>
+
+<script>
+  import { paperTone, pickGlyph } from '@/lib/treatments';
+
+  interface Grid {
+    cols: number;
+    rows: number;
+    lum: string;
+  }
+
+  interface Layer {
+    art: string;
+    ramp: string;
+    ink: readonly [number, number, number];
+    hot: readonly [number, number, number];
+    lightInk: readonly [number, number, number];
+    lightHot: readonly [number, number, number];
+    alpha: number;
+    /** Where this plate starts along the approach, 0-1. Staggered so
+        there is always one arriving, one mid-field and one leaving. */
+    phase: number;
+    cut: number;
+    /** Relative parallax travel. */
+    par: number;
+    /** Only visible near the pointer. */
+    hidden?: boolean;
+    /** The plate that answers the pointer and carries the cycling drift. */
+    focus?: boolean;
+  }
+
+  /* Six plates, not three.
+   *
+   * "Sub-layers" cannot be built by moving things around INSIDE a plate —
+   * that was tried twice and it fragments the flowers, because any
+   * displacement varying across a bloom pulls the bloom apart. But depth
+   * BETWEEN plates is free. Six of them, evenly spaced along the same
+   * journey, means three or four are on screen at any moment at
+   * genuinely different distances, which is what a valley of flowers
+   * actually looks like: not one wall of blooms, several.
+   *
+   * Only three drawings exist, each used twice. They are never at the
+   * same scale simultaneously — the pair is half a journey apart — so
+   * the repeat is not visible.
+   *
+   * One family of mark, and a fine grid.
+   *
+   * Mixing hairlines with shade blocks read as OUTLINES rather than as
+   * light — two kinds of mark competing, and the thin one drew edges.
+   * Braille instead was worse in the other direction: eight densities of
+   * scattered dots have no MASS, so the flowers dissolved into texture.
+   *
+   * So the marks are shade blocks throughout, one family, tone climbing
+   * evenly — and "finer" is bought where it should be, in the GRID.
+   * These plates are rendered at 420-560 columns rather than 200-340, so
+   * each mark is small because the cells are small, not because the
+   * character is thin. Highlights are the full block at the top of the
+   * ramp: mass reading as light, which is what a highlight is.
+   */
+  /* Fixed depths, not a journey.
+   *
+   * `depth` is 0 at the back and 1 in your face. It sets scale, opacity
+   * and how far the plate shifts under the pointer — one number, so the
+   * three can never disagree about which plate is nearer.
+   *
+   * The near plates are deliberately faint. Held at full strength they
+   * were on screen far too long and simply blocked everything behind
+   * them; a foreground you can see through is what lets four depths read
+   * at once. */
+  interface Plate {
+    art: string;
+    depth: number;
+    ramp: string;
+    alpha: number;
+    /** Below this tone a cell is not drawn at all. The lever for the
+        nearest plate: raising it makes the foreground SPARSE, where
+        lowering alpha only ever makes it a fainter slab. */
+    cut: number;
+    /** How far this plate slides under the pointer, relative. */
+    par: number;
+    /** The plate hover is aimed at. Exactly one, and it is not the
+        nearest — see the note above the array. */
+    focus?: boolean;
+  }
+
+  const PLATES: ReadonlyArray<Plate> = [
+    /* Five plates, five DIFFERENT drawings — and that is not a detail.
+       Reusing three drawings across five plates put the same rose on
+       screen twice, at two scales, concentric, because every plate is
+       centred on the frame. A duplicate you can see is worse than a
+       shallower field.
+
+       The FOCUS plate is the one behind the nearest, not the nearest.
+       The plate in your face is cropped to a few blooms and mostly
+       transparent by design, so there is nothing there to interact with;
+       one step back is the first plate you see whole, which makes it the
+       only plate where a response to the pointer can be read. So it gets
+       the strongest parallax and the cycling motion, and the plate in
+       front of it is cut back to a scattering. */
+    { art: 'jungle-far', depth: 0.0, ramp: ' ░▒▓', alpha: 0.5, cut: 0.13, par: 0.22 },
+    { art: 'jungle-mid', depth: 0.22, ramp: ' ░▒▓█', alpha: 0.72, cut: 0.13, par: 0.5 },
+    { art: 'jungle-alt1', depth: 0.44, ramp: ' ░▒▓█', alpha: 0.58, cut: 0.16, par: 0.9 },
+    { art: 'jungle-alt2', depth: 0.68, ramp: ' ░▒▓█', alpha: 0.46, cut: 0.14, par: 1.7, focus: true },
+    { art: 'jungle-near', depth: 0.88, ramp: ' ░▒▓█', alpha: 0.12, cut: 0.46, par: 1.15 },
+  ];
+
+  const LAYERS: Record<string, Layer> = Object.fromEntries([
+    ...PLATES.map((pl, i) => [
+      `p${i}`,
+      {
+        art: pl.art,
+        ramp: pl.ramp,
+        ink: [112, 122, 140],
+        hot: [242, 246, 255],
+        lightInk: [140, 146, 158],
+        lightHot: [46, 52, 64],
+        alpha: pl.alpha,
+        phase: pl.depth,
+        cut: pl.cut,
+        par: pl.par,
+        focus: pl.focus,
+      } satisfies Layer,
+    ]),
+    [
+      'cat',
+      {
+        art: 'jungle-cat',
+        ramp: ' ░▒▓█',
+        ink: [78, 86, 100],
+        hot: [252, 138, 190],
+        lightInk: [120, 126, 138],
+        lightHot: [198, 62, 122],
+        alpha: 1,
+        phase: 0.5,
+        cut: 0.12,
+        par: 1,
+        hidden: true,
+      } satisfies Layer,
+    ],
+  ]) as Record<string, Layer>;
+
+  const root = document.querySelector<HTMLElement>('[data-jungle="p0"]')?.parentElement;
+  if (root) {
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+
+    interface Loaded extends Layer {
+      canvas: HTMLCanvasElement;
+      ctx: CanvasRenderingContext2D;
+      cols: number;
+      rows: number;
+      lum: Uint8Array;
+    }
+
+    const loaded: Loaded[] = [];
+    let raf = 0;
+    let dark = document.documentElement.classList.contains('dark');
+    let px = -1;
+    let py = -1;
+    /** True only while the focus plate is being re-painted on a clock. */
+    let drifting = false;
+
+    /* The drift, in numbers.
+     *
+     * Six groups, because the boundaries between them are the only place
+     * this can go wrong — a bloom lying across two groups gets sheared by
+     * the difference between their offsets, and fewer groups means fewer
+     * seams. The offsets are a third of a cell at most, so the worst case
+     * is two thirds of a cell of shear across an edge that follows a
+     * smooth field rather than a straight line.
+     *
+     * This is the one thing in this component that is allowed to displace
+     * cells, and it is allowed because the offset is constant across a
+     * whole group. The failures recorded above came from displacement
+     * that VARIED across a bloom; a group moving as one does not pull
+     * anything apart. */
+    const GROUPS = 6;
+    const DRIFT_X = 0.3;
+    const DRIFT_Y = 0.22;
+    /** Radians the golden angle, so no two groups ever come into step. */
+    const GROUP_PHASE = 2.39996;
+    /** How far the pointer's attention reaches, in CSS pixels. */
+    const FOCUS_R = 210;
+    /** ~11fps. Sixty was the cost this component spent three paragraphs
+        removing, and "subtle shifts" do not read any better fast. */
+    const FRAME_MS = 90;
+
+    type RGB = readonly [number, number, number];
+    const VOID: RGB = [0, 0, 0];
+
+    /* Two palettes, because a pond is two things.
+     *
+     * One list of hues made the whole field read as one species in five
+     * colours — confetti botany. Foliage and bloom are separated now:
+     * greens and teals for the leaves, waterlily and lotus colours for
+     * the flowers. Within each family the hue still drifts, so no two
+     * leaves are quite the same green.
+     *
+     * Which family a cell belongs to CANNOT come from its brightness.
+     * That was the obvious idea and it is backwards: the ramp uses tone
+     * for light, so a leaf's lit edge is bright and a shadowed petal is
+     * dark. Histogramming the plates confirms it — no bimodality, just a
+     * decaying tail. Species comes from the smooth field below instead,
+     * which is continuous and therefore cannot split a bloom. */
+    const LEAF: ReadonlyArray<RGB> = [
+      [86, 186, 172], // teal
+      [70, 164, 128], // sea green
+      [124, 196, 116], // fresh green
+      [52, 142, 152], // deep teal
+      [150, 202, 138], // sage
+    ];
+    const PETAL: ReadonlyArray<RGB> = [
+      [248, 152, 196], // lotus pink
+      [252, 214, 228], // blush white
+      [244, 112, 148], // deep rose
+      [250, 230, 182], // lily cream
+      [212, 158, 240], // water hyacinth
+    ];
+
+    /* Light theme needs the same hues an octave down. On cream, the ramp
+       runs from grey INK to near-black HOT, so a bright pink applied over
+       it goes chalky and the mark loses its weight. Deeper, more
+       saturated versions read as the same flower and keep the mass. */
+    const LEAF_LIGHT: ReadonlyArray<RGB> = [
+      [22, 106, 100],
+      [20, 96, 68],
+      [54, 112, 46],
+      [14, 82, 92],
+      [72, 110, 52],
+    ];
+    const PETAL_LIGHT: ReadonlyArray<RGB> = [
+      [188, 54, 112],
+      [176, 88, 128],
+      [172, 32, 66],
+      [148, 104, 30],
+      [116, 60, 158],
+    ];
+
+    /* A smooth field, not a hash of a rectangle.
+     *
+     * Hashing a cluster gave every 14x10 block of cells one flat colour,
+     * so approaching the field painted RECTANGLES on it — the grid
+     * showing through as colour, which is the opposite of flowers having
+     * their own hues. Three low-frequency sines instead: the value drifts
+     * continuously, adjacent stops blend, and a bloom picks up whatever
+     * is passing under it. No edges, because there are none.
+     *
+     * Called at three frequencies: slow for species, faster for the hue
+     * inside each family, slower still for the drifting groups. */
+    function field(x: number, y: number, fu: number, fv: number): number {
+      const u = x * fu;
+      const v = y * fv;
+      const n =
+        Math.sin(u) * 0.5 + Math.sin(u * 0.43 + v) * 0.3 + Math.sin(v * 0.71 - u * 0.19) * 0.2;
+      return (n + 1) / 2;
+    }
+
+    /** Walk a palette continuously, wrapping, so there are no colour seams. */
+    function rampPick(pal: ReadonlyArray<RGB>, n: number): RGB {
+      const pos = Math.min(0.9999, Math.max(0, n)) * pal.length;
+      const i = Math.min(pal.length - 1, Math.floor(pos));
+      const a = pal[i] ?? VOID;
+      const b = pal[(i + 1) % pal.length] ?? VOID;
+      const f = pos - i;
+      return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+    }
+
+    /** Foliage or flower, and which one — from position alone. */
+    function tint(x: number, y: number, isDark: boolean): RGB {
+      const leaf = rampPick(isDark ? LEAF : LEAF_LIGHT, field(x, y, 0.055, 0.083));
+      const petal = rampPick(isDark ? PETAL : PETAL_LIGHT, field(x, y, 0.071, 0.11));
+      /* Roughly a third bloom, two thirds leaf, which is about the ratio
+         a real bed of lilies sits at.
+
+         The frequency matters more than the ratio. At 0.017 the field ran
+         barely one cycle across a plate, so pink owned the left half of
+         the screen and teal the right — two continents, not a pond. Three
+         or four cycles puts several bloom patches in view at once, each
+         still wide enough to hold a whole flower. */
+      const w = smoothstep(0.48, 0.7, field(x, y, 0.048, 0.075));
+      return [
+        leaf[0] + (petal[0] - leaf[0]) * w,
+        leaf[1] + (petal[1] - leaf[1]) * w,
+        leaf[2] + (petal[2] - leaf[2]) * w,
+      ];
+    }
+
+    function smoothstep(a: number, b: number, v: number): number {
+      const u = Math.min(1, Math.max(0, (v - a) / (b - a)));
+      return u * u * (3 - 2 * u);
+    }
+
+    function hash01(x: number, y: number): number {
+      return ((((x * 374761393) ^ (y * 668265263)) >>> 0) % 1024) / 1024;
+    }
+
+    function paint(l: Loaded, t: number): void {
+      const rect = l.canvas.getBoundingClientRect();
+      if (rect.width === 0) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (l.canvas.width !== Math.round(rect.width * dpr)) {
+        l.canvas.width = Math.round(rect.width * dpr);
+        l.canvas.height = Math.round(rect.height * dpr);
+      }
+      l.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      l.ctx.clearRect(0, 0, rect.width, rect.height);
+
+      /* Depth, fixed. Nothing travels any more — see the component note.
+         Still exponential, because that is how distance actually maps to
+         apparent size; a linear spread put every plate at much the same
+         scale and the depth stopped reading. */
+      const prog = l.phase;
+      const scale = 0.92 * Math.pow(3.4, prog);
+
+      /* In from nothing at the back, out as it sweeps past. The plate is
+         never at full strength for long, which is what stops any single
+         arrangement of flowers being on screen long enough to memorise. */
+      /* In slowly and in stages, out early and fast.
+         A linear fade-in made a whole plate arrive at once, which reads
+         as an appearance rather than as something coming closer; eased
+         over a much longer ramp it emerges. Out is the opposite problem —
+         held to the end, a near plate becomes a slab across the whole
+         view, so it starts leaving at 60% and is gone well before its
+         cells are the size of a fist. */
+      // Opacity is carried by the plate's own alpha now.
+      const fade = 1;
+
+      const chh = (rect.height / l.rows) * scale;
+      const cw = chh / 2;
+      const ox = (rect.width - l.cols * cw) / 2;
+      const oy = (rect.height - l.rows * chh) / 2;
+
+      l.ctx.font = `${(chh * 0.98).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+      l.ctx.textAlign = 'center';
+      l.ctx.textBaseline = 'middle';
+
+      const ink = dark ? l.ink : l.lightInk;
+      const hot = dark ? l.hot : l.lightHot;
+
+      // Only the rows and columns still inside the frame once scaled.
+      const cxF = rect.width / 2;
+      const cyF = rect.height / 2;
+
+      /* The focus plate answers the pointer. It is the only plate that
+         does, and the only one that can: it is the nearest plate you see
+         whole, and it is already being re-painted on a clock for the
+         drift, so reading the pointer costs nothing extra. */
+      const live = l.focus && drifting;
+      const attend = l.focus && px >= 0;
+      const pxPix = px * rect.width;
+      const pyPix = py * rect.height;
+      const reach2 = FOCUS_R * FOCUS_R;
+
+      const x0 = Math.max(0, Math.floor(-ox / cw));
+      const x1 = Math.min(l.cols - 1, Math.ceil((rect.width - ox) / cw));
+      const y0 = Math.max(0, Math.floor(-oy / chh));
+      const y1 = Math.min(l.rows - 1, Math.ceil((rect.height - oy) / chh));
+
+      for (let y = y0; y <= y1; y += 1) {
+        for (let x = x0; x <= x1; x += 1) {
+          const base = (l.lum[y * l.cols + x] ?? 0) / 255;
+          if (base < 0.02) continue;
+
+          /* Displacement, and the one rule about it.
+             Depth inside a plate was tried twice by MOVING cells — once
+             from per-cell tone, once from a smooth field — and both
+             fragmented the flowers, because any displacement that VARIES
+             across a bloom pulls that bloom apart. So depth is carried by
+             which mark a cell gets, never by where it sits.
+             The drift below is the one exception, and it survives the same
+             rule: the offset is constant across a whole group, so a group
+             sways as one object. Nothing varies within a bloom. */
+
+          let gx = ox + x * cw;
+          let gy = oy + y * chh;
+
+          /* Which group, and where that group is in its cycle. Derived
+             from position and time only — nothing is stored, so there is
+             no state to get out of step with the drawing. */
+          let step = 0;
+          if (live) {
+            const ph = Math.floor(field(x, y, 0.034, 0.052) * GROUPS) * GROUP_PHASE;
+            gx += Math.sin(t * 0.5 + ph) * cw * DRIFT_X;
+            gy += Math.cos(t * 0.37 + ph * 1.3) * chh * DRIFT_Y;
+            /* The ascii transition — ░ to ▒ to ▓ and back. It biases the
+               GLYPH only; tone, colour and opacity are left alone,
+               because moving those too would read as a flicker.
+               And unlike the drift, this one is deliberately NOT coherent
+               across a group. Stepped in unison it swung a tenth of the
+               plate's ink at once, which is the plate breathing rather
+               than the marks changing. A per-cell offset spreads the
+               crossing out so a group transitions as a dissolve — which
+               is what a ramp of shade blocks is for. */
+            step = Math.sin(t * 0.29 + ph * 0.7 + hash01(x, y) * 4.2) * 0.7;
+          }
+
+          /* 0.9, not 0.7. At 0.7 the cat's brightest cells still cleared
+             the threshold with nobody near it, so a few pink marks hung in
+             the flowers permanently — which is a glitch, not a secret.
+             Hidden has to mean hidden, or finding it is not finding it. */
+          const cut = l.cut;
+          const lit = base;
+          if (lit < cut + (hash01(x, y) - 0.5) * 0.05) continue;
+
+          /* floor, not round. Rounding shifts every mark on every plate
+             up half a step of the ramp, which quietly thickened the whole
+             scene — `step` is 0 on the four plates that do not drift, and
+             the arithmetic has to be identical for them. On paper the
+             ramp runs the other way, so the same floor still lands on
+             the inverted rung. */
+          const tone = paperTone(base, 0, !dark);
+          const glyph = pickGlyph(l.ramp, tone, step);
+          if (!glyph || glyph === ' ') continue;
+
+          /* Attention, as a falloff. Squared distance and a squared
+             falloff, so the lift is concentrated where the pointer is
+             rather than spread as a general brightening of the plate. */
+          let near = 0;
+          if (attend) {
+            const dx = gx + cw / 2 - pxPix;
+            const dy = gy + chh / 2 - pyPix;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < reach2) {
+              const u = 1 - d2 / reach2;
+              near = u * u;
+            }
+          }
+
+          const h = Math.max(0, (lit - 0.55) / 0.45);
+          let r = ink[0] + (hot[0] - ink[0]) * h;
+          let g = ink[1] + (hot[1] - ink[1]) * h;
+          let b = ink[2] + (hot[2] - ink[2]) * h;
+
+          /* A tint from the light, not from the cursor. The field is lit
+             from the upper left, so blooms facing that way take warmth
+             and the ones behind stay cool — which is the cheapest way to
+             say "there is a sun here" and stops the whole plate reading
+             as one flat grey. */
+          const litSide = smoothstep(0.15, 0.95, (1 - x / l.cols) * 0.6 + (1 - y / l.rows) * 0.4);
+          const warm = litSide * Math.max(0, base - 0.42) * 0.9;
+          if (warm > 0.01) {
+            /* Weaker than it was. At full strength the sun bleached the
+               hues back out again, and a warm grey plate is the thing the
+               palettes exist to stop. It only has to say "lit from over
+               there", and it can say that quietly. */
+            r += (250 - r) * warm * 0.34;
+            g += (206 - g) * warm * 0.34;
+            b += (168 - b) * warm * 0.34;
+          }
+
+          /* Colour is the default state, and most of the mark.
+             It used to be a 20% wash over grey, applied only where the
+             tone was already high — so the field read as a grey botanical
+             print with a hint of dye in the highlights. These are
+             flowers; they are allowed to be their own colour. The tone
+             ramp still does the work of light, because the tint is mixed
+             INTO the ramp's output rather than replacing it. */
+          if (!l.hidden) {
+            const hue = tint(x, y, dark);
+            /* Attention shows up as SATURATION, not as light. Lifting
+               opacity was the first attempt and it drove the full-block
+               marks to opaque, which painted a bright rectangle around
+               the cursor — a selection box, not a glow. Colour is the
+               safer channel: it has nowhere to blow out to. */
+            const w = Math.min(0.95, (dark ? 0.68 : 0.56) * (0.45 + lit * 0.55) * (1 + near * 0.6));
+            r += (hue[0] - r) * w;
+            g += (hue[1] - g) * w;
+            b += (hue[2] - b) * w;
+          }
+
+
+          const a = Math.min(1, l.alpha * fade * (0.3 + tone * 1.05) * (1 + near * 0.28));
+          if (a < 0.015) continue;
+          l.ctx.fillStyle = `rgba(${r | 0},${g | 0},${b | 0},${a.toFixed(3)})`;
+          l.ctx.fillText(glyph, gx + cw / 2, gy + chh / 2);
+        }
+      }
+    }
+
+
+    void Promise.all(
+      Object.entries(LAYERS).map(async ([key, layer]) => {
+        const canvas = root.querySelector<HTMLCanvasElement>(`[data-jungle="${key}"]`);
+        const ctx = canvas?.getContext('2d');
+        if (!canvas || !ctx) return;
+
+        const res = await fetch(`/art/${layer.art}-grid.json`);
+        const g = (await res.json()) as Grid;
+        loaded.push({
+          ...layer,
+          canvas,
+          ctx,
+          cols: g.cols,
+          rows: g.rows,
+          lum: Uint8Array.from(atob(g.lum), (c) => c.charCodeAt(0)),
+        });
+      }),
+    ).then(() => {
+      const now = performance.now() / 1000;
+      for (const l of loaded) {
+        paint(l, now);
+        l.canvas.classList.remove('opacity-0');
+      }
+
+      /* Parallax as a transform, not as a repaint.
+       *
+       * This used to redraw every cell of every plate sixty times a
+       * second to animate a slow drift, which is hundreds of thousands of
+       * fillText calls per second for motion nobody asked to be that
+       * busy. The plates are painted ONCE now and moved with
+       * `translate3d`, which the compositor does on the GPU for free —
+       * so the scene costs nothing at rest and nothing while you move
+       * over it either.
+       *
+       * Each plate shifts by its own depth, which is what makes the
+       * shift read as parallax rather than as the whole picture sliding.
+       */
+      const host = root.parentElement ?? root;
+      const SHIFT = 34;
+      let queued = false;
+      let mx = 0;
+      let my = 0;
+
+      const apply = () => {
+        queued = false;
+        for (const l of loaded) {
+          /* Travel is per plate, not derived from depth. Depth would give
+             the nearest plate the biggest slide, and the nearest plate is
+             a scattering of cropped blooms you cannot follow. The plate
+             that answers the pointer is the focus plate, so that is the
+             one that moves most. */
+          const k = l.par;
+          l.canvas.style.transform = `translate3d(${(-mx * SHIFT * k).toFixed(1)}px,${(-my * SHIFT * 0.5 * k).toFixed(1)}px,0)`;
+        }
+        // The cat is revealed by a mask that follows the pointer — also
+        // a compositor job, so finding it costs no repaint either.
+        const cat = loaded.find((l) => l.hidden);
+        if (cat) {
+          const mask = `radial-gradient(9rem 9rem at ${(px * 100).toFixed(1)}% ${(py * 100).toFixed(1)}%,#000 0%,rgb(0 0 0 / 0.35) 55%,transparent 78%)`;
+          cat.canvas.style.webkitMaskImage = mask;
+          cat.canvas.style.maskImage = mask;
+        }
+      };
+
+      host.dataset.tiltArtwork = '';
+      if (matchMedia('(hover: hover)').matches || matchMedia('(pointer: coarse)').matches) {
+        host.addEventListener('pointermove', (e: PointerEvent) => {
+          const r = root.getBoundingClientRect();
+          px = (e.clientX - r.left) / r.width;
+          py = (e.clientY - r.top) / r.height;
+          mx = px - 0.5;
+          my = py - 0.5;
+          if (queued) return;
+          queued = true;
+          requestAnimationFrame(apply);
+        });
+        /* Leaving hides the cat and nothing else.
+           The parallax used to spring back to centre, which threw the
+           whole valley sideways every time the pointer crossed the
+           bottom edge — a bigger movement than any you made on purpose,
+           and one you did not ask for. The view stays where you left it;
+           it is a thing you nudged, not a thing on a spring. */
+        host.addEventListener('pointerleave', () => {
+          px = -1;
+          py = -1;
+          requestAnimationFrame(apply);
+        });
+      }
+
+      /* One plate on a clock, and only while you can see it.
+       *
+       * The whole scene used to repaint at 60fps and that cost is what
+       * the notes above are about. This is the smallest version of the
+       * same thing that still reads: ONE plate, at 11fps, stopped dead
+       * when the hero scrolls away or the reader has asked for less
+       * motion. Everything else stays painted once and moved by the
+       * compositor. */
+      const focus = loaded.find((l) => l.focus);
+      let inView = true;
+      let last = 0;
+
+      const tick = (now: number) => {
+        raf = requestAnimationFrame(tick);
+        if (now - last < FRAME_MS) return;
+        last = now;
+        if (focus) paint(focus, now / 1000);
+      };
+
+      const startDrift = () => {
+        if (raf || !focus || reduce.matches || !inView) return;
+        drifting = true;
+        raf = requestAnimationFrame(tick);
+      };
+
+      /* No repaint on stop. A plate frozen mid-drift is correct — the
+         alternative snaps every group back onto the grid at once, which
+         is the most visible movement the plate ever makes. */
+      const stopDrift = () => {
+        if (!raf) return;
+        cancelAnimationFrame(raf);
+        raf = 0;
+        drifting = false;
+      };
+
+      new IntersectionObserver(
+        (entries) => {
+          inView = entries.some((e) => e.isIntersecting);
+          if (inView) startDrift();
+          else stopDrift();
+        },
+        { rootMargin: '80px' },
+      ).observe(root);
+
+      reduce.addEventListener('change', () => {
+        if (reduce.matches) stopDrift();
+        else startDrift();
+      });
+
+      startDrift();
+
+      new MutationObserver(() => {
+        const next = document.documentElement.classList.contains('dark');
+        if (next === dark) return;
+        dark = next;
+        const t = performance.now() / 1000;
+        for (const l of loaded) paint(l, t);
+      }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+      new ResizeObserver(() => {
+        const t = performance.now() / 1000;
+        for (const l of loaded) paint(l, t);
+      }).observe(root);
+
+    });
+  }
+</script>

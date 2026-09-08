@@ -1,0 +1,75 @@
+<div data-tilt-control hidden class="w-full text-xs text-muted-foreground">
+  <button type="button" data-tilt-toggle class="min-h-11 rounded-md border border-border px-3 py-2" aria-pressed="false">Enable artwork tilt</button>
+  <span data-tilt-status role="status" class="ml-3"></span>
+</div>
+<script>
+  type MotionPermission = typeof DeviceOrientationEvent & { requestPermission?: () => Promise<'granted' | 'denied'> };
+  const control = document.querySelector<HTMLElement>('[data-tilt-control]');
+  const button = document.querySelector<HTMLButtonElement>('[data-tilt-toggle]');
+  const status = document.querySelector<HTMLElement>('[data-tilt-status]');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const coarse = matchMedia('(pointer: coarse)');
+  if (control && button && status && 'DeviceOrientationEvent' in window && coarse.matches) {
+    const motion = DeviceOrientationEvent as MotionPermission;
+    let enabled = false;
+    let baseline: { beta: number; gamma: number } | undefined;
+    let raf = 0;
+    let x = .5, y = .5, targetX = .5, targetY = .5;
+    let lastFrame = 0;
+    const clamp = (value: number) => Math.max(.08, Math.min(.92, value));
+    function paint(time: number) {
+      raf = 0;
+      if (!enabled || reduce.matches || document.hidden) return;
+      if (time - lastFrame < 32) { raf = requestAnimationFrame(paint); return; }
+      lastFrame = time;
+      x += (targetX - x) * .22;
+      y += (targetY - y) * .22;
+      document.querySelectorAll<HTMLElement>('[data-tilt-artwork]').forEach(host => {
+        const rect = host.getBoundingClientRect();
+        if (rect.bottom <= 0 || rect.top >= innerHeight || rect.width === 0 || rect.height === 0) return;
+        host.dispatchEvent(new PointerEvent('pointermove', { clientX: rect.left + x * rect.width, clientY: rect.top + y * rect.height, pointerType: 'touch' }));
+      });
+      if (Math.abs(targetX - x) + Math.abs(targetY - y) > .002) raf = requestAnimationFrame(paint);
+    }
+    function orient(event: DeviceOrientationEvent) {
+      if (!enabled || reduce.matches || document.hidden || event.beta === null || event.gamma === null) return;
+      baseline ??= { beta: event.beta, gamma: event.gamma };
+      const angle = (screen.orientation?.angle ?? 0) * Math.PI / 180;
+      const dx = event.gamma - baseline.gamma;
+      const dy = ((event.beta - baseline.beta + 540) % 360) - 180;
+      targetX = clamp(.5 + (dx * Math.cos(angle) + dy * Math.sin(angle)) / 60);
+      targetY = clamp(.5 + (dy * Math.cos(angle) - dx * Math.sin(angle)) / 60);
+      if (!raf) raf = requestAnimationFrame(paint);
+    }
+    function setEnabled(value: boolean) {
+      enabled = value;
+      baseline = undefined;
+      button!.textContent = value ? 'Disable artwork tilt' : 'Enable artwork tilt';
+      button!.setAttribute('aria-pressed', String(value));
+      if (!value) {
+        cancelAnimationFrame(raf); raf = 0;
+        document.querySelectorAll<HTMLElement>('[data-tilt-artwork]').forEach(host => host.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'touch' })));
+      }
+    }
+    control.hidden = reduce.matches;
+    button.addEventListener('click', async () => {
+      if (enabled) { setEnabled(false); status.textContent = ''; return; }
+      try {
+        if (motion.requestPermission && await motion.requestPermission() !== 'granted') {
+          status.textContent = 'Motion permission was not granted.'; return;
+        }
+        setEnabled(true);
+        status.textContent = 'Gently tilt your phone to move the artwork.';
+      } catch { status.textContent = 'Motion is unavailable in this browser.'; }
+    });
+    window.addEventListener('deviceorientation', orient, { passive: true });
+    window.addEventListener('orientationchange', () => { baseline = undefined; });
+    document.addEventListener('visibilitychange', () => {
+      baseline = undefined;
+      if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
+    });
+    reduce.addEventListener('change', () => { control.hidden = reduce.matches; if (reduce.matches) setEnabled(false); });
+    // Browsers without a permission prompt can respond to tilt immediately.
+    if (!motion.requestPermission && !reduce.matches) setEnabled(true);
+  }
+</script>

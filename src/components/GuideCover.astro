@@ -1,0 +1,1032 @@
+---
+/**
+ * The cover plate at the top of a guide.
+ *
+ * The same drawing as the guide's card in the rail, at nearly twice the
+ * sampling and alive rather than flat. It renders from a tone grid on a
+ * canvas for the same reason the hero does: a cell cannot climb the ramp
+ * — under a cursor or under a passing shimmer — if the only thing
+ * shipped is the character it already landed on.
+ *
+ * It used to idle as a diagonal band of heat wiping across the plate.
+ * That band was legible as an animation and illegible as a fact about
+ * the drawing — it crossed the reaching hands, the open palm and the
+ * spiral identically, because it knew nothing about any of them.
+ *
+ * What runs instead is positional. Every one of these drawings is two
+ * things approaching each other across a gap: two fingertips, a palm and
+ * the cubes above it, the head and tail of one spiral. So the plate is
+ * lit by two charges travelling inward from opposite edges — one pink,
+ * one teal — which collide on the seam between them. `artFocus` says
+ * where that seam is for each drawing, because it is a fact about the
+ * picture rather than about the layout.
+ *
+ * Two things move, both off that one field, so it reads as a single
+ * mechanism rather than a pile of effects: the charges drift in and out
+ * so the seam breathes, and waves leak outward from the seam in the
+ * seam's colour.
+ *
+ * Everything here is the drawing's own glyphs. There was briefly a fan
+ * of painted rays behind them, and it was wrong twice over: it was paint
+ * on an ascii site, and it was the most legible thing on the plate, so
+ * the artwork became the background of its own decoration. The only mark
+ * on this canvas that is not a character is the dwell ring.
+ *
+ * The field is light falling on the drawing, never more drawing. It is
+ * kept out of the cutoff for that reason — let it raise the threshold
+ * and the empty black lifts past the cut, fills with glyphs, and the
+ * subject dissolves into its own background. It may shade what is
+ * already there; it may not add.
+ *
+ * The pointer still applies heat, and it now picks up whichever charge's
+ * territory it is in, so reaching for the plate joins the field instead
+ * of overriding it.
+ *
+ * Past that, each drawing idles its own way — `artMotion`, one per
+ * picture, for the same reason `artFocus` is:
+ *
+ *   reach    the hands. Charges collide at the seam, and resting a
+ *            cursor fills a ring of ticks in the gap: the spinner
+ *            idiom, on the one drawing that is already about waiting
+ *            for contact. It completes and holds, and does not pretend
+ *            to load anything.
+ *   settle   the palm. Waves fall down the plate into the open hand.
+ *   stream   the spiral. Characters fall through the empty space behind
+ *            it, and skip any cell the subject occupies — the traffic
+ *            it is travelling through, kept strictly behind it.
+ */
+
+interface Chapter {
+  href: string;
+  part: number;
+  label: string;
+}
+
+interface Props {
+  /** Basename of the grid in `static/art`, without `-grid.json`. */
+  art: string;
+  /** Where the two charges collide, in fractions of the artwork. */
+  artFocus?: [number, number];
+  /** How this cover idles. See the schema for what each one is for. */
+  artMotion?: 'reach' | 'settle' | 'stream';
+  title: string;
+  subtitle?: string;
+  /** What a reader can do afterwards. Not a contents list. */
+  benefits?: string[];
+  /** Rendered above the title — "6 parts", a date, whatever the page has. */
+  eyebrow?: string;
+  /**
+   * Let the artwork run the full width behind the type instead of
+   * sitting in a mounted plate beside it.
+   *
+   * A framed plate says "this is a thing, here is a picture of it" —
+   * right for one guide. An index is not a thing, it is a way in to
+   * several, so its artwork should behave like the homepage hero: no
+   * edges, no frame, just a field the page sits on.
+   */
+  bleed?: boolean;
+  /**
+   * A second grid to use from `md` up, when there is one.
+   *
+   * A portrait painting fits a phone and strands half a desktop in empty
+   * space; cropping it wider only zooms into the middle. Two paintings is
+   * the honest answer to two very different frames, and the canvas swaps
+   * between them at the breakpoint rather than trying to make one serve
+   * both.
+   */
+  artWide?: string;
+  /** Where "start reading" goes, if there is a first chapter. */
+  startHref?: string;
+  chapters?: Chapter[];
+  /** Position in the guides index — picks the ground, as the card does. */
+  index?: number;
+}
+
+import { guidePalette, posterGround } from '@/lib/poster';
+
+const {
+  art,
+  artWide,
+  bleed = false,
+  artFocus = [0.5, 0.5],
+  artMotion = 'reach',
+  title,
+  subtitle,
+  benefits = [],
+  eyebrow,
+  startHref,
+  chapters = [],
+  index = 0,
+} = Astro.props;
+
+const palette = guidePalette(index);
+---
+
+<!-- Sized in viewport units rather than by aspect ratio. A cover is
+     "the first screen", and a fixed ratio makes that a different amount
+     of screen on every device — a 21:9 plate is a band on a phone and a
+     wall on a monitor. `min-h` rather than `h`, so a long benefit list
+     pushes the cover taller instead of overflowing it.
+
+     The artwork gets its own portrait panel rather than sitting behind
+     the type. Cropped to a wide band it was a strip of a drawing nobody
+     could identify; at its own 3:4 it is the drawing, which is the whole
+     reason it was commissioned. -->
+<header
+  class:list={[
+    'relative isolate flex min-h-[max(32rem,84svh)] flex-col pt-24 pb-14',
+    bleed
+      ? 'justify-end overflow-hidden'
+      : 'mx-auto w-full max-w-6xl justify-center gap-10 px-(--spacing-gutter) lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:items-center lg:gap-16',
+  ]}
+>
+  {
+    bleed && (
+      <>
+        <canvas
+          data-guide-cover
+          data-art={art}
+          data-art-wide={artWide}
+          data-focus={artFocus.join(',')}
+          data-motion={artMotion}
+          data-fit="cover"
+          data-anchor="0.5"
+          aria-hidden="true"
+          class="absolute inset-0 -z-10 size-full opacity-0 transition-opacity duration-700 [filter:drop-shadow(0_0_7px_rgb(60_150_255/0.34))]"
+        />
+        {/* The blue hour itself, and the only part of this that reliably
+            reads. Tinting per cell kept getting diluted — the charge
+            field lerped it out, and what survived sat at 0.35 alpha over
+            a near-black page. A screen blend over the finished canvas
+            lifts wherever there is ink and leaves the empty black alone,
+            which is exactly what the recipe specifies and is one
+            compositor pass rather than a decision per glyph. */}
+        <div
+          class="absolute inset-0 -z-10 bg-[#3ca6ff] opacity-[0.34] mix-blend-screen"
+          aria-hidden="true"
+        />
+        {/* Vignette. Part of the same recipe as the glow: the corners
+            falling away is what stops a full-bleed field reading as
+            wallpaper. */}
+        <div
+          class="absolute inset-0 -z-10 bg-[radial-gradient(120%_95%_at_50%_45%,transparent_42%,rgb(0_0_0/0.55)_100%)]"
+          aria-hidden="true"
+        />
+        {/* Two grounds. The vertical wash lifts the type off the artwork;
+            the ellipse keeps the left column readable without flattening
+            the whole field, which is where the drawing lives. */}
+        <div
+          class="absolute inset-0 -z-10 bg-linear-to-t from-background from-2% via-background/35 via-46% to-transparent"
+          aria-hidden="true"
+        />
+        <div
+          class="absolute inset-0 -z-10 bg-[radial-gradient(58%_52%_at_24%_70%,var(--background)_0%,transparent_72%)]"
+          aria-hidden="true"
+        />
+        {/* The edges dissolve rather than being cut, as on the homepage. */}
+        <div
+          class="absolute inset-0 -z-10 bg-linear-to-r from-background via-transparent via-12% to-background"
+          aria-hidden="true"
+        />
+      </>
+    )
+  }
+
+  {/* Same container recipe as every section below it — max-width on the
+      outside, gutter on the inside. Padding the header instead put the
+      title a gutter's width left of the cards under it. */}
+  <div
+    class:list={[
+      'order-2 lg:order-1',
+      bleed && 'mx-auto w-full max-w-(--container-wide) px-(--spacing-gutter)',
+    ]}
+  >
+    {eyebrow && <p class="nameplate mb-3 text-primary">{eyebrow}</p>}
+
+    <h1 class="max-w-[16ch] text-3xl sm:text-4xl lg:text-5xl">{title}</h1>
+
+    {
+      subtitle && (
+        <p class="mt-4 max-w-[52ch] text-base text-muted-foreground sm:text-lg">{subtitle}</p>
+      )
+    }
+
+    {
+      /* The exchange slot (a chat beat in place of a bullet list) wins
+         over benefits when the caller provides it. */
+      Astro.slots.has('exchange') ? (
+        <slot name="exchange" />
+      ) : (
+        benefits.length > 0 && (
+          <ul class="mt-7 grid max-w-[60ch] gap-2.5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            {benefits.map((benefit) => (
+              <li class="flex gap-2.5 text-sm leading-snug">
+                {/* The one contrast accent, rationed: a lit pip per line,
+                    the same vocabulary as the indicator lamps. */}
+                <span
+                  aria-hidden="true"
+                  class="mt-1.5 size-1.5 shrink-0 rounded-full bg-[var(--contrast)]"
+                />
+                <span>{benefit}</span>
+              </li>
+            ))}
+          </ul>
+        )
+      )
+    }
+
+    <div class="mt-8 flex flex-wrap items-center gap-4">
+      {
+        startHref && (
+          <a
+            href={startHref}
+            class="cap inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-[filter] hover:brightness-110"
+          >
+            Start reading <span aria-hidden="true">→</span>
+          </a>
+        )
+      }
+      {
+        chapters.length > 0 && (
+          <p class="font-mono text-xs text-muted-foreground">
+            {chapters.length + 1} parts · read in order
+          </p>
+        )
+      }
+    </div>
+
+    {
+      chapters.length > 0 && (
+        <ol class="mt-7 grid gap-px border-t border-rule pt-4 font-mono text-xs">
+          {chapters.map((chapter) => (
+            <li>
+              <a
+                href={chapter.href}
+                class="flex gap-3 rounded-xs px-2 py-1.5 text-muted-foreground transition-colors hover:bg-primary/5 hover:text-foreground"
+              >
+                <span class="text-primary">{String(chapter.part).padStart(2, '0')}</span>
+                <span class="min-w-0">{chapter.label}</span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      )
+    }
+  </div>
+
+  <!-- The plate, as a banner. The same object as the guide's card in
+       the index — same ground, same scanlines, same grain, the drawing
+       resolving on it — at nearly twice the sampling. It used to be a
+       chassis with screws and a recessed screen; the hardware went to
+       the sampling bench, where the instruments are. -->
+  {
+    !bleed && (
+      <div class="order-1 lg:order-2" data-arrive style="--arrive-i:1">
+        <div
+          class="screen-raised grain group relative mx-auto aspect-[3/4] w-full max-w-[22rem] lg:max-w-none"
+          style={[`--card-base:${palette.via}`, `--sprite-shadow:oklch(0.14 0.03 280)`].join(';')}
+        >
+          <span
+            class="card-ground pointer-events-none absolute inset-0"
+            style={`background:${posterGround(palette.seed, palette)}`}
+            aria-hidden="true"
+          />
+          <canvas
+            data-guide-cover
+            data-art={art}
+            data-focus={artFocus.join(',')}
+            data-motion={artMotion}
+            aria-hidden="true"
+            class="absolute inset-0 size-full opacity-0 transition-opacity duration-700"
+          />
+        </div>
+      </div>
+    )
+  }
+
+</header>
+
+<script>
+  import { TREATMENT_RAMPS, paperTone, pickGlyph, readTreatment } from '@/lib/treatments';
+
+  /** Cutoff and its per-cell wobble, as in the hero: a single flat
+      threshold draws a clean contour, which inked art never has. */
+  const CUT = 0.11;
+  const JITTER = 0.06;
+
+  /* The two charges — blueprint inks. Sky arrives from the near side,
+     cyan from the far one; which is which is arbitrary, but it has to
+     be consistent or the seam changes colour when the drawing does.
+     Kept in step with COLORS in lib/transformer-engine.ts.
+
+     Two palettes, because the glass the plate sits behind inverts with
+     the chassis: a dark page mounts the plate on PAPER-WHITE glass,
+     where the pale blueprint inks wash out to nothing — so the white
+     glass gets deep inks, and a seam that darkens toward ink instead
+     of blowing out to white. Bleeding covers have no glass at all and
+     stay page-bound. */
+  interface Palette {
+    pink: [number, number, number];
+    teal: [number, number, number];
+    seam: [number, number, number];
+    ink: [number, number, number];
+  }
+  const DARK_GLASS: Palette = {
+    pink: [163, 194, 255],
+    teal: [121, 210, 242],
+    seam: [240, 247, 255],
+    ink: [226, 236, 255],
+  };
+  const LIGHT_GLASS: Palette = {
+    pink: [58, 96, 200],
+    teal: [22, 106, 146],
+    seam: [16, 22, 36],
+    ink: [46, 52, 68],
+  };
+
+  /** Seconds for one full breath of the charges in and out. */
+  const BREATH = 11;
+  /** How far the sources sit either side of the seam, in plate widths. */
+  const SPREAD = 0.42;
+  /** Seconds for one energy wave to travel out from the seam, and how
+      many are in flight at once. */
+  const WAVE = 6;
+  const WAVES = 3;
+
+  /** Radius of the pointer's stamp, in cells, and how fast it cools. */
+  const REACH = 10;
+  const DECAY = 0.94;
+
+  /** Milliseconds of continuous hover before the ring is full. */
+  const DWELL = 1600;
+  /** Ticks in the ring, and its radius as a fraction of plate width. */
+  const TICKS = 24;
+  const RING = 0.13;
+
+  const pageDark = () => document.documentElement.classList.contains('dark');
+
+  function hash01(x: number, y: number): number {
+    return ((((x * 374761393) ^ (y * 668265263)) >>> 0) % 1024) / 1024;
+  }
+
+  interface Grid {
+    cols: number;
+    rows: number;
+    lum: string;
+  }
+
+  for (const canvas of document.querySelectorAll<HTMLCanvasElement>('canvas[data-guide-cover]')) {
+    const ctx = canvas.getContext('2d');
+    const art = canvas.dataset.art;
+    if (!ctx || !art) continue;
+
+    const [fu, fv] = (canvas.dataset.focus ?? '0.5,0.5').split(',').map(Number) as [number, number];
+    const motion = (canvas.dataset.motion ?? 'reach') as 'reach' | 'settle' | 'stream';
+    /** `reach` measures waves outward from the seam; the other two run
+        them straight down, because both of those drawings are about
+        something descending rather than something meeting. */
+    const radial = motion === 'reach';
+
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    let cols = 0;
+    let rows = 0;
+    let lum = new Uint8Array(0);
+    let cw = 0;
+    let chh = 0;
+    /** Top-left of the drawn grid inside the canvas box; negative when
+        the plate is cropping. */
+    let ox = 0;
+    let oy = 0;
+    /* The mounted plate sits behind glass whose theme is the device
+       setting; a bleeding cover sits on the page itself. */
+    const mounted = !canvas.dataset.fit;
+    // The Transformer paper keeps its inverted, luminous shading in both themes.
+    const transformerPaper = canvas.dataset.art === 'transformer-scroll';
+    /* A mounted plate sits on a banner ground, which is dark in both
+       themes, so it always takes the pale inks; only a bleeding cover
+       follows the page. */
+    const palette = () => (transformerPaper || mounted || pageDark() ? DARK_GLASS : LIGHT_GLASS);
+    let pal = palette();
+    let ramp = TREATMENT_RAMPS[readTreatment(document.documentElement)];
+    let raf = 0;
+    /** Plate size in CSS pixels. Cached because the draw loop needs it
+        every frame and `getBoundingClientRect` in a rAF is a layout. */
+    let canvasW = 0;
+    let canvasH = 0;
+    /** Pointer heat, on top of the field. One buffer, because a finger
+        and an arriving charge are the same thing to a cell. */
+    let touch = new Float32Array(0);
+    let touched = false;
+    /** Milliseconds the pointer has rested on the plate, capped at
+        `DWELL`. Zero means the ring is not drawn at all. */
+    let dwell = 0;
+    let hovering = false;
+
+    function measure(): boolean {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0 || cols === 0) return false;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      canvasW = rect.width;
+      canvasH = rect.height;
+
+      /* One scale for both axes either way — deriving cell size per axis
+         squashes the drawing flat, which at a glance reads as "the art is
+         faint" rather than "the art is the wrong shape".
+       *
+       * Which scale depends on the frame. In a mounted plate the box is
+       * the artwork's own 3:4, so covering it crops nothing. Bleeding
+       * across a full-width hero it would crop savagely — a 3:4 drawing
+       * scaled to a 1400px width is nearly 1900px tall, so a 900px hero
+       * shows the middle half and a black hole becomes a dark blob. So a
+       * bleeding cover FITS TO HEIGHT and sits off-centre instead, which
+       * is the arrangement the homepage hero already uses: art to one
+       * side, type in the space it leaves. */
+      const fitHeight = canvas.dataset.fit === 'height';
+      const unit = fitHeight
+        ? rect.height / (rows * 2)
+        : Math.max(rect.width / cols, rect.height / (rows * 2));
+      cw = unit;
+      chh = unit * 2;
+      ox = (rect.width - cols * cw) * (fitHeight ? Number(canvas.dataset.anchor ?? 0.5) : 0.5);
+      oy = (rect.height - rows * chh) / 2;
+
+      ctx.font = `${(chh * 0.98).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      return true;
+    }
+
+    /* Everything below works in "plate widths": x is already in those
+       units once divided by cols, and y has to be doubled first because
+       a cell is half as wide as it is tall. Distances are then honest
+       and a radius is a circle rather than an ellipse. */
+    const wavePhase = new Float32Array(WAVES);
+
+    function drawRing(cxp: number, cyp: number, progress: number): void {
+      /* The spinner idiom, in the same marks as the drawing: ticks round
+         a circle, lighting in order. Sits on the seam because that is
+         the one place in every one of these pictures where nothing is
+         drawn — a ring over the knuckles would be graffiti. */
+      const radius = canvasW * RING;
+      const lit = progress * TICKS;
+
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineWidth = Math.max(1.5, canvasW * 0.006);
+      for (let i = 0; i < TICKS; i += 1) {
+        const on = Math.min(1, Math.max(0, lit - i));
+        if (on <= 0) continue;
+        // Ticks start at 12 o'clock so a half-full ring reads as half.
+        const a = -Math.PI / 2 + (i / TICKS) * Math.PI * 2;
+        const inner = radius * 0.74;
+        const outer = radius * (0.74 + 0.26 * on);
+        ctx.beginPath();
+        ctx.moveTo(cxp + Math.cos(a) * inner, cyp + Math.sin(a) * inner);
+        ctx.lineTo(cxp + Math.cos(a) * outer, cyp + Math.sin(a) * outer);
+        ctx.strokeStyle = `rgba(${pal.seam.map(Math.round).join(',')},${(on * 0.85).toFixed(3)})`;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    /**
+     * Falloff toward the edges of the DRAWING, not of the canvas.
+     *
+     * A fitted cover does not fill its box, so the artwork ends somewhere
+     * in the middle of the frame — and it ends in a hard rectangle,
+     * because these sources are mid-grey at their borders rather than
+     * black. On a mounted plate that edge IS the plate and belongs. When
+     * the art bleeds it is only a seam, so the outer cells fade and the
+     * drawing dissolves into the page the way the homepage hero does.
+     */
+    /* A duotone ramp, not a tint.
+     *
+     * Lerping the ink between two hues by row was too polite to see — it
+     * moved every cell a few points and the plate stayed grey. What reads
+     * is mapping TONE to colour: shadows to a deep midnight blue,
+     * midtones to the blue hour itself, highlights blown to near-white
+     * with the accent in them. Dark parts of the picture end up a
+     * different COLOUR from bright parts, which is what makes a duotone
+     * legible as colour rather than as a wash over everything.
+     *
+     * The accent only appears in the top stop, where the drawing is
+     * already brightest, so pink stays rationed instead of becoming a
+     * tint on the whole field. */
+    const TONE_STOPS: ReadonlyArray<readonly [number, number, number]> = [
+      [46, 96, 178],
+      [64, 142, 222],
+      [124, 192, 242],
+      [206, 232, 255],
+      [255, 236, 246],
+    ];
+
+    function duotone(lit: number): [number, number, number] {
+      if (canvas.dataset.fit !== 'cover') return pal.ink;
+      const last = TONE_STOPS.length - 1;
+      /* Square-rooted, and the darkest stop is still a saturated blue
+         rather than near-black. Both for the same reason: tone in these
+         drawings skews low, so a linear lookup parked almost every cell
+         on stop 0 — and with stop 0 nearly black, the field came out
+         monochrome despite having five colours in it. Alpha already
+         carries darkness; the ramp only has to carry hue. */
+      const pos = Math.sqrt(Math.min(1, Math.max(0, lit))) * last;
+      const i = Math.min(last - 1, Math.floor(pos));
+      const f = pos - i;
+      const a = TONE_STOPS[i] as readonly [number, number, number];
+      const b = TONE_STOPS[i + 1] as readonly [number, number, number];
+      return [
+        Math.round(a[0] + (b[0] - a[0]) * f),
+        Math.round(a[1] + (b[1] - a[1]) * f),
+        Math.round(a[2] + (b[2] - a[2]) * f),
+      ];
+    }
+
+    function edgeFade(x: number, y: number): number {
+      if (canvas.dataset.fit !== 'height') return 1;
+      const span = 0.12;
+      const fx = Math.min(x / cols, 1 - x / cols) / span;
+      const fy = Math.min(y / rows, 1 - y / rows) / span;
+      return Math.min(1, Math.max(0, fx)) * Math.min(1, Math.max(0, fy));
+    }
+
+    function draw(now = performance.now()): void {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Skip the rows and columns the crop has pushed outside the plate.
+      const y0 = Math.max(0, Math.floor(-oy / chh));
+      const y1 = Math.min(rows - 1, Math.ceil((canvasH - oy) / chh));
+      const x0 = Math.max(0, Math.floor(-ox / cw));
+      const x1 = Math.min(cols - 1, Math.ceil((canvasW - ox) / cw));
+
+      // Drops carry their own columns, so only the row window is needed.
+      if (motion === 'stream') drawStream(now, y0, y1);
+
+      /* Cells are half as wide as they are tall, so vertical distances
+         are doubled before anything measures one. Derived here rather
+         than once at setup: `cols` is zero until the grid has landed,
+         and hoisting this made it 2/0 — every distance then came out
+         infinite, every colour NaN, and an invalid `rgba()` string
+         leaves canvas on its default fill, which is black. A plate of
+         black glyphs on black is indistinguishable from a broken fetch. */
+      const aspect = 2 / cols;
+
+      /* The seam, in grid space and in pixels. */
+      const sx = fu * cols;
+      const sy = fv * rows;
+      const seamPx = ox + sx * cw + cw / 2;
+      const seamPy = oy + sy * chh + chh / 2;
+
+      /* The two sources, breathing in toward the seam and back out.
+         They travel along the plate's diagonal, which is the axis all
+         three of these drawings are composed on. */
+      const breath = (Math.sin((now / 1000 / BREATH) * Math.PI * 2) + 1) / 2;
+      const reach = SPREAD * (0.55 + breath * 0.45);
+      const ax = -0.78 * reach;
+      const ay = 0.62 * reach;
+
+      /* Wave phases depend only on the clock, so they are hoisted out of
+         the cell loop rather than recomputed fifty thousand times. */
+      for (let w = 0; w < WAVES; w += 1) {
+        wavePhase[w] = (now / 1000 / WAVE + w / WAVES) % 1;
+      }
+
+      for (let y = y0; y <= y1; y += 1) {
+        for (let x = x0; x <= x1; x += 1) {
+          const base = (lum[y * cols + x] ?? 0) / 255;
+
+          /* This runs about fifty thousand times a frame, so nothing in
+             here allocates and nothing calls a slow builtin: no array
+             returns for the colour mixing, `sqrt` rather than `hypot`,
+             and a rational falloff standing in for `exp`. Written the
+             obvious way with a `mix()` helper it churned six figures of
+             short-lived arrays per frame and wedged the main thread. */
+          const dx = (x - sx) / cols;
+          const dy = (y - sy) * aspect;
+
+          const pax = dx - ax;
+          const pay = dy - ay;
+          const pbx = dx + ax;
+          const pby = dy + ay;
+          const dA = Math.sqrt(pax * pax + pay * pay);
+          const dB = Math.sqrt(pbx * pbx + pby * pby);
+          const sum = dA + dB;
+
+          /* -1 deep in teal's territory, +1 deep in pink's, 0 on the
+             seam. This is the whole colour model. */
+          const bias = sum > 0 ? (dB - dA) / sum : 0;
+          /* Falls off with distance from the seam, so the collision is
+             a place on the plate and not a global tint. */
+          const near = dA < dB ? dA : dB;
+          /* Wide enough that the charge reaches most of the drawing.
+             Tight, the colour was a dot on an otherwise grey plate and
+             the cover read as broken rather than as lit from two
+             sides. */
+          const seam = 1 / (1 + (near * near) / 0.19);
+
+          /* Waves, measured along whatever axis this drawing's motion
+             runs on: outward from the seam when two things are reaching
+             for each other, straight down when something is falling into
+             a hand or travelling through layers. */
+          const axis = radial ? near : y / rows;
+
+          let wave = 0;
+          for (let w = 0; w < WAVES; w += 1) {
+            const t = wavePhase[w] ?? 0;
+            const d = Math.abs(axis - t * 0.85);
+            if (d < 0.06) {
+              const f = 1 - d / 0.06;
+              wave += f * f * (1 - t) * 0.5;
+            }
+          }
+
+          let field = seam * 0.85 + wave;
+          if (field > 1) field = 1;
+          const finger = touch[y * cols + x] ?? 0;
+          let heat = field + finger;
+          if (heat > 1) heat = 1;
+
+          /* The cut sees `base` and the pointer, and deliberately NOT the
+             field. A charge is light falling on the drawing, not more
+             drawing: let it into the threshold and it lifts the empty
+             black past the cut, the void fills with glyphs and the
+             subject dissolves into its own background. The pointer is in
+             here because that one is a person deliberately reaching for
+             detail, which is the opposite case. */
+          if (base + finger * 0.5 < CUT + (hash01(x, y) - 0.5) * 2 * JITTER) continue;
+
+          /* Same reason the field is only a third of the brightness the
+             pointer is: it may shade what is drawn, never flatten it. */
+          const lit = Math.min(1, base + finger * 0.35 + field * 0.12);
+          /* On light glass the ramp runs the other way: highlights go
+             thin, shadows take the ink. Finger lift still climbs after
+             that, so reaching for a cell never thins it. */
+          const invert = transformerPaper || pal === LIGHT_GLASS;
+          const tone = paperTone(base, finger * 0.35 + field * 0.12, invert);
+          const glyph = pickGlyph(ramp, tone);
+          if (!glyph || glyph === ' ') continue;
+
+          /* Territory picks the hue, proximity to the seam pulls it
+             toward the seam colour — white on dark glass, ink on white
+             glass — and heat decides how far from plain ink the cell
+             travels at all. Three lerps, unrolled per channel. */
+          const tHue = (bias + 1) / 2;
+          const tSeam = Math.min(1, seam * seam * 1.1);
+          const tHeat = Math.min(1, heat * 1.5);
+
+          const cr = pal.teal[0] + (pal.pink[0] - pal.teal[0]) * tHue;
+          const cg = pal.teal[1] + (pal.pink[1] - pal.teal[1]) * tHue;
+          const cb = pal.teal[2] + (pal.pink[2] - pal.teal[2]) * tHue;
+
+          const hr = cr + (pal.seam[0] - cr) * tSeam;
+          const hg = cg + (pal.seam[1] - cg) * tSeam;
+          const hb = cb + (pal.seam[2] - cb) * tSeam;
+
+          /* Two colour models, one per frame type.
+           *
+           * A mounted plate uses the two-charge field: territory picks
+           * the hue, the seam lifts it toward white. That is a fact about
+           * a drawing of two things meeting, and it belongs there.
+           *
+           * A full-bleed hero uses the tonal ramp instead, because the
+           * field was quietly winning. `tSeam` pulls cells toward SEAM —
+           * near-white — across most of a wide plate, so the duotone was
+           * being computed and then lerped straight back out of
+           * existence. It looked like the colour had not been applied.
+           * Here the ramp carries the hue and heat only whitens, so the
+           * pointer still reads without the field repainting the sky. */
+          const base3 = duotone(lit);
+          const toned = canvas.dataset.fit === 'cover';
+          const tr = toned ? pal.seam[0] : hr;
+          const tg2 = toned ? pal.seam[1] : hg;
+          const tb = toned ? pal.seam[2] : hb;
+          const amount = toned ? Math.min(1, finger * 1.5) : tHeat;
+
+          const r = (base3[0] + (tr - base3[0]) * amount) | 0;
+          const g = (base3[1] + (tg2 - base3[1]) * amount) | 0;
+          const b = (base3[2] + (tb - base3[2]) * amount) | 0;
+
+          const alpha = Math.min(1, 0.35 + tone * 0.7) * edgeFade(x, y);
+          if (alpha < 0.02) continue;
+          ctx.fillStyle = `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
+          ctx.fillText(glyph, ox + x * cw + cw / 2, oy + y * chh + chh / 2);
+        }
+      }
+
+      /* The dwell ring belongs to `reach` alone: it is the gap between
+         two fingertips made into a thing you wait on. On a spiral or a
+         held palm it would just be a widget parked on the artwork. */
+      if (motion === 'reach' && dwell > 0) {
+        drawRing(seamPx, seamPy, Math.min(1, dwell / DWELL));
+      }
+    }
+
+    /**
+     * Traffic falling through the empty space behind the drawing.
+     *
+     * Only for `stream`, and only where the drawing is not: each column
+     * drops a short tail of characters, and any cell the subject already
+     * occupies is skipped outright. That skip is the whole safety
+     * property — the background can never write over the foreground, so
+     * this cannot do to the spiral what the painted rays did to the
+     * hands.
+     */
+    const STREAM_SYMBOLS = '01<>+=/\\|:·∑×→↓';
+    /* Actual vocabulary rather than noise. The drawing is a thing
+       descending through layers in order, so the traffic it falls
+       through is the traffic of the machine it is about. */
+    const STREAM_WORDS = [
+      'attention', 'softmax', 'query', 'key', 'value', 'token',
+      'embed', 'layer', 'norm', 'residual', 'logits', 'head',
+    ];
+
+    /**
+     * Three depths. Size, rate and brightness all move together, because
+     * that is the only combination the eye reads as distance: a small
+     * glyph moving fast reads as small, not as far away.
+     */
+    const STREAM_LAYERS = [
+      { scale: 0.55, rate: 0.22, tail: 0.2, head: 0.42 },
+      { scale: 0.9, rate: 0.5, tail: 0.34, head: 0.66 },
+      { scale: 1.4, rate: 0.95, tail: 0.5, head: 0.92 },
+    ] as const;
+
+    interface Drop {
+      col: number;
+      layer: number;
+      speed: number;
+      phase: number;
+      /** A word falls as a word; null means a run of loose symbols. */
+      text: string | null;
+      len: number;
+      pink: boolean;
+    }
+
+    let drops: Drop[] = [];
+
+    function buildDrops(): void {
+      /* Deliberately not one per column. An even comb of drops is the
+         thing that read as uniform however much the speeds varied —
+         it is the spacing that gives it away, not the motion. */
+      const count = Math.max(24, Math.round(cols * 0.8));
+      const next: Drop[] = [];
+
+      /* Every property gets its own salt. Sharing one between the word
+         and the speed is what made this look wrong: drops that chose the
+         same word also got the same speed, so they fell in permanent
+         lockstep and printed the same letter across neighbouring columns
+         — reading as "yyyy" rather than as four words falling. */
+      for (let i = 0; i < count; i += 1) {
+        const rLayer = hash01(i, 11);
+        const rCol = hash01(i, 47);
+        const rSpeed = hash01(i, 29);
+        const rPhase = hash01(i, 53);
+        const rWord = hash01(i, 97);
+        const rKind = hash01(i, 131);
+        const rTint = hash01(i, 197);
+
+        // Weighted toward the back, so depth reads as depth rather than
+        // as three equal ribbons.
+        const layer = rLayer < 0.5 ? 0 : rLayer < 0.82 ? 1 : 2;
+        const word = rKind < 0.5 ? (STREAM_WORDS[Math.floor(rWord * STREAM_WORDS.length)] ?? null) : null;
+
+        next.push({
+          col: Math.min(cols - 1, Math.floor(rCol * cols)),
+          layer,
+          // Wide jitter on top of the layer rate, so two drops in the
+          // same plane drift apart instead of travelling together.
+          speed: STREAM_LAYERS[layer]!.rate * (0.55 + rSpeed * 1.05),
+          phase: rPhase * 1.6,
+          text: word,
+          len: word ? word.length : 5 + Math.floor(rKind * 15),
+          pink: rTint > 0.78,
+        });
+      }
+
+      // Far planes first, so nearer ones overlay them.
+      next.sort((a, b) => a.layer - b.layer);
+      drops = next;
+    }
+
+    function drawStream(now: number, y0: number, y1: number): void {
+      if (!drops.length) buildDrops();
+      const seconds = now / 1000;
+
+      // `measure` owns the canvas font; borrow and give it back.
+      const baseFont = ctx.font;
+      let currentLayer = -1;
+
+      for (const d of drops) {
+        const L = STREAM_LAYERS[d.layer]!;
+        if (d.layer !== currentLayer) {
+          ctx.font = `${(chh * 0.98 * L.scale).toFixed(2)}px ui-monospace, SFMono-Regular, monospace`;
+          currentLayer = d.layer;
+        }
+
+        const headY = ((seconds * d.speed + d.phase) % 1.5 - 0.25) * rows;
+        const tint = d.pink ? pal.pink : pal.teal;
+
+        /* Spacing scales with the glyph so the near plane does not draw
+           big characters at small-character pitch — but never below one
+           cell. Below that, `round` lands two consecutive characters on
+           the same row and stacks them: the far layer was printing "yy"
+           and "nnn" where it meant to print a word falling. */
+        const step = Math.max(1, L.scale);
+
+        for (let k = 0; k < d.len; k += 1) {
+          const y = Math.round(headY - k * step);
+          if (y < y0 || y > y1) continue;
+          // Never over the subject. This is the safety property.
+          if ((lum[y * cols + d.col] ?? 0) / 255 >= CUT) continue;
+
+          /* A word has to stay readable as a word. Fading straight to
+             zero left the first letter bright and the rest below the
+             threshold, so "attention" fell as a lone "n" and the whole
+             thing read as loose noise rather than as text. Words hold
+             most of their brightness the whole way down and only taper
+             at the very end; symbol runs, which mean nothing in
+             particular, still trail off properly. */
+          const drop = k / d.len;
+          const fade = d.text ? 0.55 + 0.45 * (1 - drop) : 1 - drop;
+          const a = k === 0 ? L.head : L.tail * fade;
+          if (a < 0.02) continue;
+
+          /* A word reads downward, so the head of the drop is its LAST
+             letter — otherwise it falls spelled backwards. Loose symbols
+             churn on a slow clock so the run reads as changing data
+             rather than as a rigid ribbon sliding past. */
+          const ch = d.text
+            ? d.text[d.text.length - 1 - k]
+            : STREAM_SYMBOLS[(d.col * 31 + y * 17 + ((seconds * 3) | 0)) % STREAM_SYMBOLS.length];
+          if (!ch) continue;
+
+          ctx.fillStyle = `rgba(${tint[0]},${tint[1]},${tint[2]},${a.toFixed(3)})`;
+          ctx.fillText(ch, ox + d.col * cw + cw / 2, oy + y * chh + chh / 2);
+        }
+      }
+
+      ctx.font = baseFont;
+    }
+
+    let last = 0;
+    function tick(now: number): void {
+      // Rate-limited to ~24fps. This repaints the whole plate — there is
+      // no small dirty region when the thing moving is a field covering
+      // all of it — and a slow bloom does not need 60.
+      if (now - last > 41) {
+        const elapsed = last === 0 ? 41 : Math.min(now - last, 200);
+        last = now;
+
+        /* The ring fills while the pointer rests and empties faster than
+           it filled once it leaves, so a passing cursor never leaves a
+           stub of progress sitting on the plate. */
+        dwell = hovering
+          ? Math.min(DWELL, dwell + elapsed)
+          : Math.max(0, dwell - elapsed * 2.5);
+
+        if (touched) {
+          let alive = false;
+          for (let i = 0; i < touch.length; i += 1) {
+            const h = (touch[i] ?? 0) * DECAY;
+            touch[i] = h > 0.004 ? h : 0;
+            if (touch[i] > 0) alive = true;
+          }
+          touched = alive;
+        }
+
+        draw(now);
+      }
+      raf = requestAnimationFrame(tick);
+    }
+
+    const wide = matchMedia('(min-width: 768px)');
+    const gridName = () =>
+      wide.matches && canvas.dataset.artWide ? canvas.dataset.artWide : art;
+
+    fetch(`/art/${gridName()}-grid.json`)
+      .then((res) => res.json() as Promise<Grid>)
+      .then((grid) => {
+        cols = grid.cols;
+        rows = grid.rows;
+        lum = Uint8Array.from(atob(grid.lum), (c) => c.charCodeAt(0));
+        touch = new Float32Array(cols * rows);
+
+        if (!measure()) return;
+        draw();
+        canvas.classList.remove('opacity-0');
+
+        new ResizeObserver(() => {
+          if (measure()) draw();
+        }).observe(canvas);
+
+        new MutationObserver(() => {
+          pal = palette();
+          ramp = TREATMENT_RAMPS[readTreatment(document.documentElement)];
+          draw();
+        }).observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['class', 'data-treatment', 'data-instrument'],
+        });
+
+        /* Hover and tap both reach it. `pointermove` covers a mouse; a
+           touch drag fires the same event, so the two need no separate
+           path — and `touch-action` is left alone so a scroll gesture
+           over the plate still scrolls. */
+        const stamp = (event: PointerEvent) => {
+          const rect = canvas.getBoundingClientRect();
+          const cx = Math.floor((event.clientX - rect.left - ox) / cw);
+          const cy = Math.floor((event.clientY - rect.top - oy) / chh);
+
+          for (let dy = -REACH; dy <= REACH; dy += 1) {
+            for (let dx = -REACH; dx <= REACH; dx += 1) {
+              const x = cx + dx;
+              const y = cy + dy;
+              if (x < 0 || y < 0 || x >= cols || y >= rows) continue;
+              const dist = Math.hypot(dx, dy);
+              if (dist > REACH) continue;
+              const i = y * cols + x;
+              touch[i] = Math.min(1, (touch[i] ?? 0) + (1 - dist / REACH) * 0.4);
+            }
+          }
+          touched = true;
+          // A still plate has no loop running to pick this up.
+          if (reduce.matches) draw();
+        };
+
+        const plate = canvas.parentElement;
+        if (plate) plate.dataset.tiltArtwork = '';
+        plate?.addEventListener('pointermove', stamp);
+
+        /* Dwell is a hover affordance, so it is mouse-shaped: a finger
+           that touches the plate is already gone by the time a ring
+           would mean anything, and leaving one filling under a held
+           touch would just look stuck. */
+        plate?.addEventListener('pointerenter', (event) => {
+          if ((event as PointerEvent).pointerType === 'touch') return;
+          hovering = true;
+        });
+        const release = () => {
+          hovering = false;
+        };
+        plate?.addEventListener('pointerleave', release);
+        plate?.addEventListener('pointercancel', release);
+        // A plate that scrolls out from under a resting cursor should
+        // not keep filling where nobody can see it.
+        window.addEventListener('blur', release);
+
+        if (reduce.matches) return;
+
+        // Nothing off-screen has any business holding a rAF loop open.
+        new IntersectionObserver((entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting && !raf) {
+              last = 0;
+              raf = requestAnimationFrame(tick);
+            } else if (!entry.isIntersecting && raf) {
+              cancelAnimationFrame(raf);
+              raf = 0;
+              // Scrolled away mid-hover: come back to an empty ring
+              // rather than to one frozen part-full.
+              hovering = false;
+              dwell = 0;
+            }
+          }
+        }).observe(canvas);
+      })
+      .then(() => {
+        /* Swap paintings at the breakpoint. Rebuilding from a second
+           grid is the whole point of the two-source approach — reusing
+           the portrait one and cropping is what left the desktop empty
+           at the sides in the first place. */
+        if (!canvas.dataset.artWide) return;
+        let loaded = gridName();
+        wide.addEventListener('change', () => {
+          /* Guard on the name, not on the event. A media-query listener
+             fires whenever the query is re-evaluated, which includes
+             resizes that never cross the breakpoint — and each one would
+             otherwise re-request a grid already in hand. */
+          const next = gridName();
+          if (next === loaded) return;
+          loaded = next;
+          void fetch(`/art/${next}-grid.json`)
+            .then((res) => res.json() as Promise<Grid>)
+            .then((g) => {
+              cols = g.cols;
+              rows = g.rows;
+              lum = Uint8Array.from(atob(g.lum), (c) => c.charCodeAt(0));
+              touch = new Float32Array(cols * rows);
+              if (measure()) draw();
+            })
+            .catch(() => {
+              /* Keep whichever grid is already loaded. */
+            });
+        });
+      })
+      .catch(() => {
+        /* No cover art; the title below still reads. */
+      });
+  }
+</script>

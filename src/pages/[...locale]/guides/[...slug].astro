@@ -1,0 +1,200 @@
+---
+import ContentAgeNotice from "@/components/ContentAgeNotice.astro";
+import type { GetStaticPaths } from 'astro';
+import { getCollection, render } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import GuideCover from '@/components/GuideCover.astro';
+import ChatExchange from '@/components/ChatExchange.astro';
+import { chapterNeighbours, getGuides, splitId } from '@/lib/content';
+import { LOCALES, formatDate, localeParam, localePath, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+export const getStaticPaths = (async () => {
+  const paths: { params: { locale: string | undefined; slug: string }; props: Props }[] = [];
+
+  for (const locale of LOCALES) {
+    const guides = await getGuides(locale);
+    guides.forEach((guide, index) => {
+      for (const entry of [guide.root, ...guide.chapters]) {
+        // A guide root lives at `<guide>/index.mdx` but must be served
+        // from `/guides/<guide>`, not `/guides/<guide>/index`.
+        const slug = splitId(entry.id).slug.replace(/\/index$/, '');
+        paths.push({
+          params: { locale: localeParam(locale), slug },
+          // `index` is the guide's position in the index, which picks
+          // the ground its cover is printed on — the same one its card
+          // in the rail already wears.
+          props: { entry, guide, locale, index },
+        });
+      }
+    });
+  }
+
+  return paths;
+}) satisfies GetStaticPaths;
+
+type Props = {
+  entry: Awaited<ReturnType<typeof getCollection<'guides'>>>[number];
+  guide: Awaited<ReturnType<typeof getGuides>>[number];
+  locale: Locale;
+  index: number;
+};
+
+const { entry, guide, locale, index } = Astro.props as Props;
+const t = useTranslations(locale);
+const { Content } = await render(entry);
+
+const { prev, next } = chapterNeighbours(guide, entry);
+const chapterHref = (e: Props['entry']) =>
+  localePath(locale, `guides/${splitId(e.id).slug.replace(/\/index$/, '')}`);
+
+const isRoot = entry.data.part === 0;
+const sequence = [guide.root, ...guide.chapters];
+/* A one-part guide has no siblings to navigate between — the rail
+   would list the page you are already on and nothing else. Nor when a
+   guide opts out (`hideContents`) and shows the map only via prev/next. */
+const showRail = sequence.length > 1 && !guide.root.data.hideContents;
+---
+
+<Base
+  locale={locale}
+  title={entry.data.title}
+  description={entry.data.description}
+  path={`guides/${splitId(entry.id).slug.replace(/\/index$/, '')}`}
+>
+  {
+    /* Full-bleed, outside the reading column. A cover constrained to the
+       article width is a header; a cover that owns the first screen is a
+       cover. */
+    isRoot && entry.data.art && (
+      <GuideCover
+        art={entry.data.art}
+        artFocus={entry.data.artFocus}
+        artMotion={entry.data.artMotion}
+        title={entry.data.title}
+        subtitle={entry.data.subtitle ?? entry.data.description}
+        benefits={entry.data.benefits}
+        eyebrow={
+          /* A one-part guide is a guide that has not been split, not a
+             guide with one part in it — saying "1 parts" advertises a
+             count nobody asked for and gets the grammar wrong doing it. */
+          sequence.length > 1
+            ? `${sequence.length} ${t('guides.parts')} · ${formatDate(entry.data.pubDate, locale, { day: undefined })}`
+            : formatDate(entry.data.pubDate, locale, { day: undefined })
+        }
+        startHref={guide.chapters[0] ? chapterHref(guide.chapters[0]) : undefined}
+        index={index}
+        chapters={sequence.slice(1).map((chapter) => ({
+          href: chapterHref(chapter),
+          part: chapter.data.part,
+          label: chapter.data.navLabel ?? chapter.data.title,
+        }))}
+      >
+        {entry.data.exchange && <ChatExchange slot="exchange" />}
+      </GuideCover>
+    )
+  }
+
+  <div
+    class:list={[
+      'mx-auto grid max-w-6xl gap-10 px-(--spacing-gutter) py-14',
+      showRail && 'lg:grid-cols-[15rem_minmax(0,1fr)]',
+    ]}
+  >
+    <!-- ── Chapter rail ─────────────────────────────────────── -->
+    {
+      showRail && (
+        <nav class="lg:sticky lg:top-24 lg:self-start" aria-label={t('guides.contents')}>
+          <p class="nameplate mb-3">{t('guides.contents')}</p>
+
+          <ol class="space-y-1.5 border-s border-rule ps-3 font-mono text-xs">
+            {sequence.map((chapter) => {
+              const current = chapter.id === entry.id;
+              return (
+                <li>
+                  <a
+                    href={chapterHref(chapter)}
+                    aria-current={current ? 'page' : undefined}
+                    class:list={[
+                      'block transition-colors hover:text-primary',
+                      current ? 'text-primary' : 'text-muted-foreground',
+                    ]}
+                  >
+                    <span class="opacity-60">{String(chapter.data.part).padStart(2, '0')}</span>{' '}
+                    {chapter.data.navLabel ?? chapter.data.title}
+                  </a>
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+      )
+    }
+
+    <!-- ── Chapter body ─────────────────────────────────────── -->
+    <article class:list={['min-w-0', !showRail && 'mx-auto w-full max-w-3xl']}>
+      {
+        /* Chapters keep the plain header. A guide's ROOT has its cover
+           above this whole layout, full-bleed, so nothing here. */
+        !(isRoot && entry.data.art) && (
+          <header class="mb-8">
+            <p class="nameplate mb-3 flex flex-wrap gap-x-3">
+              <a href={localePath(locale, `guides/${guide.slug}`)} class="hover:text-primary">
+                {guide.root.data.title}
+              </a>
+              {!isRoot && (
+                <span class="text-primary">
+                  {t('guides.part')} {entry.data.part}
+                </span>
+              )}
+              <time datetime={entry.data.pubDate.toISOString()}>
+                {formatDate(entry.data.pubDate, locale)}
+              </time>
+            </p>
+
+            <h1 class="text-3xl">{entry.data.title}</h1>
+            <p class="mt-3 text-lg text-muted-foreground">{entry.data.description}</p>
+          </header>
+        )
+      }
+
+      <ContentAgeNotice date={entry.data.pubDate} />
+    <div class="prose-bench">
+        <Content />
+      </div>
+
+      <!-- ── Prev / next ────────────────────────────────────── -->
+      {
+        (prev || next) && (
+          <nav class="mt-14 grid gap-3 border-t border-rule pt-6 sm:grid-cols-2">
+            {prev ? (
+              <a
+                href={chapterHref(prev)}
+                class="group rounded-md border border-border p-4 transition-colors hover:border-primary"
+              >
+                <span class="nameplate">← {t('guides.prev')}</span>
+                <span class="mt-1 block text-sm transition-colors group-hover:text-primary">
+                  {prev.data.navLabel ?? prev.data.title}
+                </span>
+              </a>
+            ) : (
+              <span />
+            )}
+
+            {next && (
+              <a
+                href={chapterHref(next)}
+                class="group rounded-md border border-border p-4 transition-colors hover:border-primary sm:text-end"
+              >
+                <span class="nameplate">{t('guides.next')} →</span>
+                <span class="mt-1 block text-sm transition-colors group-hover:text-primary">
+                  {next.data.navLabel ?? next.data.title}
+                </span>
+              </a>
+            )}
+          </nav>
+        )
+      }
+    </article>
+  </div>
+</Base>

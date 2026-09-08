@@ -1,0 +1,1778 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* Self-hosted, no external requests. Variable where available. */
+@import '@fontsource-variable/ibm-plex-sans';
+@import '@fontsource/ibm-plex-mono/300.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-sans-condensed/500.css';
+@import '@fontsource/ibm-plex-sans-condensed/600.css';
+@import '@fontsource/ibm-plex-sans-condensed/700.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ══════════════════════════════════════════════════════════════════
+   PALETTE — the workbench
+   Dark  = the bench at night: warm near-black, brushed steel, amber
+           phosphor glowing off a CRT.
+   Light = the blueprint on paper: warm cream stock, graphite ink,
+           the same amber as the ink you annotate with.
+   Both share hue families so the accent never shifts identity.
+   ══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* -- raw material ------------------------------------------------ */
+  --bench-950: oklch(0.16 0.008 60);
+  --bench-900: oklch(0.19 0.009 60);
+  --bench-850: oklch(0.23 0.011 60);
+  --steel-700: oklch(0.35 0.012 70);
+  --steel-500: oklch(0.48 0.014 70);
+  --steel-300: oklch(0.64 0.014 75);
+
+  --paper-50: oklch(0.98 0.008 85);
+  --paper-100: oklch(0.955 0.012 85);
+  --paper-200: oklch(0.915 0.016 85);
+  --paper-300: oklch(0.86 0.018 82);
+
+  --ink-900: oklch(0.22 0.014 60);
+  --ink-700: oklch(0.36 0.014 62);
+  --ink-500: oklch(0.52 0.012 65);
+
+  --amber-500: oklch(0.76 0.155 72);
+  --amber-600: oklch(0.66 0.155 66);
+  --amber-700: oklch(0.55 0.145 60);
+  --phosphor: oklch(0.82 0.135 78);
+  --rust-500: oklch(0.64 0.165 42);
+
+  /* The accent hue, one level of indirection so a whole palette can be
+     swapped by overriding three variables. Defaults to amber; the
+     [data-accent] blocks further down replace them. */
+  --hue-500: oklch(0.75 0.19 352);
+  --hue-600: oklch(0.64 0.22 353);
+  --hue-700: oklch(0.55 0.21 355);
+  --hue-phosphor: oklch(0.8 0.17 350);
+
+  /* The contrast accent. Always a different hue from the dominant one,
+     and used in only three places site-wide — indicator lamps, the
+     chart's cut line, and the active prompt marker. Sparing is the
+     point: it reads as contrast precisely because it is rationed. */
+  --contrast: oklch(0.52 0.11 195);
+
+  /* Green means correct / live / running. On the page it follows the
+     paper: cream gets a darker, denser green, the dark bench gets the
+     vivid phosphor version. The screen version lives with the device
+     tokens below — the glass inverts independently of the page. */
+  --success: oklch(0.5 0.14 152);
+
+  /* -- semantic (light is the default document) -------------------- */
+  --background: var(--paper-50);
+  --foreground: var(--ink-900);
+  --muted: var(--paper-200);
+  --muted-foreground: var(--ink-500);
+  --card: var(--paper-100);
+  --card-foreground: var(--ink-900);
+  --popover: var(--paper-50);
+  --popover-foreground: var(--ink-900);
+  --primary: var(--hue-700);
+  --primary-foreground: var(--paper-50);
+  --secondary: var(--paper-200);
+  --secondary-foreground: var(--ink-900);
+  --accent: var(--hue-600);
+  --accent-foreground: var(--ink-900);
+  --destructive: var(--rust-500);
+  --destructive-foreground: var(--paper-50);
+  --border: oklch(0.86 0.014 82);
+  --input: oklch(0.86 0.014 82);
+  --ring: var(--hue-600);
+  --radius: 0.25rem;
+
+  --rule: oklch(0.88 0.014 82);
+
+  /* Card hairlines follow the PAGE, not the device. The chassis edge
+     inverts with the instrument setting, and cards wearing it ended
+     up with a light outline on the dark bench. */
+  --card-edge: oklch(0.78 0.016 80);
+
+  /* One tile of fractal noise, stamped into a data URI rather than
+     applied as `filter: url(#…)` on the element itself. As a filter the
+     browser re-rasterises the whole subtree on every repaint, which the
+     cards do continuously while their saturation transitions on hover;
+     as a background image it is one texture upload that never changes.
+     160px so the repeat is past the eye's pattern-finding distance. */
+  --noise-tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  color-scheme: light;
+}
+
+.dark {
+  --background: var(--bench-950);
+  --foreground: oklch(0.93 0.012 85);
+  --muted: var(--bench-850);
+  --muted-foreground: var(--steel-300);
+  --card: var(--bench-900);
+  --card-foreground: oklch(0.93 0.012 85);
+  --popover: var(--bench-900);
+  --popover-foreground: oklch(0.93 0.012 85);
+  --primary: var(--hue-500);
+  --primary-foreground: var(--bench-950);
+  --secondary: var(--bench-850);
+  --secondary-foreground: oklch(0.93 0.012 85);
+  --accent: var(--hue-500);
+  --accent-foreground: var(--bench-950);
+  --destructive: var(--rust-500);
+  --destructive-foreground: var(--bench-950);
+  --border: oklch(0.28 0.01 62);
+  --input: oklch(0.28 0.01 62);
+  --ring: var(--hue-500);
+
+  --rule: oklch(0.26 0.01 62);
+
+  --card-edge: oklch(0.3 0.012 65);
+
+  --contrast: oklch(0.82 0.13 190);
+
+  /* Vivid on the dark bench; this is the "it works" colour. The screen
+     version lives with the device tokens below. */
+  --success: oklch(0.82 0.2 148);
+
+  color-scheme: dark;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   INSTRUMENT HARDWARE
+
+   One device, always: the graphite bench, in both themes. It used to be
+   a choice — `data-instrument` / `data-screen` could pair the hardware
+   with the page (cream bench at night, cream glass at noon) — but the
+   choice is gone from the settings panel and the ruling is simpler:
+   an instrument is a dark object on the page, wherever it turns up.
+
+   The CHROME (chassis, screws, well, panel) and the SCREEN (the glass
+   and phosphor inside it) still resolve through separate token groups,
+   so a component can take the glass without the chassis — but both
+   groups are theme-independent now, and nothing keys on `.dark`.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ═─ CHROME ─════════════════════════════════════════════════════════ */
+
+/* The bench: graphite panel, both themes. */
+:root {
+  --chassis-hi: oklch(0.295 0.011 68);
+  --chassis-lo: oklch(0.185 0.008 62);
+  --chassis-edge: oklch(0.105 0.005 55);
+
+  /* Bevels. `light` is the lit top edge, `dark` the shaded bottom one.
+     Every raised or recessed part is built from this pair. */
+  --bevel-light: rgb(255 255 255 / 0.14);
+  --bevel-dark: rgb(0 0 0 / 0.65);
+  --bevel-deep: rgb(0 0 0 / 0.85);
+
+  --screw-hi: oklch(0.56 0.014 72);
+  --screw-lo: oklch(0.22 0.008 60);
+  --screw-slot: oklch(0.11 0.005 55);
+
+  /* The recessed well a screen or a fader track sits inside. */
+  --well: oklch(0.14 0.006 58);
+}
+
+/* ═─ SCREEN ─══════════════════════════════════════════════════════ */
+
+/* The glass: dark, phosphor readout, both themes. */
+:root {
+  --screen-bg: oklch(0.06 0.008 120);
+  --screen-fg: var(--hue-phosphor);
+  --screen-dim: oklch(0.53 0.085 72);
+  /* A second, colourless phosphor. On a panel whose job is to be *read*
+     — a token list, a table of figures — amber-on-amber leaves nothing
+     for a signal to stand out against, because everything is already
+     wearing the accent. These two carry the data; the saturated tokens
+     above are then free to mean something. */
+  --screen-plain: oklch(0.965 0.003 90);
+  --screen-plain-dim: oklch(0.7 0.006 85);
+  /* The aperture does not glow — only the phosphor text does. A
+     bloom on the whole panel reads as a light leak, not a screen. */
+  --screen-glow: 0 0 0 rgb(0 0 0 / 0);
+  --screen-scanline: rgb(0 0 0 / 0.3);
+  --screen-vignette: rgb(0 0 0 / 0.62);
+
+  --success-screen: oklch(0.86 0.21 148);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   THEME — expose tokens to Tailwind utilities
+   ══════════════════════════════════════════════════════════════════ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-rule: var(--rule);
+  --color-card-edge: var(--card-edge);
+
+  --color-chassis-hi: var(--chassis-hi);
+  --color-chassis-lo: var(--chassis-lo);
+  --color-chassis-edge: var(--chassis-edge);
+  --color-screen: var(--screen-bg);
+  --color-screen-fg: var(--screen-fg);
+  --color-screen-dim: var(--screen-dim);
+  --color-screen-plain: var(--screen-plain);
+  --color-screen-plain-dim: var(--screen-plain-dim);
+  --color-well: var(--well);
+  --color-success: var(--success);
+  --color-success-screen: var(--success-screen);
+  --color-contrast: var(--contrast);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+
+  --font-sans:
+    'Bricolage Grotesque', 'IBM Plex Sans Variable', 'Noto Sans Devanagari Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+  --font-condensed: 'IBM Plex Sans Condensed', 'IBM Plex Sans Variable', ui-sans-serif, sans-serif;
+
+  /* ── Type scale ──────────────────────────────────────────────────
+     A 1.25 (major third) scale at text sizes, opening up to a fluid
+     display range. Tracking tightens as size grows — the correction
+     large type needs and small type must not get. */
+  --text-2xs: 0.6875rem;      /* 11px  — nameplates, dims */
+  --text-2xs--line-height: 1.35;
+  --text-2xs--letter-spacing: 0;
+
+  --text-xs: 0.75rem;         /* 12px  — meta, tape */
+  --text-xs--line-height: 1.45;
+  --text-xs--letter-spacing: 0;
+
+  --text-sm: 0.875rem;        /* 14px  — captions, card body */
+  --text-sm--line-height: 1.55;
+  --text-sm--letter-spacing: 0;
+
+  --text-base: 1.0625rem;     /* 17px  — body. 16 is too small for prose. */
+  --text-base--line-height: 1.65;
+  --text-base--letter-spacing: 0;
+
+  --text-lg: 1.1875rem;       /* 19px  — lede */
+  --text-lg--line-height: 1.6;
+  --text-lg--letter-spacing: 0;
+
+  --text-xl: 1.375rem;        /* 22px  — h3 */
+  --text-xl--line-height: 1.4;
+  --text-xl--letter-spacing: 0;
+
+  --text-2xl: 1.75rem;        /* 28px  — h2 */
+  --text-2xl--line-height: 1.25;
+  --text-2xl--letter-spacing: -0.018em;
+
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 1.15;
+  --text-3xl--letter-spacing: -0.022em;
+
+  --text-4xl: 3rem;
+  --text-4xl--line-height: 1.08;
+  --text-4xl--letter-spacing: -0.028em;
+
+  --text-5xl: 3.75rem;
+  --text-5xl--line-height: 1.03;
+  --text-5xl--letter-spacing: -0.032em;
+
+  --spacing-gutter: clamp(1.25rem, 5vw, 4rem);
+  --container-measure: 68ch;
+  --container-wide: 84rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    letter-spacing: var(--text-base--letter-spacing);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  /* Headings inherit optical tracking from the scale above. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 600;
+    text-wrap: balance;
+  }
+
+  p,
+  li {
+    text-wrap: pretty;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-accent-foreground);
+  }
+
+  /* Devanagari sits optically smaller than Latin at the same px and
+     needs more leading. Correct it wherever the lang attribute says so. */
+  :lang(hi) {
+    font-size: 1.06em;
+    line-height: 1.8;
+    letter-spacing: 0;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   COMPONENT PRIMITIVES — the hardware vocabulary
+   ══════════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* ════════════════════════════════════════════════════════════════
+     THE HARDWARE VOCABULARY
+
+     Everything here is built from one idea: light falls from above.
+     A raised part is lit on its top edge and shaded on its bottom
+     one; a recessed part is the exact inverse. Every bevel below is
+     a `--bevel-light` / `--bevel-dark` pair applied in that order,
+     which is what keeps the panel reading as a single object lit by
+     a single lamp rather than a pile of unrelated boxes.
+     ════════════════════════════════════════════════════════════════ */
+
+  /* ── screw head ──────────────────────────────────────────────────
+     A pan-head screw, lit top-left. Purely decorative, so it is
+     inert to pointers and hidden from the accessibility tree. */
+  .screw {
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    pointer-events: none;
+    /* A far shallower head gradient than before: the old one ran from
+       near-white to near-black across 11px, which read as a bright
+       bead rather than a fastener. */
+    background: radial-gradient(
+      circle at 38% 34%,
+      color-mix(in oklch, var(--screw-hi) 55%, var(--color-chassis-hi)) 0%,
+      var(--screw-lo) 85%
+    );
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklch, var(--bevel-dark) 55%, transparent),
+      0 1px 1px color-mix(in oklch, var(--bevel-dark) 45%, transparent);
+    opacity: 0.7;
+  }
+
+  /* Star drive. Six spokes from a repeating conic gradient, masked to a
+     small disc in the middle of the head. */
+  .screw::before {
+    content: '';
+    position: absolute;
+    inset: 26%;
+    border-radius: 50%;
+    background: repeating-conic-gradient(
+      var(--screw-slot) 0deg 12deg,
+      transparent 12deg 60deg
+    );
+    opacity: 0.75;
+  }
+
+
+  /* A turned metal cap — the top of a knob, or the slug of a switch.
+     Like the plaque, it owns its ink: the metal inverts with the
+     chassis, so the lettering on it has to invert too. */
+  .cap {
+    background: radial-gradient(
+      circle at 34% 27%,
+      var(--screw-hi) 0%,
+      var(--screw-lo) 72%,
+      var(--color-chassis-edge) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 var(--bevel-light),
+      inset 0 -1px 1px var(--bevel-dark),
+      0 1px 3px var(--bevel-dark);
+  }
+
+  .cap {
+    color: var(--hue-500);
+  }
+
+  /* ── chassis ─────────────────────────────────────────────────────
+     A milled panel. The repeating gradient is a brushed-metal grain,
+     kept far below the threshold of conscious notice — it exists to
+     stop the large flat area from banding.
+
+     The bench is graphite in both themes (see the hardware tokens), so
+     the text re-scope below is unconditional: inside a chassis
+     `text-foreground` resolves to the PANEL's foreground — pale ink on
+     graphite — never the page's. */
+  .chassis {
+    position: relative;
+    border-radius: 6px;
+    --foreground: oklch(0.93 0.012 85);
+    --muted-foreground: oklch(0.64 0.014 75);
+    --primary: var(--hue-500);
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgb(255 255 255 / 0.014) 0 1px,
+        transparent 1px 3px
+      ),
+      linear-gradient(180deg, var(--color-chassis-hi) 0%, var(--color-chassis-lo) 100%);
+    border: 1px solid var(--color-chassis-edge);
+    box-shadow:
+      inset 0 1px 0 var(--bevel-light),
+      inset 0 10px 14px -8px rgb(255 255 255 / 0.14),
+      inset 1px 0 0 rgb(255 255 255 / 0.045),
+      inset -1px 0 0 var(--bevel-dark),
+      inset 0 -1px 0 var(--bevel-deep),
+      0 1px 1px rgb(0 0 0 / 0.18),
+      0 8px 22px -6px rgb(0 0 0 / 0.3),
+      0 26px 60px -18px rgb(0 0 0 / 0.35);
+  }
+
+  /* ── engraved separators ─────────────────────────────────────────
+     A groove milled into the panel: one dark line for the cut, one
+     light line below it for the lip catching the light. */
+  .panel-divider-h {
+    border-bottom: 1px solid var(--color-chassis-edge);
+    box-shadow: 0 1px 0 var(--bevel-light);
+  }
+
+  .panel-divider-v {
+    border-right: 1px solid var(--color-chassis-edge);
+    box-shadow: 1px 0 0 var(--bevel-light);
+  }
+
+  /* ── raised nameplate ────────────────────────────────────────────
+     A metal plaque screwed onto the panel face. Raised, so it is lit
+     on top and drops a shadow onto the chassis beneath. The lettering
+     colour is owned here, not by the page: the plate inverts with the
+     chassis, so its ink has to invert with it — bright on the dark
+     plate, dark on the light one. */
+  .plaque {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 3px;
+    border: 1px solid var(--color-chassis-edge);
+    color: var(--hue-500);
+    background: linear-gradient(180deg, oklch(0.36 0.012 70) 0%, oklch(0.21 0.009 62) 100%);
+    box-shadow:
+      inset 0 1px 0 var(--bevel-light),
+      inset 0 -1px 0 var(--bevel-dark),
+      0 1px 2px var(--bevel-dark);
+  }
+
+  /* ── indicator lamp ──────────────────────────────────────────────
+     Unlit is a dead grey bulb sunk into the panel; lit adds the
+     bloom. The inset shadow on both states is what makes it read as
+     a bulb in a hole rather than a dot painted on. */
+  .led {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: 50%;
+    /* Raw token, not the --color-* alias: aliases resolve once at
+       :root, so they cannot see the chassis re-scope. Anything printed
+       on a panel references the panel's tokens directly. */
+    background: var(--muted-foreground);
+    box-shadow:
+      inset 0 -1px 1px rgb(0 0 0 / 0.5),
+      inset 0 1px 1px rgb(255 255 255 / 0.25),
+      0 0 0 1px var(--bevel-dark);
+  }
+
+  .led-on {
+    background: radial-gradient(circle at 36% 30%, color-mix(in oklch, var(--contrast) 55%, white), var(--contrast) 62%, color-mix(in oklch, var(--contrast) 70%, black));
+    box-shadow:
+      inset 0 -1px 1px rgb(0 0 0 / 0.4),
+      0 0 0 1px var(--bevel-dark),
+      0 0 3px color-mix(in oklch, var(--contrast) 95%, transparent),
+      0 0 7px color-mix(in oklch, var(--contrast) 55%, transparent),
+      0 0 12px color-mix(in oklch, var(--contrast) 22%, transparent);
+  }
+
+  /* ── recessed channel ────────────────────────────────────────────
+     Inverse bevel: dark at the top where the lip overhangs, light at
+     the bottom where the floor catches the lamp. */
+  .groove {
+    background: linear-gradient(180deg, var(--color-well) 0%, color-mix(in oklch, var(--color-well) 84%, white) 100%);
+    border-radius: 999px;
+    box-shadow:
+      inset 0 2px 5px rgb(0 0 0 / 0.9),
+      inset 0 -1px 0 rgb(255 255 255 / 0.06),
+      0 1px 0 rgb(255 255 255 / 0.05);
+  }
+
+  /* ── knurled metal ───────────────────────────────────────────────
+     The milled grip texture on a knob rim or a fader thumb. */
+  .knurl {
+    background-image:
+      repeating-linear-gradient(
+        90deg,
+        rgb(255 255 255 / 0.16) 0 1px,
+        transparent 1px 2px,
+        rgb(0 0 0 / 0.22) 2px 3px,
+        transparent 3px 4px
+      ),
+      linear-gradient(180deg, var(--screw-hi) 0%, var(--screw-lo) 55%, var(--color-chassis-edge) 100%);
+  }
+
+  /* ── the screen ──────────────────────────────────────────────────
+     Five stacked layers, outside in:
+       1. a bezel ring milled around the aperture
+       2. the hard shadow the bezel casts onto the glass
+       3. a vignette, because the phosphor is dimmer at the edges
+       4. scanlines
+       5. a diagonal sheen off the glass surface
+     Dropping any one of them is what makes a "screen" look like a
+     rectangle with a dark background. */
+  .crt {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    background: var(--color-screen);
+    box-shadow:
+      /* 1 — bezel band and its inner lip */
+      inset 0 0 0 5px oklch(0.155 0.007 58),
+      inset 0 0 0 6px oklch(0.09 0.004 55),
+      /* 2 — the aperture shadow falling onto the glass */
+      inset 0 8px 16px -4px rgb(0 0 0 / 0.9),
+      /* 3 — vignette */
+      inset 0 0 40px 8px var(--screen-vignette),
+      /* Chromatic fringe: red and cyan misconverging on opposite edges */
+      inset 1.5px 0 0 0 oklch(0.62 0.2 25 / 0.4),
+      inset -1.5px 0 0 0 oklch(0.75 0.14 200 / 0.4),
+      /* outer: the panel cutout */
+      0 0 0 1px oklch(0.09 0.004 55),
+      0 1px 0 var(--bevel-light),
+      var(--screen-glow);
+  }
+
+  /* Phosphor bloom. text-shadow inherits, and `currentColor` resolves
+     per element, so amber readouts glow amber and green ones glow
+     green without any per-element wiring. The glass is dark in both
+     themes, so the bloom is unconditional. */
+  .crt {
+    text-shadow:
+      0 0 0.5px color-mix(in oklch, currentColor 85%, transparent),
+      0 0 3px color-mix(in oklch, currentColor 55%, transparent),
+      0 0 7px color-mix(in oklch, currentColor 22%, transparent);
+  }
+
+  /* 4 — scanlines */
+  .crt::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      var(--screen-scanline) 0 1px,
+      transparent 1px 3px
+    );
+  }
+
+  /* 5 — glass sheen, plus a corner falloff the box-shadow cannot
+     reach because it is clipped by the bezel ring above. */
+  .crt::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    background:
+      radial-gradient(125% 95% at 50% 45%, transparent 55%, var(--screen-vignette) 100%),
+      linear-gradient(
+        122deg,
+        rgb(255 255 255 / 0.07) 0%,
+        rgb(255 255 255 / 0.02) 24%,
+        transparent 44%
+      );
+  }
+
+  /* ── the navigation bar ──────────────────────────────────────────
+     A control strip floating above the bench rather than a browser
+     chrome bar welded to the viewport edge. Bound to the PAGE tokens,
+     not the chassis ones: the chassis inverts against the page, and a
+     navbar that followed it would put dark text on a dark pill. */
+  .navbar {
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklch, var(--color-border) 70%, transparent);
+    background: color-mix(in oklch, var(--color-card) 55%, transparent);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.35),
+      inset 0 -1px 0 rgb(0 0 0 / 0.1),
+      0 1px 2px rgb(0 0 0 / 0.12),
+      0 12px 32px -14px rgb(0 0 0 / 0.35);
+  }
+
+  /* A fine speckle so the glass has grain rather than reading as flat
+     translucency. */
+  .navbar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0.35;
+    background-image: radial-gradient(currentColor 0.5px, transparent 0.5px);
+    background-size: 3px 3px;
+    color: rgb(255 255 255 / 0.5);
+    mix-blend-mode: overlay;
+  }
+
+  .dark .navbar {
+    border: 1px solid rgb(255 255 255 / 0.08);
+    background: color-mix(in oklch, var(--color-card) 42%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.14),
+      inset 0 -1px 0 rgb(0 0 0 / 0.5),
+      0 2px 6px rgb(0 0 0 / 0.4),
+      0 16px 40px -16px rgb(0 0 0 / 0.7);
+  }
+
+  .dark .navbar::after {
+    color: rgb(255 255 255 / 0.28);
+  }
+
+
+  /* ════════════════════════════════════════════════════════════════
+     INSTRUMENT TYPOGRAPHY
+
+     Three voices, never mixed: condensed uppercase for anything
+     engraved on metal, mono for anything the machine measured, and
+     the sans for prose. Numbers are always tabular so a changing
+     readout does not jitter.
+     ════════════════════════════════════════════════════════════════ */
+
+  .nameplate {
+    font-family: var(--font-condensed);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+    color: var(--muted-foreground);
+  }
+
+  /* Chromatic aberration on screen type. The red/cyan pair sits under
+     the phosphor bloom, so the text reads as slightly misconverged
+     rather than simply doubled. Sub-pixel offsets only — anything
+     larger stops looking like optics and starts looking like a bug. */
+  .chromatic {
+    text-shadow:
+      -0.6px 0 0 oklch(0.62 0.22 25 / 0.55),
+      0.6px 0 0 oklch(0.78 0.15 200 / 0.55),
+      0 0 3px color-mix(in oklch, currentColor 50%, transparent),
+      0 0 7px color-mix(in oklch, currentColor 20%, transparent);
+  }
+
+  .readout {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-screen-fg);
+  }
+
+  /* The headline measurement. Light weight, because at this size a
+     regular mono goes muddy. */
+  .readout-xl {
+    font-family: var(--font-mono);
+    font-weight: 300;
+    font-size: clamp(2.5rem, 4.2vw, 3.25rem);
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    font-variant-numeric: tabular-nums;
+    color: var(--foreground);
+  }
+
+  .gauge-value {
+    font-family: var(--font-mono);
+    font-weight: 300;
+    font-size: 1.875rem;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+    color: var(--foreground);
+  }
+
+  .gauge-label {
+    display: block;
+    margin-top: 0.4rem;
+    font-family: var(--font-condensed);
+    font-weight: 500;
+    font-size: 0.6875rem;
+    color: var(--muted-foreground);
+  }
+
+/* ── Ticker ──────────────────────────────────────────────────────
+     A scrolling sign under the teaching readout. The track holds two
+     identical copies of the list and translates by exactly -50%, so the
+     seam lands where the second copy starts and the loop is invisible.
+
+     Reduced motion does not just slow this down — the global rule would
+     snap it to its end state mid-sentence. It gets a static, wrapping
+     list instead. */
+  .ticker {
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  }
+
+  .ticker-track {
+    display: flex;
+    width: max-content;
+    animation: ticker-scroll 26s linear infinite;
+  }
+
+  .ticker:hover .ticker-track {
+    animation-play-state: paused;
+  }
+
+  @keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ticker {
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+
+    .ticker-track {
+      width: 100%;
+      flex-wrap: wrap;
+      animation: none;
+    }
+
+    /* The duplicate copy exists only to make the loop seamless. */
+    .ticker-track > [data-ticker-clone] {
+      display: none;
+    }
+  }
+
+/* A screen that bulges OUT rather than sinking in. Same glass, inverse
+     bevel: lit along the top edge, shadowed along the bottom, and
+     casting onto the panel instead of receiving from it. Used for the
+     programme cards, which are buttons — a recessed button reads as
+     already pressed. */
+  .screen-raised {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-card-edge);
+    /* No outer light line under the bottom edge — on the paper theme
+        `--bevel-light` is near-opaque white and printed a solid hairline
+        on the page beneath the cards. Elevation is the inset top edge
+        and the drop shadow, nothing else. */
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.22),
+      inset 0 -2px 3px rgb(0 0 0 / 0.35),
+      0 4px 10px -2px rgb(0 0 0 / 0.35),
+      0 10px 22px -8px rgb(0 0 0 / 0.4);
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  /* Deliberately no transform: these sit in a tight grid, and shifting
+      or scaling one nudges the eye and makes the panel feel loose. Only
+      the lighting changes — and on hover the card's own hue blooms out
+      of it, a glow rather than a line. */
+  .screen-raised:hover {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.3),
+      inset 0 -2px 3px rgb(0 0 0 / 0.35),
+      0 0 0 1px color-mix(in oklch, var(--card-base, oklch(0.5 0.1 260)) 55%, transparent),
+      0 8px 16px -2px rgb(0 0 0 / 0.4),
+      0 14px 34px -8px color-mix(in oklch, var(--card-base, oklch(0.5 0.1 260)) 40%, transparent),
+      0 18px 44px -10px rgb(0 0 0 / 0.45);
+  }
+
+  .screen-raised:active {
+    box-shadow:
+      inset 0 2px 5px rgb(0 0 0 / 0.5),
+      inset 0 -1px 0 rgb(255 255 255 / 0.12);
+  }
+
+  /* Scanlines only — no vignette or bezel, since this one is proud of
+     the panel rather than cut into it. The elevation reads through the
+     1px lit top edge and the hover glow; no washes. */
+  .screen-raised::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.16) 0 1px, transparent 1px 3px);
+  }
+
+  /* ── film grain ──────────────────────────────────────────────────
+     Sits above the artwork and below anything set at z-10 or higher,
+     so the picture is grainy but the lettering stays crisp.
+
+     `overlay` rather than a flat alpha wash: overlay darkens what is
+     already dark and lightens what is already light, so the grain rides
+     the image instead of greying it uniformly. A wash reads as dust on
+     the lens; this reads as the emulsion. */
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: var(--grain-opacity, 0.42);
+    mix-blend-mode: overlay;
+    background-image: var(--noise-tile);
+    background-size: 160px 160px;
+  }
+
+  /* Overlay against a near-black ground has almost nothing to lighten,
+     so dark mode leans on soft-light, which lifts shadows. */
+  .dark .grain::after {
+    mix-blend-mode: soft-light;
+    opacity: var(--grain-opacity, 0.85);
+  }
+
+  /* The chassis takes the same texture at a fraction of the strength —
+     enough to stop a large flat panel reading as a rectangle of paint,
+     not enough to look like a photograph of metal. Bounded to the panel
+     rather than laid over the viewport: a fixed, blended full-page
+     overlay pushes the whole document onto one compositing layer and
+     re-blends it every scroll frame. */
+  .chassis {
+    position: relative;
+  }
+
+  .chassis::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background-image: var(--noise-tile);
+    background-size: 160px 160px;
+    opacity: 0.45;
+    mix-blend-mode: soft-light;
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .grain::after {
+      display: none;
+    }
+  }
+
+  /* Sprite lettering: a hard offset shadow, no blur — the way text sat
+     on a tile-based background before subpixel rendering existed. */
+  .sprite-text {
+    font-weight: 700;
+    text-shadow:
+      1px 1px 0 var(--sprite-shadow, rgb(0 0 0 / 0.55)),
+      2px 2px 0 var(--sprite-shadow, rgb(0 0 0 / 0.35));
+  }
+
+/* Hollow lettering — the fill removed so the background reads through
+     it. Needs an explicit stroke colour because the fill is transparent
+     and currentColor would vanish with it. */
+  .text-outline {
+    color: transparent;
+    -webkit-text-stroke: 1px var(--outline-ink, currentColor);
+    paint-order: stroke fill;
+  }
+
+  /* Extruded lettering: the same glyph stamped repeatedly down-right in
+     a darker tone, which is how depth was faked before it was cheap. */
+  .text-extruded {
+    text-shadow:
+      1px 1px 0 var(--sprite-shadow, rgb(0 0 0 / 0.6)),
+      2px 2px 0 var(--sprite-shadow, rgb(0 0 0 / 0.6)),
+      3px 3px 0 var(--sprite-shadow, rgb(0 0 0 / 0.6)),
+      4px 4px 0 var(--sprite-shadow, rgb(0 0 0 / 0.45)),
+      5px 5px 6px rgb(0 0 0 / 0.4);
+  }
+
+  /* A label too wide for its card, scrolled. Two copies, translated by
+     exactly -50%, so the loop has no seam. */
+  .label-marquee {
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .label-marquee > span {
+    display: inline-block;
+    animation: label-scroll 11s linear infinite;
+    animation-delay: -2s;
+  }
+
+  @keyframes label-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .label-marquee > span {
+      animation: none;
+    }
+  }
+
+  /* A slow band of symbols drifting across a card. Two copies, -50%,
+     so the loop has no seam. */
+  .symbol-drift > span {
+    display: inline-block;
+    white-space: nowrap;
+    animation: symbol-drift 21s linear infinite;
+    animation-delay: -4s;
+  }
+
+  @keyframes symbol-drift {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .symbol-drift > span {
+      animation: none;
+    }
+  }
+
+/* A machined tab rather than a rounded pill: the trailing corner is
+     cut off, so it reads as a plate riveted to the card. */
+  .tab-notch {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%);
+  }
+
+  /* Its mirror, for the right-hand side. */
+  .tab-notch-l {
+    clip-path: polygon(5px 0, 100% 0, 100% 100%, 0 100%, 0 5px);
+  }
+
+  /* Phosphor type: brighter than the card it sits on, with the same
+     red/cyan misconvergence and bloom the instrument screens use, so a
+     title reads as drawn by the display rather than printed on it. */
+  .phosphor-type {
+    text-shadow:
+      -0.6px 0 0 oklch(0.62 0.22 25 / 0.5),
+      0.6px 0 0 oklch(0.78 0.15 200 / 0.5),
+      0 0 3px color-mix(in oklch, currentColor 60%, transparent),
+      0 0 8px color-mix(in oklch, currentColor 25%, transparent);
+  }
+
+  /* Hollow display lettering — the ground reads through the glyph. */
+  .type-hollow {
+    color: transparent;
+    -webkit-text-stroke: 1px var(--hollow-ink, currentColor);
+    paint-order: stroke fill;
+  }
+
+  .rule {
+    border: 0;
+    border-top: 1px solid var(--color-rule);
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     THE BANNER
+
+     The page-chrome surface. Everything on this site that is not
+     prose is one of two things: an INSTRUMENT (chassis, screws,
+     glass — confined to the sampling bench) or a BANNER — the poster
+     cards on the home rail, the guide covers, and now the panels that
+     used to borrow the chassis. A banner is a dark printed screen: a
+     coloured ground, scanlines, grain, a hairline, phosphor type. No
+     bevels, no fasteners, nothing pretending to be metal.
+
+     Dark in both themes, like the cards, because the ground IS the
+     colour and paper has nothing to print it on. Text tokens are
+     re-scoped so anything typeset inside resolves to pale ink.
+     ════════════════════════════════════════════════════════════════ */
+  .banner {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-card-edge);
+    --foreground: oklch(0.95 0.01 85);
+    --muted-foreground: oklch(0.72 0.012 80);
+    --primary: var(--hue-500);
+    --border: rgb(255 255 255 / 0.13);
+    --rule: rgb(255 255 255 / 0.1);
+    --muted: rgb(255 255 255 / 0.06);
+    --success: oklch(0.82 0.2 148);
+    --card-base: var(--banner-base, oklch(0.24 0.02 280));
+    color: var(--foreground);
+    background:
+      radial-gradient(70% 60% at 85% 0%, color-mix(in oklch, var(--card-base) 70%, transparent) 0%, transparent 70%),
+      linear-gradient(160deg, color-mix(in oklch, var(--card-base) 55%, oklch(0.16 0.01 270)) 0%, oklch(0.13 0.012 265) 100%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.14),
+      0 4px 10px -2px rgb(0 0 0 / 0.3),
+      0 12px 30px -12px rgb(0 0 0 / 0.5);
+  }
+
+  /* Scanlines, above the ground and below anything set at z-10. */
+  .banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.14) 0 1px, transparent 1px 3px);
+  }
+
+  /* Phosphor readout on a banner: the mono voice, glowing. */
+  .banner .readout,
+  .banner .gauge-value {
+    color: var(--hue-phosphor);
+    text-shadow:
+      0 0 0.5px color-mix(in oklch, currentColor 85%, transparent),
+      0 0 4px color-mix(in oklch, currentColor 45%, transparent),
+      0 0 10px color-mix(in oklch, currentColor 18%, transparent);
+  }
+
+  /* ── section head ────────────────────────────────────────────────
+     A numbered rule. The number is the mono voice — a measurement of
+     where you are on the page — and the rule is what makes a run of
+     sections read as one document rather than as five stacked pages. */
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--color-rule);
+  }
+
+  .section-head .index {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-primary);
+    margin-inline-end: 0.9rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     PROSE
+     ════════════════════════════════════════════════════════════════ */
+
+  .prose-bench {
+    max-width: var(--container-measure);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+  }
+
+  .prose-bench > * + * {
+    margin-top: 1.15em;
+  }
+
+  .prose-bench h2 {
+    font-size: var(--text-2xl);
+    line-height: var(--text-2xl--line-height);
+    letter-spacing: var(--text-2xl--letter-spacing);
+    margin-top: 2.4em;
+    margin-bottom: 0.6em;
+  }
+
+  .prose-bench h3 {
+    font-size: var(--text-xl);
+    line-height: var(--text-xl--line-height);
+    letter-spacing: var(--text-xl--letter-spacing);
+    margin-top: 1.9em;
+    margin-bottom: 0.5em;
+  }
+
+  .prose-bench a:not(.not-prose) {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    text-decoration-color: color-mix(in oklch, var(--color-primary) 40%, transparent);
+    transition: text-decoration-color 0.15s;
+  }
+
+  .prose-bench a:not(.not-prose):hover {
+    text-decoration-color: var(--color-primary);
+  }
+
+  .prose-bench blockquote {
+    border-left: 2px solid var(--color-primary);
+    padding-left: 1.1em;
+    font-style: normal;
+    color: var(--color-muted-foreground);
+  }
+
+  .prose-bench code:not(pre code) {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    background: var(--color-muted);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  .prose-bench pre {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    padding: 1rem 1.1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    overflow-x: auto;
+  }
+
+  .prose-bench ul,
+  .prose-bench ol {
+    padding-left: 1.3em;
+  }
+
+  .prose-bench ul {
+    list-style: none;
+  }
+
+  .prose-bench ul > li {
+    position: relative;
+  }
+
+  .prose-bench ul > li::before {
+    content: '';
+    position: absolute;
+    left: -1.05em;
+    top: 0.72em;
+    width: 5px;
+    height: 1px;
+    background: var(--color-primary);
+  }
+
+  .prose-bench ol {
+    list-style: decimal;
+  }
+
+  .prose-bench ol::marker {
+    font-family: var(--font-mono);
+  }
+
+  .prose-bench table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+  }
+
+  .prose-bench th {
+    font-family: var(--font-condensed);
+    font-weight: 600;
+    text-align: left;
+    color: var(--color-muted-foreground);
+  }
+
+  .prose-bench th,
+  .prose-bench td {
+    border-bottom: 1px solid var(--color-rule);
+    padding: 0.5em 0.75em 0.5em 0;
+  }
+
+  .prose-bench td {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* The engine's light-mode paper: a faint blueprint dot grid behind the
+   drawing, in the same blue as the machine's light-mode ink. Gone on
+   the dark bench — the grid on near-black reads as noise, not paper. */
+.engine-dots {
+  background-image: radial-gradient(circle, rgb(47 95 208 / 0.16) 1px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+.dark .engine-dots {
+  background-image: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ACCENT PALETTES
+
+   Each palette replaces four variables and nothing else — every other
+   token derives from them, so a swap is total and consistent without
+   touching a single component. Set by the design-settings panel via
+   `data-accent` on the root element; absent means amber.
+
+   Light values are darker and denser because the paper background is
+   bright; dark values are the vivid phosphor version. Screens use the
+   phosphor variable so a CRT glows in the chosen hue.
+   ══════════════════════════════════════════════════════════════════ */
+
+:root[data-accent='purple'] {
+  --hue-500: oklch(0.76 0.15 305);
+  --hue-600: oklch(0.64 0.19 302);
+  --hue-700: oklch(0.53 0.19 300);
+  --hue-phosphor: oklch(0.8 0.15 305);
+}
+
+:root[data-accent='amber'] {
+  --hue-500: var(--amber-500);
+  --hue-600: var(--amber-600);
+  --hue-700: var(--amber-700);
+  --hue-phosphor: var(--phosphor);
+}
+
+:root[data-accent='teal'] {
+  --hue-500: oklch(0.78 0.12 192);
+  --hue-600: oklch(0.65 0.12 194);
+  --hue-700: oklch(0.53 0.11 196);
+  --hue-phosphor: oklch(0.83 0.13 190);
+  /* Teal cannot contrast against itself. */
+  --contrast: oklch(0.55 0.2 352);
+}
+
+.dark[data-accent='teal'] {
+  --contrast: oklch(0.8 0.17 350);
+}
+
+:root[data-accent='cool'] {
+  --hue-500: oklch(0.76 0.13 258);
+  --hue-600: oklch(0.63 0.16 260);
+  --hue-700: oklch(0.52 0.16 262);
+  --hue-phosphor: oklch(0.81 0.13 258);
+}
+
+/* The cool palettes want a cooler bench and paper too, or the warm
+   greys underneath fight the accent. Page tokens follow the page;
+   device tokens follow the device, as everywhere else. */
+:root:not([data-accent='amber']) {
+  --background: oklch(0.98 0.005 265);
+  --muted: oklch(0.94 0.008 265);
+  --card: oklch(0.965 0.006 265);
+  --rule: oklch(0.89 0.008 265);
+  --border: oklch(0.87 0.008 265);
+}
+
+.dark:not([data-accent='amber']) {
+  --background: oklch(0.16 0.012 275);
+  --muted: oklch(0.23 0.014 275);
+  --card: oklch(0.19 0.013 275);
+  --rule: oklch(0.27 0.014 275);
+  --border: oklch(0.29 0.014 275);
+  --screen-glow: 0 0 0 rgb(0 0 0 / 0);
+}
+
+/* The cool accent tints the hardware toward its own hue — one rule now,
+   since the bench is graphite in both themes. */
+:root:not([data-accent='amber']) {
+  --chassis-hi: oklch(0.3 0.016 275);
+  --chassis-lo: oklch(0.19 0.012 275);
+  --chassis-edge: oklch(0.11 0.008 275);
+  --well: oklch(0.14 0.01 275);
+  --screen-bg: oklch(0.06 0.012 280);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TYPESETTING PRESETS
+   Body size and leading only — the modular scale keeps its ratios.
+   ══════════════════════════════════════════════════════════════════ */
+
+:root[data-typeset='compact'] {
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  --container-measure: 74ch;
+}
+
+:root[data-typeset='comfortable'] {
+  --text-base: 1.125rem;
+  --text-base--line-height: 1.75;
+  --container-measure: 62ch;
+}
+
+:root[data-typeset='comfortable'] body,
+:root[data-typeset='compact'] body {
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   OPTIONAL TYPEFACES
+
+   Grotesques and humanists, exposed through `[data-font]`; absent means
+   the default IBM Plex Sans.
+
+   Sources are symlinked from ~/Sites/fonts rather than copied into the
+   repo. Most of that tree is TTF, so the variable faces were converted
+   to woff2 into static/fonts/generated — roughly half the bytes for the
+   same outlines.
+
+   Google Sans is the exception to keep an eye on: as shipped it carries
+   six axes and every script, at 4.5MB; pinned and subset it is ~50KB.
+   It is also PROPRIETARY — Google's brand face, not licensed for
+   third-party sites — and ships on an explicit request only. The rest
+   are OFL.
+   ══════════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('/fonts/Bricolage-var.woff2') format('woff2-variations');
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Familjen Grotesk';
+  src: url('/fonts/FamiljenGrotesk-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Familjen Grotesk';
+  src: url('/fonts/FamiljenGrotesk-500.woff2') format('woff2');
+  font-weight: 500 700;
+  font-display: swap;
+}
+
+/* `font-stretch` is not decoration here: without the descriptor the
+   browser treats a face as normal-width only and never touches the
+   `wdth` axis, however much of it the file still carries. Anek and
+   Zalando are subset to 75-100 — the condensed half kept, the expanded
+   half dropped. */
+@font-face {
+  font-family: 'Anek Latin';
+  src: url('/fonts/generated/AnekLatin-var.woff2') format('woff2-variations');
+  font-weight: 100 800;
+  font-stretch: 75% 100%;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Zalando Sans';
+  src: url('/fonts/generated/ZalandoSans-var.woff2') format('woff2-variations');
+  font-weight: 200 900;
+  font-stretch: 75% 100%;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Rethink Sans';
+  src: url('/fonts/generated/RethinkSans-var.woff2') format('woff2-variations');
+  font-weight: 400 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Hanken Grotesk';
+  src: url('/fonts/generated/HankenGrotesk-var.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pontano Sans';
+  src: url('/fonts/generated/PontanoSans-var.woff2') format('woff2-variations');
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Special Gothic';
+  src: url('/fonts/generated/SpecialGothic-var.woff2') format('woff2-variations');
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Golos Text';
+  src: url('/fonts/generated/GolosText-var.woff2') format('woff2-variations');
+  font-weight: 400 900;
+  font-display: swap;
+}
+
+/* Google Sans, pinned and subset by the build script — see the note in
+   scripts/build-fonts.ts. PROPRIETARY: on an explicit request, out
+   before any public release. */
+@font-face {
+  font-family: 'Google Sans';
+  src: url('/fonts/generated/GoogleSans-var.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Spline Sans';
+  src: url('/fonts/generated/SplineSans-var.woff2') format('woff2-variations');
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Spline Sans Mono';
+  src: url('/fonts/generated/SplineSansMono-var.woff2') format('woff2-variations');
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Strichpunkt Sans';
+  src: url('/fonts/generated/StrichpunktSans-var.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+/* Choosing a sans also swaps the mono, where a genuine sibling exists.
+   Only Spline Sans ships one; the rest fall back to IBM Plex Mono,
+   which is a deliberate mismatch rather than an oversight — pairing a
+   grotesque with an unrelated mono looks worse than not pairing it. */
+:root { --font-sans-active: 'Bricolage Grotesque'; }
+:root[data-font='plex'] { --font-sans-active: 'IBM Plex Sans Variable'; }
+:root[data-font='bricolage'] { --font-sans-active: 'Bricolage Grotesque'; }
+:root[data-font='familjen'] { --font-sans-active: 'Familjen Grotesk'; }
+:root[data-font='spline'] {
+  --font-sans-active: 'Spline Sans';
+  --font-mono-active: 'Spline Sans Mono';
+}
+:root[data-font='strichpunkt'] { --font-sans-active: 'Strichpunkt Sans'; }
+:root[data-font='anek'] { --font-sans-active: 'Anek Latin'; }
+:root[data-font='zalando'] { --font-sans-active: 'Zalando Sans'; }
+:root[data-font='rethink'] { --font-sans-active: 'Rethink Sans'; }
+:root[data-font='hanken'] { --font-sans-active: 'Hanken Grotesk'; }
+:root[data-font='pontano'] { --font-sans-active: 'Pontano Sans'; }
+:root[data-font='specialgothic'] { --font-sans-active: 'Special Gothic'; }
+:root[data-font='golos'] { --font-sans-active: 'Golos Text'; }
+:root[data-font='googlesans'] { --font-sans-active: 'Google Sans'; }
+
+:root[data-font] body,
+:root[data-font] h1,
+:root[data-font] h2,
+:root[data-font] h3,
+:root[data-font] h4 {
+  font-family:
+    var(--font-sans-active), 'IBM Plex Sans Variable', 'Noto Sans Devanagari Variable',
+    ui-sans-serif, system-ui, sans-serif;
+}
+
+:root[data-font] {
+  --font-mono:
+    var(--font-mono-active, 'IBM Plex Mono'), ui-monospace, 'SF Mono', monospace;
+}
+
+/* Stylistic ligatures */
+:root[data-ligatures='on'] {
+  font-variant-ligatures: common-ligatures discretionary-ligatures contextual;
+  font-feature-settings: 'dlig' 1, 'liga' 1, 'clig' 1, 'calt' 1;
+}
+
+:root[data-ligatures='off'] {
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'clig' 0, 'dlig' 0;
+}
+
+/* Headline weight */
+:root[data-headline='light'] :is(h1, h2, h3, h4) { font-weight: 400; }
+:root[data-headline='regular'] :is(h1, h2, h3, h4) { font-weight: 500; }
+:root[data-headline='bold'] :is(h1, h2, h3, h4) { font-weight: 700; }
+
+/* Type scale. Rescales the whole ramp rather than just body, so the
+   headline-to-body proportion survives the change. */
+:root[data-scale='s'] {
+  --text-base: 1rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.9rem;
+  --text-4xl: 2.5rem;
+  --text-5xl: 3rem;
+}
+
+:root[data-scale='l'] {
+  --text-base: 1.125rem;
+  --text-lg: 1.3125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-3xl: 2.6rem;
+  --text-4xl: 3.4rem;
+  --text-5xl: 4.25rem;
+}
+
+:root:is([data-scale='s'], [data-scale='l']) body {
+  font-size: var(--text-base);
+}
+
+/* Shiki dual-theme: follow the document theme, not the OS. */
+.dark .astro-code,
+.dark .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* A card that only resolves on hover is a card that never resolves on a
+   phone. Where there is no pointer, ship the detailed render.
+
+   Deliberately unlayered. Inside `@layer components` this loses to the
+   `opacity-0` utility on the same element — Tailwind orders utilities
+   after components — and the override silently does nothing. */
+@media (hover: none) {
+  .art-coarse {
+    opacity: 0;
+  }
+
+  .art-fine {
+    opacity: 1;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   THE CARD GRID
+   Was a marquee. A moving rail meant every card was a target that
+   slides away from the cursor, and pausing on hover only papered over
+   that — you still had to catch one first. A grid holds still, shows
+   every card at once, and lets the cards be big enough to look at.
+   ══════════════════════════════════════════════════════════════════ */
+
+.card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+  .card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  /* `auto-fill` with a 14rem floor rather than a fixed count: the cards
+     want to be about 224px and the container is fluid, so let the track
+     count fall out of the width instead of guessing it per breakpoint. */
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    gap: 1.25rem;
+  }
+
+  /* The home rail is five cards, and five is the one count a fluid
+     floor gets wrong: at 1280 it holds four and strands the fifth on a
+     row of its own. So the rail states its count once the width can
+     bear it, and lets the floor decide below that. */
+  .card-grid[data-count='5'] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* ── arrival ───────────────────────────────────────────────────────
+   Cards rise into place as they enter the viewport, staggered by their
+   index. The script that flips `data-arrived` is two lines and lives in
+   the page; without JS (or under reduced motion) they simply sit there.
+   Opacity and translate only — both compositor properties. */
+/* Only hidden once JS has declared itself (`html.js`, set before first
+   paint by ThemeScript) — a no-JS page never has anything to reveal. */
+html.js [data-arrive] {
+  transition:
+    opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    translate 900ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: calc(var(--arrive-i, 0) * 70ms);
+}
+
+html.js [data-arrive]:not([data-arrived]) {
+  opacity: 0;
+  translate: 0 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.js [data-arrive]:not([data-arrived]) {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  html.js [data-arrive] {
+    transition: none;
+  }
+}
+
+/* The resting state. Cards breathe out of phase with each other so the
+   grid reads as alive rather than as one thing animating.
+
+   On the WRAPPER, not on the coarse image. It used to sit on
+   `.art-coarse`, which is also the element the hover crossfade drives —
+   so hovering cancelled a running animation mid-cycle and opacity
+   snapped from wherever it was to 1. That snap was the flicker. Two
+   effects, two elements, no argument. */
+@keyframes card-breathe {
+  from {
+    opacity: 0.78;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.card-grid .card-art {
+  animation: card-breathe var(--breathe-dur, 7s) ease-in-out infinite alternate;
+  animation-delay: var(--breathe-delay, 0s);
+}
+
+/* Hover settles the breath at full rather than cutting it, so there is
+   nothing to jump from. */
+.card-grid a:hover .card-art,
+.card-grid a:focus-visible .card-art {
+  animation-play-state: paused;
+  opacity: 1;
+  transition: opacity 220ms ease;
+}
+
+/* Brighten the artwork itself. Saturation alone left the sparser cards
+   looking unchanged — a card made of 300 glyphs has little colour to
+   saturate, so it needs luminance instead. */
+.card-grid a .card-art {
+  transition:
+    opacity 220ms ease,
+    filter 260ms ease;
+}
+
+.card-grid a:hover .card-art,
+.card-grid a:focus-visible .card-art {
+  filter: brightness(1.45) contrast(1.06);
+}
+
+/* The ground drifts under the artwork on hover. The gradient is sized
+   larger than the card so there is somewhere to drift TO. */
+.card-ground {
+  background-size: 165% 165%;
+  background-position: 30% 35%;
+  transition: background-position 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.card-grid a:hover .card-ground,
+.card-grid a:focus-visible .card-ground {
+  background-position: 70% 65%;
+}
+
+/* Condensed bold, and bigger than it was.
+ *
+ * The previous set leaned on size alone at a normal width and weight,
+ * and over a busy dithered picture that is not enough contrast to read
+ * against — a title on a card is competing with artwork, not sitting on
+ * paper. Condensed is what makes the size affordable: at 700 it is
+ * heavier AND narrower, so the type gets bolder and larger without the
+ * line running off the card.
+ *
+ * Every line takes the same weight. Size and opacity separate the title
+ * from its qualifier, which is the same rule as before — this raises the
+ * floor rather than adding a second axis back.
+ *
+ * Legibility without a scrim: a shadow mixed from the card's own base
+ * colour, driven dark and saturated. A neutral black shadow greys the
+ * card; this one deepens it. */
+.card-title {
+  /* The active app font when one is picked in Settings, falling back to
+     the condensed face when none is. `:root[data-font] h1–h4` already
+     applies the app font to titles marked as real headings, but most
+     card titles are `<span>`s that never match it — so every card title
+     follows the chosen font here, uniformly. */
+  font-family:
+    var(
+      --font-sans-active,
+      'IBM Plex Sans Condensed',
+      'IBM Plex Sans Variable',
+      ui-sans-serif,
+      sans-serif
+    );
+  font-weight: 700;
+  /* Condensed where the chosen face has a real `wdth` axis, ignored
+     everywhere else — a face without the axis is left alone rather than
+     squeezed, because no browser synthesises width and the ones that
+     tried made it look like a bug. The fallback stack already leads with
+     a drawn condensed. */
+  font-stretch: 87.5%;
+  text-shadow:
+    0 1px 0 color-mix(in oklch, var(--card-base, black) 45%, black),
+    0 2px 6px color-mix(in oklch, var(--card-base, black) 30%, black);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-grid .card-art {
+    animation: none;
+  }
+
+  .card-ground {
+    transition: none;
+  }
+}
+
+.pixel-type {
+  -webkit-mask-image: repeating-linear-gradient(
+    180deg,
+    #000 0 2px,
+    rgb(0 0 0 / 0.35) 2px 3px
+  );
+  mask-image: repeating-linear-gradient(180deg, #000 0 2px, rgb(0 0 0 / 0.35) 2px 3px);
+}
+
+/* Below about 14px the slices land inside the strokes and the text just
+   looks broken, so small labels get a finer, gentler screen. */
+.pixel-type-sm {
+  -webkit-mask-image: repeating-linear-gradient(
+    180deg,
+    #000 0 1px,
+    rgb(0 0 0 / 0.55) 1px 2px
+  );
+  mask-image: repeating-linear-gradient(180deg, #000 0 1px, rgb(0 0 0 / 0.55) 1px 2px);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .pixel-type,
+  .pixel-type-sm {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}

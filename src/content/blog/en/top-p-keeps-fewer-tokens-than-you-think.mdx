@@ -1,0 +1,20 @@
+---
+title: Top-p 0.9 keeps 3 tokens at T=0.4 and 31 at T=1.6
+description: Nucleus sampling is a percentage of a distribution you already reshaped.
+pubDate: 2025-07-28
+kind: til
+tags: [sampling, decoding]
+---
+
+Top-p is described as "keep the smallest set of tokens whose probability sums to
+p." True, and misleading — because temperature has already rewritten those
+probabilities before top-p looks at them.
+
+At `T=0.4` the distribution is spiky, so 90% of the mass lives in about three
+tokens. At `T=1.6` the same logits flatten out and you need thirty-odd tokens to
+reach the same 90%.
+
+Same `p`. Same model. Ten times the candidate pool.
+
+This is why "we set top-p to 0.9" is not a description of anything. It is half a
+setting.

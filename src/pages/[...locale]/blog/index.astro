@@ -1,0 +1,5 @@
+---
+import { localeStaticPaths, localePath } from '@/lib/i18n';
+export const getStaticPaths = () => localeStaticPaths();
+return Astro.redirect(localePath(Astro.props.locale, 'notes'), 301);
+---

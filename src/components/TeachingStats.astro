@@ -1,0 +1,57 @@
+---
+/**
+ * The teaching numbers, as a small banner under the introduction.
+ *
+ * They used to sit in a chassis with a CRT in it, in a second column
+ * that covered the statue's shoulder. The hardware is gone — instruments
+ * live on the sampling bench now — and so is the column: the numbers
+ * are one line of phosphor on a printed strip, and the artwork gets its
+ * right-hand side back.
+ *
+ * The star row clips the fractional star instead of rounding, so 4.5
+ * reads as four and a half rather than five.
+ */
+const rating = 4.5;
+const stars = [1, 2, 3, 4, 5];
+
+const STAR_PATH =
+  'M12 2.6l2.9 5.9 6.5.95-4.7 4.58 1.11 6.47L12 17.45l-5.81 3.05 1.11-6.47-4.7-4.58 6.5-.95z';
+---
+
+<div class="banner grain inline-flex max-w-full flex-wrap items-end gap-x-10 gap-y-5 px-5 py-4 sm:px-6">
+  <p class="readout relative z-10 w-full text-[11px] text-muted-foreground">
+    Teaching AI to engineers &amp; mortals
+  </p>
+
+  <div class="relative z-10">
+    <p class="gauge-value font-semibold">1M+</p>
+    <p class="gauge-label">taught</p>
+  </div>
+
+  <div class="relative z-10">
+    <p class="flex items-center gap-3">
+      <span class="gauge-value font-semibold">{rating}+</span>
+
+      <span class="flex gap-0.5" role="img" aria-label={`${rating} out of 5`}>
+        {
+          stars.map((i) => {
+            const fill = Math.min(1, Math.max(0, rating - (i - 1)));
+            return (
+              <svg viewBox="0 0 24 24" class="size-[16px] shrink-0" aria-hidden="true">
+                <path d={STAR_PATH} class="fill-white/20" />
+                {fill > 0 && (
+                  <path
+                    d={STAR_PATH}
+                    class="fill-[var(--hue-phosphor)]"
+                    clip-path={`inset(0 ${(1 - fill) * 100}% 0 0)`}
+                  />
+                )}
+              </svg>
+            );
+          })
+        }
+      </span>
+    </p>
+    <p class="gauge-label">avg. rating</p>
+  </div>
+</div>

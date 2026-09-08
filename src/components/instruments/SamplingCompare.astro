@@ -1,0 +1,188 @@
+---
+/**
+ * Field recordings — one prompt, three sampler configs, a real model.
+ *
+ * Nothing here is simulated: these are recorded Gemma 4 E4B runs, the
+ * same maths prompt sent three times with only the sampling settings
+ * changed. The transcripts are condensed (the broken-LaTeX noise of the
+ * raw capture is elided, marked with an ellipsis) but the arithmetic,
+ * the detours and the final answers are verbatim. Raw captures live in
+ * the repo at src/content/references/sampling-examples.
+ *
+ * Layout: three columns side by side from 900px up — the compare view.
+ * Below that, three stacked screens, each with its own scroll, so a run
+ * can be read top to bottom without losing the other two. There is no
+ * tab control and no state, which is why this is an .astro component
+ * and ships no JavaScript.
+ *
+ * Colour discipline follows the logprobs panel: the only saturated
+ * thing on any screen is the green "correct answer" chip. The two
+ * failures stay dim — their text is the evidence, it needs no flag.
+ */
+
+interface Run {
+  /** Short screen label — the nameplate above each transcript. */
+  label: string;
+  /** The config, as mono chips. */
+  settings: string[];
+  verdict: 'correct' | 'wrong' | 'gibberish';
+  /** One line under the settings: what to watch for while reading. */
+  note: string;
+  /** Thinking trace, condensed. Each string is a paragraph. */
+  thinking: string[];
+  /** What the model actually answered. */
+  response: string;
+}
+
+const PROMPT = 'What is 38438*3984';
+const ANSWER = '153,136,992';
+
+const RUNS: Run[] = [
+  {
+    label: 'Greedy',
+    settings: ['temperature 0.0'],
+    verdict: 'wrong',
+    note: 'The partial products are right. Watch what happens when it has to add them.',
+    thinking: [
+      'Thinking Process: identify the request — the user wants 38438 × 3984. Since these are large numbers, standard multiplication is required.',
+      'Direct multiplication. Step 1: 38438 × 4 = 153,752. Step 2: 38438 × 80 = 3,075,040. Step 3: 38438 × 900 = 34,594,200. Step 4: 38438 × 3000 = 115,314,000.',
+      'Re-check using standard multiplication… (Wait, this is adding the partial products, which is incorrect. I need to align the place values.)',
+      'Summing: 153752 + 3075040 = 3228792. 3228792 + 34594200 = 37823000 + 3228792 = 37823000 + 3228792 = 37823000 + 3228792 = 37823000 + 3228792 = 37823000 + 3228792 […] (Error in mental addition, let’s use the full numbers.)',
+      '153752 + 3075040 = 3228792. 3228792 + 34594200 = 37823000 + 3228792 = 37823000 + 3228792 […] (Still error prone.)',
+      'Let’s use the standard method: 38438 × 3984 = 153,752,032 (Using a calculator for verification). Self-correction: since the calculation is complex, relying on the verified result is best.',
+    ],
+    response: '38438 × 3984 = 153,752,032',
+  },
+  {
+    label: 'Recommended',
+    settings: ['temperature 1.0', 'top_p 0.95', 'top_k 64'],
+    verdict: 'correct',
+    note: 'The settings off the model card. It meanders, catches its own errors, and lands.',
+    thinking: [
+      'The user wants me to calculate the product of 38438 and 3984. I will use long multiplication or a calculator/mental math approach.',
+      'Method 1 — standard multiplication: 38438 × 3984 = 38438 × (4000 − 16) = 38438×4000 − 38438×16 = 153,752,000 − 38438×16.',
+      '38438 × 16: 38438×10 = 384,380; 38438×6 = 30000×6 + 8000×6 + 400×6 + 38×6 = 180000 + 48000 + 2400 + 228 = 230,628. So 38438×16 = 615,008. (Wait, let me recheck 38438 × 16.) 38438×16 = 38438×(2×8) = 76876×8 = 560000 + 48000 + 6400 + 560 + 48 = 614,008. (Let’s use standard multiplication for 38438 × 16.) 230,628 + 384,380 = 615,008. So 38438 × 16 = 615,008.',
+      'Now subtract: 153,752,000 − 615,008 = 153,137,000 − 8 = 153,136,992.',
+      'Method 2 — direct multiplication, for verification: (38438×4) = 153,752, (38438×80) = 3,075,040, (38438×900) = 34,594,200, (38438×3000) = 115,314,000. Summing these up […] (Wait, error in summation here. Let’s redo the alignment.) […] = 153,136,992. The result is 153,136,992.',
+    ],
+    response: 'To find the product of 38438 and 3984, we perform the multiplication: 38438 × 3984 = 153,136,992.',
+  },
+  {
+    label: 'Everything at once',
+    settings: ['temperature 1.0', 'top_p 0.14', 'presence_penalty 2.0', 'repeat_penalty 2.0'],
+    verdict: 'gibberish',
+    note: 'A nucleus cut to the bone and two penalties fighting it. The trace never recovers.',
+    thinking: [
+      'Thinking Process: identify the request — the user wants to calculate 38,438 × 3,984. (The input uses an asterisk as a multiplication symbol.)',
+      'This is large number arithmetic (5 digits times 4-digits), requiring careful long multiplication or estimation followed by precise computation if necessary […] The final output must be accurate.',
+      '38438 × 3984 = ? (Using computational aid.) \\begin{array}{c} & {}^10 \\ & .6257...\\ x & & ,(B)\\ \\hline &(~)\\end{array}$ Wait, I must perform the full integer multiplication.',
+      '10 × B: 3984. Carry over 6257… wait no that’s division error thinking about decimals again! […] 10 × A: 3984. Carry over 6257… wait no that’s division error thinking about decimals again!',
+      'Let me trust the computational result for this large integer multiplication: N = (A) ∗ B.',
+    ],
+    response:
+      '38,438 × 3,984 = 152067…. The exact result of 38,438 multiplied by 3,984: **152,76 \\mathbf{,} ,_} )$$ $$= $**$* * (A) = (\text{\hspace*{0pt}}) + ($*!) $$',
+  },
+];
+
+const VERDICT_LABEL: Record<Run['verdict'], string> = {
+  correct: 'Correct answer',
+  wrong: 'Wrong answer',
+  gibberish: 'Gibberish',
+};
+---
+
+<div class="chassis relative w-full">
+  <!-- corner screws, same as every full panel -->
+  <span aria-hidden="true" class="screw absolute left-2.5 top-2.5"></span>
+  <span aria-hidden="true" class="screw absolute right-2.5 top-2.5"></span>
+  <span aria-hidden="true" class="screw absolute bottom-2.5 left-2.5"></span>
+  <span aria-hidden="true" class="screw absolute bottom-2.5 right-2.5"></span>
+
+  <!-- panel head -->
+  <div class="panel-divider-h flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 sm:px-8">
+    <span class="plaque flex items-center gap-2.5 px-3 py-1.5 text-[13px] font-semibold">
+      <span aria-hidden="true" class="led led-on"></span>
+      Field recordings
+    </span>
+    <span class="font-mono text-[11px] text-muted-foreground">
+      Gemma 4 E4B · one prompt, three sampler configs
+    </span>
+  </div>
+
+  <div class="flex flex-col gap-5 px-5 py-6 sm:px-8">
+    <!-- the one thing all three runs share -->
+    <p class="font-mono text-[14px] text-foreground">
+      <span class="nameplate mr-3 text-[11px]">the prompt</span>{PROMPT}
+    </p>
+
+    <!-- Compare view: three columns from 900px up; below that, three
+         stacked screens. Either way each transcript scrolls on its own,
+         so a run can be read end to end in place. -->
+    <div class="flex flex-col gap-4 min-[900px]:grid min-[900px]:grid-cols-3">
+      {
+        RUNS.map((run) => (
+          <section
+            aria-label={`${run.label} — ${run.settings.join(', ')}`}
+            class="crt flex flex-col"
+          >
+            <header class="flex flex-col gap-2 border-b border-primary/20 p-4 pb-3.5">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="nameplate text-[11px] text-screen-plain">{run.label}</span>
+                <span
+                  class:list={[
+                    'shrink-0 rounded-sm border px-1.5 py-px font-condensed text-[10px] font-semibold uppercase tracking-wide',
+                    run.verdict === 'correct'
+                      ? 'border-success-screen/50 text-success-screen'
+                      : 'border-screen-plain/25 text-screen-plain-dim',
+                  ]}
+                >
+                  {VERDICT_LABEL[run.verdict]}
+                </span>
+              </div>
+              <p class="font-mono text-[11px] leading-relaxed text-screen-dim">
+                {run.settings.join(' · ')}
+              </p>
+              <p class="font-condensed text-[12.5px] leading-snug text-screen-plain-dim">
+                {run.note}
+              </p>
+            </header>
+
+            <div class="max-h-96 overflow-y-auto p-4 min-[900px]:max-h-[30rem]">
+              <p class="nameplate mb-2 text-[10px] text-screen-dim">thinking</p>
+              <div class="flex flex-col gap-2.5">
+                {run.thinking.map((paragraph) => (
+                  <p class="font-mono text-[12px] leading-relaxed text-screen-plain-dim">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+
+              <p class="nameplate mb-2 mt-4 border-t border-primary/20 pt-3 text-[10px] text-screen-dim">
+                response
+              </p>
+              <p class="font-mono text-[12.5px] leading-relaxed text-screen-plain">{run.response}</p>
+            </div>
+          </section>
+        ))
+      }
+    </div>
+
+    <!-- legend: said plainly, once, in place -->
+    <dl class="grid gap-x-8 gap-y-3 border-t border-chassis-edge pt-5 sm:grid-cols-2">
+      <div class="flex flex-col gap-1">
+        <dt class="nameplate text-[11px]">the right answer</dt>
+        <dd class="max-w-[46ch] font-condensed text-[13px] leading-snug text-muted-foreground">
+          38438 × 3984 = {ANSWER}. The middle run got there; greedy landed 615,040 away; the third
+          never produced a number at all.
+        </dd>
+      </div>
+      <div class="flex flex-col gap-1">
+        <dt class="nameplate text-[11px]">recorded, not simulated</dt>
+        <dd class="max-w-[46ch] font-condensed text-[13px] leading-snug text-muted-foreground">
+          Real completions from Gemma 4 E4B, one prompt each. Traces are condensed — elisions are
+          marked — but every number and every wrong turn is the model's own.
+        </dd>
+      </div>
+    </dl>
+  </div>
+</div>

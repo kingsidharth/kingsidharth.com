@@ -1,0 +1,98 @@
+---
+import AskAboutMe from "@/components/AskAboutMe";
+/**
+ * Headline, one paragraph, done. The benefit list that used to sit here
+ * repeated what the programme cards already say, and two separate
+ * paragraphs of biography read as one thought split in half.
+ */
+
+/* The cycling word is rendered as a stack, not swapped in place: every
+   word sits in the same grid cell, so the span is always as wide as the
+   longest of them and nothing after it moves. Replacing the text
+   content instead made "some" jump between lines on every tick. */
+const words = ['AI', 'design', 'ML', 'tech', 'startup'];
+---
+
+<div class="flex w-full min-w-0 flex-col">
+  <h1 class="pixel-type max-w-[24ch] text-4xl sm:text-5xl">
+    <span class="sr-only">Can I show you some cool AI stuff?</span>
+
+    <span aria-hidden="true">
+      Can I show you some cool{' '}
+      <span
+        data-cycle-track
+        class="inline-grid justify-items-start overflow-hidden align-bottom transition-[width] duration-200"
+      >
+        {
+          words.map((word, i) => (
+            <span
+              data-cycle-word
+              data-active={i === 0 ? '' : undefined}
+              class="col-start-1 row-start-1 text-primary opacity-0 transition-opacity duration-200 data-[active]:opacity-100"
+            >
+              {word}
+            </span>
+          ))
+        }
+      </span>{' '}
+      stuff?
+    </span>
+  </h1>
+
+  <p class="mt-5 max-w-[54ch] text-lg text-muted-foreground">
+    I teach and build AI products — for engineers, and for people who don't code. 16+ years in
+    startups: Instamojo, Headout, now Outskill. College dropout. There's a{' '}
+    <a
+      href="https://www.youtube.com/kingsidharthofficial"
+      rel="noopener"
+      class="text-primary hover:underline">YouTube channel</a
+    >{' '}
+    too.
+  </p>
+  <AskAboutMe client:load />
+</div>
+
+<script>
+  // The words are stacked in one grid cell so they can crossfade. That
+  // makes the track as wide as the LONGEST word, which left a gap after
+  // a short one — so the track's width is driven from the active word
+  // and transitioned, giving a tight fit with no reflow of what follows.
+  const track = document.querySelector<HTMLElement>('[data-cycle-track]');
+  const words = document.querySelectorAll<HTMLElement>('[data-cycle-word]');
+
+  if (track && words.length > 1) {
+    const fit = (el: HTMLElement) => {
+      track.style.width = `${el.getBoundingClientRect().width}px`;
+    };
+
+    // Fonts change metrics, so wait for them before the first measure.
+    const start = () => {
+      fit(words[0]);
+
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      // Offset from the cards next door so the headline is not changing
+      // on the same beat as everything else.
+      let i = 0;
+      setTimeout(
+        () => {
+          setInterval(() => {
+            words[i].removeAttribute('data-active');
+            i = (i + 1) % words.length;
+            words[i].setAttribute('data-active', '');
+            fit(words[i]);
+          }, 2600);
+        },
+        400 + Math.round(Math.random() * 600),
+      );
+    };
+
+    if (document.fonts?.ready) void document.fonts.ready.then(start);
+    else start();
+
+    addEventListener('resize', () => {
+      const active = document.querySelector<HTMLElement>('[data-cycle-word][data-active]');
+      if (active) fit(active);
+    });
+  }
+</script>

@@ -1,0 +1,189 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import SectionHead from '@/components/SectionHead.astro';
+import BroadcastCard from '@/components/BroadcastCard.astro';
+import Lineup from '@/components/Lineup.astro';
+import NoteRow from '@/components/NoteRow.astro';
+import WorkList from '@/components/WorkList.astro';
+import TemperatureInstrument from '@/components/instruments/TemperatureInstrument';
+import GotchaQuiz from '@/components/instruments/GotchaQuiz';
+import HeroIntro from '@/components/HeroIntro.astro';
+import TeachingStats from '@/components/TeachingStats.astro';
+import SocialLinks from '@/components/SocialLinks.astro';
+import HeroBackdrop from '@/components/HeroBackdrop.astro';
+import { getLocalized } from '@/lib/content';
+import { localePath, localeStaticPaths, useTranslations } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+
+export const getStaticPaths = (() => localeStaticPaths()) satisfies GetStaticPaths;
+
+const { locale } = Astro.props as { locale: Locale };
+const t = useTranslations(locale);
+
+const broadcasts = (await getCollection('broadcasts'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 4);
+const work = (await getCollection('work')).sort((a, b) => a.data.order - b.data.order);
+const series = await getCollection('series');
+const notes = (await getLocalized('blog', locale)).slice(0, 5);
+---
+
+<Base
+  locale={locale}
+  title="Sidharth — Product builder"
+  description="Teaching AI, building products in Bengaluru. Tools, videos and writing about how AI actually behaves."
+  bareTitle
+>
+  <!-- ── Hero. One column now. The introduction sits in the lower
+         left, where the backdrop's mask clears a space for it, and the
+         statue owns the right-hand side of the frame — which is where
+         it always was, until a second column of hardware sat on its
+         shoulder. The teaching numbers ride under the copy as a small
+         printed strip instead. ─────────────────────────────────── -->
+  <!-- The min-height is the backdrop's own aspect ratio (2:1, capped at
+       the 82rem the image itself is capped to). Sized to its text
+       instead, the box clips the artwork with overflow-hidden — and what
+       gets cut is the bottom edge, where the tiny human stands. That
+       figure is the entire reason the image works, so the box is sized
+       to it rather than the reverse. -->
+  <div class="relative isolate min-h-[min(84vw,44rem)] overflow-hidden">
+    <HeroBackdrop class="-z-20" />
+
+    <!-- The top padding is the point of the backdrop: it is what leaves
+         the deity's head, crown and held attributes clear of the
+         headline. Fluid rather than stepped, because the artwork scales
+         with the viewport and a breakpoint would crop its face at one
+         width and strand it at the next. -->
+    <section
+      class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-[clamp(9rem,21vw,16rem)] pb-10 sm:pb-4"
+    >
+      <div class="max-w-[38rem]">
+        <HeroIntro />
+        <div class="mt-8" data-arrive style="--arrive-i:2">
+          <TeachingStats />
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ── The lineup. Programmes and video collections interleaved:
+         they are the same kind of offer, so two separate grids made
+         the page argue with itself. Five cards, five tracks. ────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-12 sm:pt-16">
+    <Lineup series={series} />
+  </section>
+
+  <!-- ── Watch ────────────────────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) py-16 sm:py-20">
+    <SectionHead
+      index="01"
+      title={t('broadcasts.title')}
+      more={{ href: localePath(locale, 'broadcasts'), label: 'All videos' }}
+    />
+
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        broadcasts.map((entry, i) => (
+          <div data-arrive style={`--arrive-i:${i}`}>
+            <BroadcastCard entry={entry} locale={locale} />
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- ── Notes ────────────────────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pb-16 sm:pb-20">
+    <SectionHead
+      index="02"
+      title={t('notes.title')}
+      more={{ href: localePath(locale, 'notes'), label: t('notes.all') }}
+    />
+
+    <div class="max-w-3xl">
+      {notes.map((entry) => <NoteRow entry={entry} locale={locale} />)}
+    </div>
+  </section>
+
+  <!-- ── Work ─────────────────────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pb-16 sm:pb-20">
+    <SectionHead
+      index="03"
+      title={t('work.title')}
+      sub={t('work.sub')}
+      more={{ href: localePath(locale, 'work'), label: 'More about the work' }}
+    />
+    <WorkList entries={work} />
+  </section>
+
+  <!-- ── The catcher. Someone who read this far is the person most
+         likely to want a go. A banner, not an instrument: the
+         instrument is what it reveals. ─────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pb-4">
+    <SectionHead index="04" title="Challenge" sub="one question, one dial" />
+    <div class="mx-auto max-w-2xl" data-arrive>
+      <GotchaQuiz client:visible />
+    </div>
+  </section>
+
+  <!-- Revealed by the quiz. Hidden rather than un-rendered so the
+       reveal is instant and it stays out of the a11y tree until then.
+       Note `client:idle`, NOT `client:visible`: a `hidden` element has
+       no layout, so an IntersectionObserver never fires and the island
+       would still be inert after the reveal.
+
+       This is the one instrument on the page, and it keeps its chassis:
+       it is the temperature explainer, which is where the hardware
+       vocabulary lives now. -->
+  <section
+    id="instrument-reveal"
+    hidden
+    class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-16"
+  >
+    <p class="nameplate mb-3 text-primary">One of the teaching tools</p>
+    <h2 class="max-w-[24ch] text-2xl sm:text-3xl">Temperature visualiser</h2>
+    <p class="mt-4 mb-8 max-w-[58ch] text-muted-foreground">
+      One dial, three prompts. Take the temperature to zero, then to two, and watch all three
+      outputs refuse to move — then find out why that is the opposite of what everyone tells you
+      temperature does.
+    </p>
+    {/* The conclusion is suppressed here: this embed is a hook, and the
+        argument it opens is four panels long. It belongs on the sampling
+        bench, which is where the link underneath goes. */}
+    <TemperatureInstrument showConclusion={false} client:idle />
+    <p class="mt-6">
+      <a
+        href={localePath(locale, 'guides/sampling')}
+        class="inline-flex items-center gap-2 rounded-md border border-border px-3.5 py-2 font-condensed text-[13px] font-semibold transition-colors hover:border-primary hover:text-primary"
+      >
+        Open the full bench <span aria-hidden="true">→</span>
+      </a>
+    </p>
+  </section>
+
+  <script>
+    // The quiz island dispatches this once, on first answer or reveal.
+    document.addEventListener('gotcha:revealed', () => {
+      const panel = document.getElementById('instrument-reveal');
+      if (!panel) return;
+      panel.hidden = false;
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  </script>
+
+  <!-- ── Elsewhere ────────────────────────────────────────────── -->
+  <section class="mx-auto max-w-(--container-wide) px-(--spacing-gutter) pt-16 pb-4">
+    <div
+      class="flex flex-wrap items-center justify-between gap-x-10 gap-y-6 border-t border-rule pt-8"
+    >
+      <div>
+        <p class="text-xl font-semibold">Elsewhere</p>
+        <p class="mt-1 text-sm text-muted-foreground">They won't let you follow me everywhere.</p>
+      </div>
+
+      <SocialLinks variant="tile" class="w-full max-w-[22rem] sm:w-auto" />
+    </div>
+  </section>
+</Base>
